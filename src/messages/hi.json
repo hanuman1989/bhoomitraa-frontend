@@ -124,11 +124,7 @@
   },
   "common": {
     "cancel": "रद्द करें",
-    "close": "बंद करें",
-    "viewMore": "और देखें",
-    "delete": "हटाएँ",
-    "filter": "फ़िल्टर",
-    "seeAll": "सभी देखें"
+    "close": "बंद करें"
   },
   "sidebar": {
     "groups": {
@@ -180,83 +176,10 @@
     "loggingOut": "लॉग आउट हो रहा है..."
   },
   "ecommerce": {
-    "metrics": {
-      "customers": "ग्राहक",
-      "orders": "ऑर्डर"
-    },
-    "months": {
-      "jan": "जनवरी",
-      "feb": "फ़रवरी",
-      "mar": "मार्च",
-      "apr": "अप्रैल",
-      "may": "मई",
-      "jun": "जून",
-      "jul": "जुलाई",
-      "aug": "अगस्त",
-      "sep": "सितंबर",
-      "oct": "अक्टूबर",
-      "nov": "नवंबर",
-      "dec": "दिसंबर"
-    },
-    "monthlySales": {
-      "title": "मासिक बिक्री",
-      "series": "बिक्री"
-    },
-    "monthlyTarget": {
-      "title": "मासिक लक्ष्य",
-      "subtitle": "हर महीने के लिए तय किया गया लक्ष्य",
-      "earned": "आज आपकी कमाई {amount} है। यह पिछले महीने से ज़्यादा है। ऐसे ही अच्छा काम करते रहें!",
-      "target": "लक्ष्य",
-      "revenue": "आमदनी",
-      "today": "आज",
-      "text20K": "20 हज़ार डॉलर"
-    },
     "statistics": {
-      "title": "आँकड़े",
-      "subtitle": "हर महीने के लिए तय किया गया लक्ष्य",
-      "sales": "बिक्री",
-      "revenue": "आमदनी",
       "monthly": "मासिक",
       "quarterly": "तिमाही",
-      "annually": "सालाना",
-      "selectDateRange": "तारीख की अवधि चुनें"
-    },
-    "recentOrders": {
-      "title": "हाल के ऑर्डर",
-      "products": "उत्पाद",
-      "category": "श्रेणी",
-      "price": "कीमत",
-      "status": "स्थिति",
-      "variants": "{count, plural, one {# प्रकार} other {# प्रकार}}",
-      "categories": {
-        "laptop": "लैपटॉप",
-        "watch": "घड़ी",
-        "smartphone": "स्मार्टफ़ोन",
-        "electronics": "इलेक्ट्रॉनिक सामान",
-        "accessories": "सहायक सामान"
-      },
-      "statuses": {
-        "delivered": "डिलीवर हो गया",
-        "pending": "बाकी है",
-        "canceled": "रद्द किया गया"
-      }
-    },
-    "demographic": {
-      "title": "ग्राहकों की जानकारी",
-      "subtitle": "देश के अनुसार ग्राहकों की संख्या",
-      "customers": "{count} ग्राहक",
-      "usa": "अमेरिका",
-      "france": "फ़्रांस"
-    },
-    "demographicCard": {
-      "usa": "अमेरिका",
-      "france": "फ़्रांस"
-    },
-    "countries": {
-      "unitedStates": "संयुक्त राज्य अमेरिका",
-      "india": "भारत",
-      "unitedKingdom": "यूनाइटेड किंगडम",
-      "sweden": "स्वीडन"
+      "annually": "सालाना"
     }
   },
   "notFound": {
@@ -297,41 +220,6 @@
       "signingIn": "लॉगिन हो रहा है…",
       "signIn2": "लॉगिन करें"
     },
-    "signInForm": {
-      "backToDashboard": "डैशबोर्ड पर वापस जाएँ",
-      "signIn": "लॉगिन करें",
-      "enterYourEmailAndPasswordToSignIn": "लॉगिन करने के लिए ईमेल और पासवर्ड डालें।",
-      "signInWithGoogle": "Google से लॉगिन करें",
-      "signInWithX": "X से लॉगिन करें",
-      "or": "या",
-      "email": "ईमेल",
-      "password": "पासवर्ड",
-      "enterYourPassword": "अपना पासवर्ड दर्ज करें",
-      "keepMeLoggedIn": "मुझे लॉगिन रखें",
-      "forgotPassword": "पासवर्ड भूल गए?",
-      "signIn2": "लॉगिन करें",
-      "donTHaveAnAccount": "क्या आपका अकाउंट नहीं है?",
-      "signUp": "अकाउंट बनाएँ"
-    },
-    "signUpForm": {
-      "backToDashboard": "डैशबोर्ड पर वापस जाएँ",
-      "signUp": "अकाउंट बनाएँ",
-      "enterYourEmailAndPasswordToSignUp": "अकाउंट बनाने के लिए ईमेल और पासवर्ड भरें।",
-      "signUpWithGoogle": "Google से अकाउंट बनाएँ",
-      "signUpWithX": "X से अकाउंट बनाएँ",
-      "or": "या",
-      "firstName": "पहला नाम",
-      "enterYourFirstName": "अपना पहला नाम लिखें",
-      "lastName": "अंतिम नाम",
-      "enterYourLastName": "अपना अंतिम नाम लिखें",
-      "email": "ईमेल",
-      "enterYourEmail": "अपना ईमेल दर्ज करें",
-      "password": "पासवर्ड",
-      "enterYourPassword": "अपना पासवर्ड दर्ज करें",
-      "alreadyHaveAnAccount": "क्या आपका पहले से अकाउंट है?",
-      "signIn": "लॉगिन करें",
-      "termsNotice": "अकाउंट बनाकर आप हमारे <terms>नियम और शर्तों</terms> तथा <privacy>गोपनीयता नीति</privacy> से सहमत होते हैं।"
-    },
     "login": {
       "title": "Next.js लॉगिन पेज | TailAdmin - Next.js डैशबोर्ड टेम्पलेट",
       "description": "यह TailAdmin डैशबोर्ड टेम्पलेट का Next.js लॉगिन पेज है।"
@@ -363,37 +251,6 @@
     "adminLoading": {
       "loadingAdminPanel": "एडमिन पैनल लोड हो रहा है...",
       "loadingAdmin": "एडमिन की जानकारी लोड हो रही है..."
-    },
-    "barChartOne": {
-      "jan": "जनवरी",
-      "feb": "फ़रवरी",
-      "mar": "मार्च",
-      "apr": "अप्रैल",
-      "may": "मई",
-      "jun": "जून",
-      "jul": "जुलाई",
-      "aug": "अगस्त",
-      "sep": "सितंबर",
-      "oct": "अक्टूबर",
-      "nov": "नवंबर",
-      "dec": "दिसंबर",
-      "sales": "बिक्री"
-    },
-    "lineChartOne": {
-      "jan": "जनवरी",
-      "feb": "फ़रवरी",
-      "mar": "मार्च",
-      "apr": "अप्रैल",
-      "may": "मई",
-      "jun": "जून",
-      "jul": "जुलाई",
-      "aug": "अगस्त",
-      "sep": "सितंबर",
-      "oct": "अक्टूबर",
-      "nov": "नवंबर",
-      "dec": "दिसंबर",
-      "sales": "बिक्री",
-      "revenue": "आमदनी"
     },
     "gridShape": {
       "grid": "ग्रिड"
@@ -445,18 +302,6 @@
     "youTubeEmbed": {
       "youTubeVideo": "YouTube वीडियो"
     },
-    "fourIsToThree": {
-      "youTubeVideo": "YouTube वीडियो"
-    },
-    "oneIsToOne": {
-      "youTubeVideo": "YouTube वीडियो"
-    },
-    "sixteenIsToNine": {
-      "youTubeVideo": "YouTube वीडियो"
-    },
-    "twentyOneIsToNine": {
-      "youTubeVideo": "YouTube वीडियो"
-    },
     "imagePreview": {
       "noImageAvailable": "तस्वीर उपलब्ध नहीं है"
     },
@@ -474,42 +319,6 @@
     "documentation": "दस्तावेज़",
     "intro": "शुरू करने के लिए <file>page.js</file> फ़ाइल में बदलाव करें।",
     "guidance": "शुरू करने या ज़्यादा जानकारी पाने के लिए <templates>टेम्पलेट</templates> या <learning>सीखने के केंद्र</learning> पर जाएँ।"
-  },
-  "calendar": {
-    "calendar": {
-      "eventConf": "इवेंट कॉन्फ़्रेंस",
-      "meeting": "मीटिंग",
-      "workshop": "कार्यशाला",
-      "event": "कार्यक्रम",
-      "newEvent": "नया कार्यक्रम",
-      "more": "और",
-      "addEventButton": "कार्यक्रम जोड़ें +"
-    },
-    "calendarEventModal": {
-      "event": "कार्यक्रम",
-      "newEvent": "नया कार्यक्रम",
-      "editEvent": "कार्यक्रम बदलें",
-      "addEvent": "कार्यक्रम जोड़ें",
-      "planYourNextBigMomentScheduleOrEditAn": "अपने अगले कार्यक्रम की योजना बनाएँ। समय तय करें या कार्यक्रम में बदलाव करें।",
-      "eventTitle": "कार्यक्रम का नाम",
-      "eventColor": "कार्यक्रम का रंग",
-      "enterStartDate": "शुरू होने की तारीख दर्ज करें",
-      "enterEndDate": "खत्म होने की तारीख दर्ज करें",
-      "close": "बंद करें",
-      "updateChanges": "बदलाव अपडेट करें",
-      "levels": {
-        "Danger": "खतरा",
-        "Success": "सफल",
-        "Primary": "मुख्य",
-        "Warning": "चेतावनी"
-      }
-    },
-    "views": {
-      "year": "साल",
-      "month": "महीना",
-      "week": "हफ़्ता",
-      "day": "दिन"
-    }
   },
   "examples": {
     "defaultModal": {
@@ -681,57 +490,5 @@
   "notificationDropdown": {
     "user": "यूज़र",
     "projectNganterApp": "प्रोजेक्ट - Nganter ऐप"
-  },
-  "profile": {
-    "dangerZone": {
-      "dangerZone": "संवेदनशील सेटिंग्स",
-      "logoutAllDevices": "सभी डिवाइस से लॉग आउट करें",
-      "signOutFromEveryActiveSession": "जहाँ-जहाँ लॉगिन हैं, वहाँ से लॉग आउट करें।",
-      "logout": "लॉग आउट करें",
-      "deleteAccount": "अकाउंट हटाएँ",
-      "onceYouDeleteYourAccountThereIsNoGoing": "अकाउंट हटाने के बाद इसे वापस नहीं लाया जा सकता। कृपया अच्छी तरह सोच लें।"
-    },
-    "security": {
-      "security": "सुरक्षा",
-      "changePassword": "पासवर्ड बदलें",
-      "receiveRealTimeNotificationsAndTeamAlerts": "तुरंत सूचनाएँ और टीम के अलर्ट पाएँ।",
-      "twoFactorAuthentication2FA": "दो चरणों वाली सुरक्षा (2FA)",
-      "keepYourAccountSecureByEnabling2FA": "2FA चालू करके अपना अकाउंट सुरक्षित रखें"
-    },
-    "userAddressCard": {
-      "address": "पता",
-      "country": "देश",
-      "unitedStates": "संयुक्त राज्य अमेरिका",
-      "cityState": "शहर/राज्य",
-      "phoenixArizonaUnitedStates": "फ़ीनिक्स, एरिज़ोना, अमेरिका।",
-      "postalCode": "पिन कोड",
-      "tAXID": "टैक्स आईडी",
-      "edit": "बदलें",
-      "editAddress": "पता बदलें",
-      "updateYourDetailsToKeepYourProfileUpTo": "अपनी प्रोफ़ाइल अपडेट रखने के लिए जानकारी बदलें।",
-      "close": "बंद करें",
-      "saveChanges": "बदलाव सेव करें"
-    },
-    "userMetaCard": {
-      "user": "यूज़र",
-      "teamManager": "टीम मैनेजर",
-      "arizonaUnitedStates": "एरिज़ोना, अमेरिका।",
-      "firstName": "पहला नाम",
-      "lastName": "अंतिम नाम",
-      "emailAddress": "ईमेल पता",
-      "phone": "फ़ोन",
-      "bio": "परिचय",
-      "socialLinks": "सोशल मीडिया लिंक",
-      "edit": "बदलें",
-      "editPersonalInformation": "निजी जानकारी बदलें",
-      "updateYourDetailsToKeepYourProfileUpTo": "अपनी प्रोफ़ाइल अपडेट रखने के लिए जानकारी बदलें।",
-      "changeProfilePicture": "प्रोफ़ाइल फ़ोटो बदलें",
-      "profilePicture": "प्रोफ़ाइल फ़ोटो",
-      "uploadASquareImage200200PxInJPEG": "JPEG या PNG फ़ॉर्मेट में 200×200 पिक्सेल की चौकोर तस्वीर अपलोड करें।",
-      "personalInformation": "निजी जानकारी",
-      "emailAddress2": "ईमेल पता",
-      "close": "बंद करें",
-      "saveChanges": "बदलाव सेव करें"
-    }
   }
 }

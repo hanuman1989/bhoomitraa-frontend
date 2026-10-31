@@ -124,11 +124,7 @@
   },
   "common": {
     "cancel": "Cancel",
-    "close": "Close",
-    "viewMore": "View More",
-    "delete": "Delete",
-    "filter": "Filter",
-    "seeAll": "See all"
+    "close": "Close"
   },
   "sidebar": {
     "groups": {
@@ -180,83 +176,10 @@
     "loggingOut": "Logging out..."
   },
   "ecommerce": {
-    "metrics": {
-      "customers": "Customers",
-      "orders": "Orders"
-    },
-    "months": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec"
-    },
-    "monthlySales": {
-      "title": "Monthly Sales",
-      "series": "Sales"
-    },
-    "monthlyTarget": {
-      "title": "Monthly Target",
-      "subtitle": "Target you’ve set for each month",
-      "earned": "You earn {amount} today, it's higher than last month. Keep up your good work!",
-      "target": "Target",
-      "revenue": "Revenue",
-      "today": "Today",
-      "text20K": "$20K"
-    },
     "statistics": {
-      "title": "Statistics",
-      "subtitle": "Target you've set for each month",
-      "sales": "Sales",
-      "revenue": "Revenue",
       "monthly": "Monthly",
       "quarterly": "Quarterly",
-      "annually": "Annually",
-      "selectDateRange": "Select date range"
-    },
-    "recentOrders": {
-      "title": "Recent Orders",
-      "products": "Products",
-      "category": "Category",
-      "price": "Price",
-      "status": "Status",
-      "variants": "{count, plural, one {# Variant} other {# Variants}}",
-      "categories": {
-        "laptop": "Laptop",
-        "watch": "Watch",
-        "smartphone": "SmartPhone",
-        "electronics": "Electronics",
-        "accessories": "Accessories"
-      },
-      "statuses": {
-        "delivered": "Delivered",
-        "pending": "Pending",
-        "canceled": "Canceled"
-      }
-    },
-    "demographic": {
-      "title": "Customers Demographic",
-      "subtitle": "Number of customer based on country",
-      "customers": "{count} Customers",
-      "usa": "USA",
-      "france": "France"
-    },
-    "demographicCard": {
-      "usa": "usa",
-      "france": "france"
-    },
-    "countries": {
-      "unitedStates": "United States",
-      "india": "India",
-      "unitedKingdom": "United Kingdom",
-      "sweden": "Sweden"
+      "annually": "Annually"
     }
   },
   "notFound": {
@@ -297,41 +220,6 @@
       "signingIn": "Signing in…",
       "signIn2": "Sign in"
     },
-    "signInForm": {
-      "backToDashboard": "Back to dashboard",
-      "signIn": "Sign In",
-      "enterYourEmailAndPasswordToSignIn": "Enter your email and password to sign in!",
-      "signInWithGoogle": "Sign in with Google",
-      "signInWithX": "Sign in with X",
-      "or": "Or",
-      "email": "Email",
-      "password": "Password",
-      "enterYourPassword": "Enter your password",
-      "keepMeLoggedIn": "Keep me logged in",
-      "forgotPassword": "Forgot password?",
-      "signIn2": "Sign in",
-      "donTHaveAnAccount": "Don't have an account?",
-      "signUp": "Sign Up"
-    },
-    "signUpForm": {
-      "backToDashboard": "Back to dashboard",
-      "signUp": "Sign Up",
-      "enterYourEmailAndPasswordToSignUp": "Enter your email and password to sign up!",
-      "signUpWithGoogle": "Sign up with Google",
-      "signUpWithX": "Sign up with X",
-      "or": "Or",
-      "firstName": "First Name",
-      "enterYourFirstName": "Enter your first name",
-      "lastName": "Last Name",
-      "enterYourLastName": "Enter your last name",
-      "email": "Email",
-      "enterYourEmail": "Enter your email",
-      "password": "Password",
-      "enterYourPassword": "Enter your password",
-      "alreadyHaveAnAccount": "Already have an account?",
-      "signIn": "Sign In",
-      "termsNotice": "By creating an account means you agree to the <terms>Terms and Conditions,</terms> and our <privacy>Privacy Policy</privacy>"
-    },
     "login": {
       "title": "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
       "description": "This is Next.js Signin Page TailAdmin Dashboard Template"
@@ -363,37 +251,6 @@
     "adminLoading": {
       "loadingAdminPanel": "Loading admin panel...",
       "loadingAdmin": "Loading admin..."
-    },
-    "barChartOne": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec",
-      "sales": "Sales"
-    },
-    "lineChartOne": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec",
-      "sales": "Sales",
-      "revenue": "Revenue"
     },
     "gridShape": {
       "grid": "grid"
@@ -445,18 +302,6 @@
     "youTubeEmbed": {
       "youTubeVideo": "YouTube video"
     },
-    "fourIsToThree": {
-      "youTubeVideo": "YouTube video"
-    },
-    "oneIsToOne": {
-      "youTubeVideo": "YouTube video"
-    },
-    "sixteenIsToNine": {
-      "youTubeVideo": "YouTube video"
-    },
-    "twentyOneIsToNine": {
-      "youTubeVideo": "YouTube video"
-    },
     "imagePreview": {
       "noImageAvailable": "No image available"
     },
@@ -474,42 +319,6 @@
     "documentation": "Documentation",
     "intro": "To get started, edit the <file>page.js</file> file.",
     "guidance": "Looking for a starting point or more instructions? Head over to <templates>Templates</templates> or the <learning>Learning</learning> center."
-  },
-  "calendar": {
-    "calendar": {
-      "eventConf": "Event Conf.",
-      "meeting": "Meeting",
-      "workshop": "Workshop",
-      "event": "Event",
-      "newEvent": "New Event",
-      "more": "more",
-      "addEventButton": "Add Event +"
-    },
-    "calendarEventModal": {
-      "event": "Event",
-      "newEvent": "New Event",
-      "editEvent": "Edit Event",
-      "addEvent": "Add Event",
-      "planYourNextBigMomentScheduleOrEditAn": "Plan your next big moment: schedule or edit an event to stay on track",
-      "eventTitle": "Event Title",
-      "eventColor": "Event Color",
-      "enterStartDate": "Enter Start Date",
-      "enterEndDate": "Enter End Date",
-      "close": "Close",
-      "updateChanges": "Update Changes",
-      "levels": {
-        "Danger": "Danger",
-        "Success": "Success",
-        "Primary": "Primary",
-        "Warning": "Warning"
-      }
-    },
-    "views": {
-      "year": "Year",
-      "month": "Month",
-      "week": "Week",
-      "day": "Day"
-    }
   },
   "examples": {
     "defaultModal": {
@@ -681,57 +490,5 @@
   "notificationDropdown": {
     "user": "User",
     "projectNganterApp": "Project - Nganter App"
-  },
-  "profile": {
-    "dangerZone": {
-      "dangerZone": "Danger Zone",
-      "logoutAllDevices": "Logout all devices",
-      "signOutFromEveryActiveSession": "Sign out from every active session.",
-      "logout": "Logout",
-      "deleteAccount": "Delete account",
-      "onceYouDeleteYourAccountThereIsNoGoing": "Once you delete your account, there is no going back. Please be certain."
-    },
-    "security": {
-      "security": "Security",
-      "changePassword": "Change Password",
-      "receiveRealTimeNotificationsAndTeamAlerts": "Receive real-time notifications and team alerts.",
-      "twoFactorAuthentication2FA": "Two-factor authentication (2FA)",
-      "keepYourAccountSecureByEnabling2FA": "Keep your account secure by enabling 2FA"
-    },
-    "userAddressCard": {
-      "address": "Address",
-      "country": "Country",
-      "unitedStates": "United States",
-      "cityState": "City/State",
-      "phoenixArizonaUnitedStates": "Phoenix, Arizona, United States.",
-      "postalCode": "Postal Code",
-      "tAXID": "TAX ID",
-      "edit": "Edit",
-      "editAddress": "Edit Address",
-      "updateYourDetailsToKeepYourProfileUpTo": "Update your details to keep your profile up-to-date.",
-      "close": "Close",
-      "saveChanges": "Save Changes"
-    },
-    "userMetaCard": {
-      "user": "user",
-      "teamManager": "Team Manager",
-      "arizonaUnitedStates": "Arizona, United States.",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "emailAddress": "Email address",
-      "phone": "Phone",
-      "bio": "Bio",
-      "socialLinks": "Social Links",
-      "edit": "Edit",
-      "editPersonalInformation": "Edit Personal Information",
-      "updateYourDetailsToKeepYourProfileUpTo": "Update your details to keep your profile up-to-date.",
-      "changeProfilePicture": "Change Profile Picture",
-      "profilePicture": "Profile Picture",
-      "uploadASquareImage200200PxInJPEG": "Upload a square image (200×200 px) in JPEG or PNG format.",
-      "personalInformation": "Personal Information",
-      "emailAddress2": "Email Address",
-      "close": "Close",
-      "saveChanges": "Save Changes"
-    }
   }
 }
