@@ -8,6 +8,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import FilterSelect from "@/components/admin/common/FilterSelect";
+import { useTranslations } from "next-intl";
 
 export interface AdminUsersFilterValues {
   keyword: string;
@@ -26,6 +27,8 @@ const inputClasses =
 export default function AdminUsersFilters({
   initialFilters = emptyFilters,
 }: AdminUsersFiltersProps) {
+  const tUi = useTranslations("adminUsers.filters");
+
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
@@ -74,15 +77,15 @@ export default function AdminUsersFilters({
   return (
     <form
       onSubmit={handleSubmit}
-      aria-label="Filter admin users"
-      className="grid items-end gap-4 rounded-xl border border-[#dce3f1] bg-white p-5 sm:grid-cols-2 md:p-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto] dark:border-gray-800 dark:bg-gray-900"
+      aria-label={tUi("filterAdminUsers")}
+      className="mb-4 grid items-end gap-4 rounded-xl border border-[#dce3f1] bg-white p-5 sm:grid-cols-2 md:p-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto] dark:border-gray-800 dark:bg-gray-900"
     >
       <div className="sm:col-span-2 lg:col-span-1">
         <label
           htmlFor="admin-search"
           className="mb-2 block text-sm font-medium"
         >
-          Search
+          {tUi("search")}
         </label>
         <div className="relative">
           <svg
@@ -103,7 +106,7 @@ export default function AdminUsersFilters({
             type="search"
             value={filters.keyword ?? ""}
             onChange={handleChange}
-            placeholder="Name, email or mobile"
+            placeholder={tUi("nameEmailOrMobile")}
             className={`${inputClasses} ps-12 placeholder:text-[#8a9ac0]`}
           />
         </div>
@@ -111,13 +114,13 @@ export default function AdminUsersFilters({
       <FilterSelect
         id="admin-status"
         name="status"
-        label="Status"
+        label={tUi("status")}
         value={filters.status}
         onChange={handleChange}
       >
-        <option value="">All</option>
-        <option value="1">Active</option>
-        <option value="0">Inactive</option>
+        <option value="">{tUi("all")}</option>
+        <option value="1">{tUi("active")}</option>
+        <option value="0">{tUi("inactive")}</option>
       </FilterSelect>
 
       <div className="flex gap-3 sm:col-span-2 lg:col-span-3 xl:col-span-1">
@@ -126,7 +129,7 @@ export default function AdminUsersFilters({
           disabled={isPending}
           className="h-12 flex-1 rounded-md bg-[#004bff] px-6 text-sm font-medium whitespace-nowrap text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
         >
-          {isPending ? "Applying..." : "Apply Filters"}
+          {isPending ? tUi("applying") : tUi("applyFilters")}
         </button>
         <button
           type="button"
@@ -134,7 +137,7 @@ export default function AdminUsersFilters({
           disabled={isPending}
           className="h-12 flex-1 rounded-md border border-blue-200 px-6 text-sm font-medium text-[#004bff] transition hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-gray-800"
         >
-          Reset
+          {tUi("reset")}
         </button>
       </div>
     </form>

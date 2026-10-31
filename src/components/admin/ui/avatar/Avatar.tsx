@@ -1,5 +1,6 @@
 import { cn } from "@/utils";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface AvatarProps {
   src: string; // URL of the avatar image
@@ -35,11 +36,14 @@ const statusColorClasses = {
 
 const Avatar: React.FC<AvatarProps> = ({
   src,
-  alt = "User Avatar",
+  alt,
   size = "medium",
   status = "none",
   className = "",
 }) => {
+  const tUi = useTranslations("ui.avatar");
+  if (alt === undefined) alt = tUi("userAvatar");
+
   return (
     <div className={cn("relative rounded-full", sizeClasses[size], className)}>
       {/* Avatar Image */}

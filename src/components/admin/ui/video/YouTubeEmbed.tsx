@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 
 type AspectRatio = "16:9" | "4:3" | "21:9" | "1:1";
 
@@ -12,9 +13,12 @@ interface YouTubeEmbedProps {
 const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({
   videoId,
   aspectRatio = "16:9",
-  title = "YouTube video",
+  title,
   className = "",
 }) => {
+  const tUi = useTranslations("ui.youTubeEmbed");
+  if (title === undefined) title = tUi("youTubeVideo");
+
   const aspectRatioClass = {
     "16:9": "aspect-video",
     "4:3": "aspect-4/3",
@@ -32,7 +36,7 @@ const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({
         frameBorder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
-        className="w-full h-full"
+        className="h-full w-full"
       ></iframe>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 interface AlertProps {
@@ -15,8 +16,10 @@ const Alert: React.FC<AlertProps> = ({
   message,
   showLink = false,
   linkHref = "#",
-  linkText = "Learn more",
+  linkText,
 }) => {
+  const t = useTranslations("ui.alert");
+  const resolvedLinkText = linkText ?? t("learnMore");
   // Tailwind classes for each variant
   const variantClasses = {
     success: {
@@ -132,7 +135,7 @@ const Alert: React.FC<AlertProps> = ({
               href={linkHref}
               className="mt-3 inline-block text-sm font-medium text-gray-500 underline dark:text-gray-400"
             >
-              {linkText}
+              {resolvedLinkText}
             </Link>
           )}
         </div>

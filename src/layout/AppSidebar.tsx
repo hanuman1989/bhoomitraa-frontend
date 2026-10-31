@@ -336,7 +336,7 @@ const AppSidebar: React.FC = () => {
               <Image
                 className="dark:hidden"
                 src="/images/logo/horizontal-logo.png"
-                alt="Logo"
+                alt={t("logo")}
                 width={150}
                 height={40}
                 priority
@@ -345,7 +345,7 @@ const AppSidebar: React.FC = () => {
               <Image
                 className="hidden dark:block"
                 src="/images/logo/horizontal-logo.png"
-                alt="Logo"
+                alt={t("logo")}
                 width={150}
                 height={40}
                 priority
@@ -355,7 +355,7 @@ const AppSidebar: React.FC = () => {
           ) : (
             <Image
               src="/images/logo/logo-icon.png"
-              alt="Logo"
+              alt={t("logo")}
               width={32}
               height={32}
               priority

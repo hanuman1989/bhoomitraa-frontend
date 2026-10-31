@@ -11,8 +11,11 @@ import { loginAdmin } from "@/actions/admin/auth";
 import { Controller, useForm } from "react-hook-form";
 import type { AdminLoginPayload } from "@/types/auth";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useTranslations } from "next-intl";
 
 export default function SignInForm() {
+  const tUi = useTranslations("auth.signIn");
+
   const router = useRouter();
   const { setAuth } = useAdminAuth();
 
@@ -50,7 +53,7 @@ export default function SignInForm() {
         }
         setError("root.server", {
           type: "server",
-          message: result.message || "Unable to sign in.",
+          message: result.message || tUi("unableToSignIn"),
         });
         return;
       }
@@ -60,7 +63,7 @@ export default function SignInForm() {
     } catch {
       setError("root.server", {
         type: "server",
-        message: "Unable to sign in. Please try again.",
+        message: tUi("unableToSignInPleaseTryAgain"),
       });
     }
   }
@@ -71,10 +74,10 @@ export default function SignInForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="text-title-sm sm:text-title-md mb-2 font-semibold text-gray-800 dark:text-white/90">
-              Sign In
+              {tUi("signIn")}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign in!
+              {tUi("enterYourEmailAndPasswordToSignIn")}
             </p>
           </div>
           <div>
@@ -90,25 +93,26 @@ export default function SignInForm() {
               <div className="space-y-6">
                 <div>
                   <Label>
-                    Email <span className="text-error-500">*</span>{" "}
+                    {tUi("email")}{" "}
+                    <span className="text-error-500">*</span>{" "}
                   </Label>
                   <Input
                     {...register("email", {
-                      required: "Email is required.",
+                      required: tUi("emailIsRequired"),
                       pattern: {
                         value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: "Please enter a valid email address.",
+                        message: tUi("pleaseEnterAValidEmailAddress"),
                       },
                       maxLength: {
                         value: 255,
-                        message: "Email must be at most 255 characters.",
+                        message: tUi("emailMustBeAtMost255Characters"),
                       },
                       setValueAs: (value) => value.trim(),
                     })}
                     id="admin-login-email"
                     type="email"
                     autoComplete="email"
-                    placeholder="Enter your email"
+                    placeholder={tUi("enterYourEmail")}
                     aria-required="true"
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={
@@ -127,21 +131,22 @@ export default function SignInForm() {
                 </div>
                 <div>
                   <Label>
-                    Password <span className="text-error-500">*</span>{" "}
+                    {tUi("password")}{" "}
+                    <span className="text-error-500">*</span>{" "}
                   </Label>
                   <div className="relative">
                     <Input
                       {...register("password", {
-                        required: "Password is required.",
+                        required: tUi("passwordIsRequired"),
                         maxLength: {
                           value: 255,
-                          message: "Password must be at most 255 characters.",
+                          message: tUi("passwordMustBeAtMost255Characters"),
                         },
                       })}
                       id="admin-login-password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
-                      placeholder="Enter your password"
+                      placeholder={tUi("enterYourPassword")}
                       aria-required="true"
                       aria-invalid={Boolean(errors.password)}
                       aria-describedby={
@@ -153,7 +158,7 @@ export default function SignInForm() {
                     <button
                       type="button"
                       aria-label={
-                        showPassword ? "Hide password" : "Show password"
+                        showPassword ? tUi("hidePassword") : tUi("showPassword")
                       }
                       aria-pressed={showPassword}
                       onClick={() => setShowPassword((previous) => !previous)}
@@ -190,19 +195,14 @@ export default function SignInForm() {
                       )}
                     />
                     <span className="text-theme-sm block font-normal text-gray-700 dark:text-gray-400">
-                      Keep me logged in
+                      {tUi("keepMeLoggedIn")}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full"
-                    size="sm"
-                  >
-                    {isSubmitting ? "Signing in…" : "Sign in"}
+                  <Button disabled={isSubmitting} className="w-full" size="sm">
+                    {isSubmitting ? tUi("signingIn") : tUi("signIn2")}
                   </Button>
                 </div>
               </div>

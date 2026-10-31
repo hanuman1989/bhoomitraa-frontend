@@ -4,12 +4,15 @@ import ComponentCard from "../../common/ComponentCard";
 import Label from "../Label";
 import Select from "../Select";
 import MultiSelect from "../MultiSelect";
+import { useTranslations } from "next-intl";
 
 export default function SelectInputs() {
+  const tUi = useTranslations("forms.selectInputs");
+
   const options = [
-    { value: "marketing", label: "Marketing" },
-    { value: "template", label: "Template" },
-    { value: "development", label: "Development" },
+    { value: "marketing", label: tUi("marketing") },
+    { value: "template", label: tUi("template") },
+    { value: "development", label: tUi("development") },
   ];
 
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
@@ -19,34 +22,34 @@ export default function SelectInputs() {
   };
 
   const multiOptions = [
-    { value: "1", text: "Option 1", selected: false },
-    { value: "2", text: "Option 2", selected: false },
-    { value: "3", text: "Option 3", selected: false },
-    { value: "4", text: "Option 4", selected: false },
-    { value: "5", text: "Option 5", selected: false },
+    { value: "1", text: tUi("option1"), selected: false },
+    { value: "2", text: tUi("option2"), selected: false },
+    { value: "3", text: tUi("option3"), selected: false },
+    { value: "4", text: tUi("option4"), selected: false },
+    { value: "5", text: tUi("option5"), selected: false },
   ];
 
   return (
-    <ComponentCard title="Select Inputs">
+    <ComponentCard title={tUi("selectInputs")}>
       <div className="space-y-6">
         <div>
-          <Label>Select Input</Label>
+          <Label>{tUi("selectInput")}</Label>
           <Select
             options={options}
-            placeholder="Select Option"
+            placeholder={tUi("selectOption")}
             onChange={handleSelectChange}
             className="dark:bg-dark-900"
           />
         </div>
         <div className="relative">
           <MultiSelect
-            label="Multiple Select Options"
+            label={tUi("multipleSelectOptions")}
             options={multiOptions}
             defaultSelected={["1", "3"]}
             onChange={(values) => setSelectedValues(values)}
           />
           <p className="sr-only">
-            Selected Values: {selectedValues.join(", ")}
+            {tUi("selectedValues")} {selectedValues.join(", ")}
           </p>
         </div>
       </div>

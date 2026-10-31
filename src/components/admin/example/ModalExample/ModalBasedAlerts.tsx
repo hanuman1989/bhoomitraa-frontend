@@ -3,39 +3,42 @@ import ComponentCard from "../../common/ComponentCard";
 
 import { useModal } from "@/hooks/useModal";
 import { Modal } from "../../ui/modal";
+import { useTranslations } from "next-intl";
 
 export default function ModalBasedAlerts() {
+  const tUi = useTranslations("examples.modalBasedAlerts");
+
   const successModal = useModal();
   const infoModal = useModal();
   const warningModal = useModal();
   const errorModal = useModal();
 
   return (
-    <ComponentCard title="Modal Based Alerts">
+    <ComponentCard title={tUi("modalBasedAlerts")}>
       <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={successModal.openModal}
-          className="rounded-lg bg-success-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-success-600"
+          className="bg-success-500 shadow-theme-xs hover:bg-success-600 rounded-lg px-4 py-3 text-sm font-medium text-white"
         >
-          Success Alert
+          {tUi("successAlert")}
         </button>
         <button
           onClick={infoModal.openModal}
-          className="rounded-lg bg-blue-light-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-blue-light-600"
+          className="bg-blue-light-500 shadow-theme-xs hover:bg-blue-light-600 rounded-lg px-4 py-3 text-sm font-medium text-white"
         >
-          Info Alert
+          {tUi("infoAlert")}
         </button>
         <button
           onClick={warningModal.openModal}
-          className="rounded-lg bg-warning-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-warning-600"
+          className="bg-warning-500 shadow-theme-xs hover:bg-warning-600 rounded-lg px-4 py-3 text-sm font-medium text-white"
         >
-          Warning Alert
+          {tUi("warningAlert")}
         </button>
         <button
           onClick={errorModal.openModal}
-          className="rounded-lg bg-error-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-error-600"
+          className="bg-error-500 shadow-theme-xs hover:bg-error-600 rounded-lg px-4 py-3 text-sm font-medium text-white"
         >
-          Danger Alert
+          {tUi("dangerAlert")}
         </button>
       </div>
       {/* Success Modal */}
@@ -79,20 +82,19 @@ export default function ModalBasedAlerts() {
               </svg>
             </span>
           </div>
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 sm:text-title-sm dark:text-white/90">
-            Well Done!
+          <h4 className="sm:text-title-sm mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            {tUi("wellDone")}
           </h4>
           <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-            Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
-            felis risus nisi non. Quisque eu ut tempor curabitur.
+            {tUi("loremIpsumDolorSitAmetConsecteturFeugiatIpsumLibero")}
           </p>
 
           <div className="mt-7 flex w-full items-center justify-center gap-3">
             <button
               type="button"
-              className="flex w-full justify-center rounded-lg bg-success-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-success-600 sm:w-auto"
+              className="bg-success-500 shadow-theme-xs hover:bg-success-600 flex w-full justify-center rounded-lg px-4 py-3 text-sm font-medium text-white sm:w-auto"
             >
-              Okay, Got It
+              {tUi("okayGotIt")}
             </button>
           </div>
         </div>
@@ -139,20 +141,19 @@ export default function ModalBasedAlerts() {
             </span>
           </div>
 
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 sm:text-title-sm dark:text-white/90">
-            Information Alert!
+          <h4 className="sm:text-title-sm mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            {tUi("informationAlert")}
           </h4>
           <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-            Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
-            felis risus nisi non. Quisque eu ut tempor curabitur.
+            {tUi("loremIpsumDolorSitAmetConsecteturFeugiatIpsumLibero")}
           </p>
 
           <div className="mt-7 flex w-full items-center justify-center gap-3">
             <button
               type="button"
-              className="flex w-full justify-center rounded-lg bg-blue-light-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-blue-light-600 sm:w-auto"
+              className="bg-blue-light-500 shadow-theme-xs hover:bg-blue-light-600 flex w-full justify-center rounded-lg px-4 py-3 text-sm font-medium text-white sm:w-auto"
             >
-              Okay, Got It
+              {tUi("okayGotIt")}
             </button>
           </div>
         </div>
@@ -199,20 +200,19 @@ export default function ModalBasedAlerts() {
             </span>
           </div>
 
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 sm:text-title-sm dark:text-white/90">
-            Warning Alert!
+          <h4 className="sm:text-title-sm mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            {tUi("warningAlert2")}
           </h4>
           <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-            Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
-            felis risus nisi non. Quisque eu ut tempor curabitur.
+            {tUi("loremIpsumDolorSitAmetConsecteturFeugiatIpsumLibero")}
           </p>
 
           <div className="mt-7 flex w-full items-center justify-center gap-3">
             <button
               type="button"
-              className="flex w-full justify-center rounded-lg bg-warning-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-warning-600 sm:w-auto"
+              className="bg-warning-500 shadow-theme-xs hover:bg-warning-600 flex w-full justify-center rounded-lg px-4 py-3 text-sm font-medium text-white sm:w-auto"
             >
-              Okay, Got It
+              {tUi("okayGotIt")}
             </button>
           </div>
         </div>
@@ -259,20 +259,19 @@ export default function ModalBasedAlerts() {
             </span>
           </div>
 
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 sm:text-title-sm dark:text-white/90">
-            Danger Alert!
+          <h4 className="sm:text-title-sm mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            {tUi("dangerAlert2")}
           </h4>
           <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-            Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor
-            felis risus nisi non. Quisque eu ut tempor curabitur.
+            {tUi("loremIpsumDolorSitAmetConsecteturFeugiatIpsumLibero")}
           </p>
 
           <div className="mt-7 flex w-full items-center justify-center gap-3">
             <button
               type="button"
-              className="flex w-full justify-center rounded-lg bg-error-500 px-4 py-3 text-sm font-medium text-white shadow-theme-xs hover:bg-error-600 sm:w-auto"
+              className="bg-error-500 shadow-theme-xs hover:bg-error-600 flex w-full justify-center rounded-lg px-4 py-3 text-sm font-medium text-white sm:w-auto"
             >
-              Okay, Got It
+              {tUi("okayGotIt")}
             </button>
           </div>
         </div>

@@ -18,10 +18,10 @@ export const adminUsersAPI = {
 
   show: (id: number) => apiRequest<ApiResponse<AdminUser>>(`${endpoint}/${id}`),
 
-  create: (data: AdminUserFormValues) =>
+  create: (data: AdminUser) =>
     apiRequest<ApiResponse<AdminUser>>(endpoint, { method: "POST", data }),
 
-  update: (id: number, data: Partial<AdminUserFormValues>) =>
+  update: (id: number, data: Partial<AdminUser>) =>
     apiRequest<ApiResponse<AdminUser>>(`${endpoint}/${id}`, {
       method: "PATCH",
       data,

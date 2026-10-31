@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import type { ComponentProps } from "react";
+import { useTranslations } from "next-intl";
 
 export interface BreadcrumbItem {
   label: string;
@@ -17,8 +18,10 @@ export default function PageBreadcrumb({
   description,
   breadcrumbs = [{ label: pageTitle }],
 }: BreadcrumbProps) {
+  const tUi = useTranslations("ui.pageBreadCrumb");
+
   return (
-    <header className="mb-6 flex flex-wrap items-start justify-between gap-4 pb-1">
+    <header className="mb-4 flex flex-wrap items-start justify-between gap-4 pb-1">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-[#0b164d] md:text-4xl dark:text-white/90">
           {pageTitle}
@@ -30,13 +33,16 @@ export default function PageBreadcrumb({
         )}
       </div>
       {breadcrumbs.length > 0 && (
-        <nav aria-label="Breadcrumb" className="pt-2 text-sm">
+        <nav aria-label={tUi("breadcrumb")} className="pt-2 text-sm">
           <ol className="flex flex-wrap items-center gap-3">
             {breadcrumbs.map((item, index) => {
               const isCurrentPage = index === breadcrumbs.length - 1;
 
               return (
-                <li key={`${item.label}-${index}`} className="flex items-center gap-3">
+                <li
+                  key={`${item.label}-${index}`}
+                  className="flex items-center gap-3"
+                >
                   {index > 0 && (
                     <svg
                       aria-hidden="true"
@@ -63,9 +69,11 @@ export default function PageBreadcrumb({
                   ) : (
                     <span
                       aria-current={isCurrentPage ? "page" : undefined}
-                      className={isCurrentPage
-                        ? "font-medium text-[#0b164d] dark:text-white/90"
-                        : "text-[#53699b] dark:text-gray-400"}
+                      className={
+                        isCurrentPage
+                          ? "font-medium text-[#0b164d] dark:text-white/90"
+                          : "text-[#53699b] dark:text-gray-400"
+                      }
                     >
                       {item.label}
                     </span>

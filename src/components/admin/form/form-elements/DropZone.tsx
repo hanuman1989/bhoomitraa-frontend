@@ -4,17 +4,22 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import Image from "next/image";
 import ComponentCard from "../../common/ComponentCard";
-import { Modal } from "@/components/ui/modal";
+import { Modal } from "@/components/admin/ui/modal";
 import { useModal } from "@/hooks/useModal";
 import { UploadIcon, TrashBinIcon, EyeIcon } from "@/icons";
+import { useTranslations } from "next-intl";
 
 interface FileWithPreview extends File {
   preview?: string;
 }
 
 export default function DropzoneComponent() {
+  const tUi = useTranslations("forms.dropZone");
+
   const [files, setFiles] = useState<FileWithPreview[]>([]);
-  const [previewImage, setPreviewImage] = useState<FileWithPreview | null>(null);
+  const [previewImage, setPreviewImage] = useState<FileWithPreview | null>(
+    null,
+  );
   const { isOpen, openModal, closeModal } = useModal();
 
   // Keep a ref always pointing at the latest files so the unmount cleanup
@@ -32,7 +37,7 @@ export default function DropzoneComponent() {
           preview: file.type.startsWith("image/")
             ? URL.createObjectURL(file)
             : undefined,
-        })
+        }),
       ),
     ]);
   }, []);
@@ -87,9 +92,12 @@ export default function DropzoneComponent() {
   });
 
   const getBorderColor = () => {
-    if (isDragReject) return "border-error-500 bg-error-50/60 dark:bg-error-950/20";
-    if (isDragAccept) return "border-brand-500 bg-brand-50/60 dark:bg-brand-950/20";
-    if (isFocused) return "border-brand-500 ring-2 ring-brand-500/20 bg-gray-50 dark:bg-gray-900";
+    if (isDragReject)
+      return "border-error-500 bg-error-50/60 dark:bg-error-950/20";
+    if (isDragAccept)
+      return "border-brand-500 bg-brand-50/60 dark:bg-brand-950/20";
+    if (isFocused)
+      return "border-brand-500 ring-2 ring-brand-500/20 bg-gray-50 dark:bg-gray-900";
     return "border-gray-300 bg-gray-50 hover:border-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-brand-500";
   };
 
@@ -100,11 +108,11 @@ export default function DropzoneComponent() {
   };
 
   return (
-    <ComponentCard title="Dropzone">
+    <ComponentCard title={tUi("dropzone")}>
       <div>
         <div
           {...getRootProps()}
-          className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-7 text-center transition-all duration-200 outline-hidden lg:p-10 ${getBorderColor()}`}
+          className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-7 text-center outline-hidden transition-all duration-200 lg:p-10 ${getBorderColor()}`}
         >
           {/* Hidden file input handled by react-dropzone */}
           <input {...getInputProps()} />
@@ -116,26 +124,26 @@ export default function DropzoneComponent() {
             </div>
 
             {/* Title / Status Message */}
-            <h4 className="mb-2 text-theme-xl font-semibold text-gray-800 dark:text-white/90">
+            <h4 className="text-theme-xl mb-2 font-semibold text-gray-800 dark:text-white/90">
               {isDragReject
-                ? "File type not supported"
+                ? tUi("fileTypeNotSupported")
                 : isDragAccept
-                ? "Drop images here"
-                : isDragActive
-                ? "Drop files here"
-                : "Drag & Drop Files Here"}
+                  ? tUi("dropImagesHere")
+                  : isDragActive
+                    ? tUi("dropFilesHere")
+                    : tUi("dragDropFilesHere")}
             </h4>
 
             {/* Helper Text */}
             <p className="mb-4 max-w-72.5 text-sm text-gray-600 dark:text-gray-400">
               {isDragReject
-                ? "Only PNG, JPG, WebP, and SVG images up to 5MB are allowed"
-                : "Drag and drop your PNG, JPG, WebP, SVG images here or browse"}
+                ? tUi("onlyPNGJPGWebPAndSVGImagesUpTo")
+                : tUi("dragAndDropYourPNGJPGWebPSVGImages")}
             </p>
 
             {/* Action Prompt */}
-            <span className="text-theme-sm font-medium text-brand-500 underline hover:text-brand-600">
-              Browse File
+            <span className="text-theme-sm text-brand-500 hover:text-brand-600 font-medium underline">
+              {tUi("browseFile")}
             </span>
           </div>
         </div>
@@ -145,7 +153,8 @@ export default function DropzoneComponent() {
           <div className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
               <h5 className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
-                Uploaded Images ({files.length})
+                {tUi("uploadedImages")}
+                {files.length})
               </h5>
               <button
                 type="button"
@@ -155,9 +164,9 @@ export default function DropzoneComponent() {
                   });
                   setFiles([]);
                 }}
-                className="text-theme-xs font-medium text-error-500 hover:text-error-600 dark:text-error-400"
+                className="text-theme-xs text-error-500 hover:text-error-600 dark:text-error-400 font-medium"
               >
-                Clear all
+                {tUi("clearAll")}
               </button>
             </div>
 
@@ -165,7 +174,7 @@ export default function DropzoneComponent() {
               {files.map((file) => (
                 <div
                   key={`${file.name}-${file.lastModified}`}
-                  className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-xs transition hover:shadow-theme-sm dark:border-gray-800 dark:bg-gray-900"
+                  className="group shadow-theme-xs hover:shadow-theme-sm relative overflow-hidden rounded-xl border border-gray-200 bg-white transition dark:border-gray-800 dark:bg-gray-900"
                 >
                   {/* Image Preview Container */}
                   <div className="relative aspect-4/3 w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -190,8 +199,8 @@ export default function DropzoneComponent() {
                           type="button"
                           onClick={() => handleOpenPreview(file)}
                           className="flex size-8 items-center justify-center rounded-full bg-white/90 text-gray-800 backdrop-blur-xs transition hover:bg-white dark:bg-gray-800/90 dark:text-white dark:hover:bg-gray-800"
-                          title="Preview image"
-                          aria-label={`Preview ${file.name}`}
+                          title={tUi("previewImage")}
+                          aria-label={tUi("previewFile", { name: file.name })}
                         >
                           <EyeIcon className="size-4" />
                         </button>
@@ -199,9 +208,9 @@ export default function DropzoneComponent() {
                       <button
                         type="button"
                         onClick={() => removeFile(file.name)}
-                        className="flex size-8 items-center justify-center rounded-full bg-white/90 text-error-500 backdrop-blur-xs transition hover:bg-white dark:bg-gray-800/90 dark:text-error-400 dark:hover:bg-gray-800"
-                        title="Remove image"
-                        aria-label={`Remove ${file.name}`}
+                        className="text-error-500 dark:text-error-400 flex size-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-xs transition hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800"
+                        title={tUi("removeImage")}
+                        aria-label={tUi("removeFile", { name: file.name })}
                       >
                         <TrashBinIcon className="size-4" />
                       </button>
@@ -210,7 +219,10 @@ export default function DropzoneComponent() {
 
                   {/* File Metadata */}
                   <div className="p-3">
-                    <p className="truncate text-theme-xs font-medium text-gray-800 dark:text-white/90" title={file.name}>
+                    <p
+                      className="text-theme-xs truncate font-medium text-gray-800 dark:text-white/90"
+                      title={file.name}
+                    >
                       {file.name}
                     </p>
                     <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
@@ -233,7 +245,7 @@ export default function DropzoneComponent() {
             <div>
               <div className="mb-4">
                 <h4 className="text-theme-lg font-semibold text-gray-800 dark:text-white/90">
-                  Image Preview
+                  {tUi("imagePreview")}
                 </h4>
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">
                   {previewImage.name} • {formatFileSize(previewImage.size)}
@@ -258,5 +270,3 @@ export default function DropzoneComponent() {
     </ComponentCard>
   );
 }
-
-

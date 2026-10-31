@@ -1,50 +1,53 @@
 "use client";
-import DatePicker from "@/components/form/date-picker";
+import DatePicker from "@/components/admin/form/date-picker";
 import { useState } from "react";
-import { EyeCloseIcon, EyeIcon, TimeIcon } from "../../../icons";
+import { EyeCloseIcon, EyeIcon, TimeIcon } from "@/icons";
 import ComponentCard from "../../common/ComponentCard";
 import Input from "../input/InputField";
 import Label from "../Label";
 import Select from "../Select";
+import { useTranslations } from "next-intl";
 
 export default function DefaultInputs() {
+  const tUi = useTranslations("forms.defaultInputs");
+
   const [showPassword, setShowPassword] = useState(false);
   const options = [
-    { value: "marketing", label: "Marketing" },
-    { value: "template", label: "Template" },
-    { value: "development", label: "Development" },
+    { value: "marketing", label: tUi("marketing") },
+    { value: "template", label: tUi("template") },
+    { value: "development", label: tUi("development") },
   ];
   const handleSelectChange = (value: string) => {
     console.log("Selected value:", value);
   };
 
   return (
-    <ComponentCard title="Default Inputs">
+    <ComponentCard title={tUi("defaultInputs")}>
       <div className="space-y-6">
         <div>
-          <Label htmlFor="test">Input</Label>
-          <Input type="text" id="test" placeholder="Regular Input" />
+          <Label htmlFor="test">{tUi("input")}</Label>
+          <Input type="text" id="test" placeholder={tUi("regularInput")} />
         </div>
         <div>
-          <Label>Input with Placeholder</Label>
+          <Label>{tUi("inputWithPlaceholder")}</Label>
           <Input type="text" placeholder="info@gmail.com" />
         </div>
         <div>
-          <Label>Select Input</Label>
+          <Label>{tUi("selectInput")}</Label>
           <Select
             options={options}
-            placeholder="Select an option"
+            placeholder={tUi("selectAnOption")}
             onChange={handleSelectChange}
             className="dark:bg-dark-900"
           />
         </div>
         <div>
-          <Label htmlFor="pass">Password Input</Label>
+          <Label htmlFor="pass">{tUi("passwordInput")}</Label>
           <div className="relative">
             <Input
               id="pass"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder={tUi("enterYourPassword")}
               className="pe-10"
             />
             <button
@@ -63,8 +66,8 @@ export default function DefaultInputs() {
         <div>
           <DatePicker
             id="date-picker"
-            label="Date Picker Input"
-            placeholder="Select a date"
+            label={tUi("datePickerInput")}
+            placeholder={tUi("selectADate")}
             onChange={(dates, currentDateString) => {
               // Handle your logic
               console.log({ dates, currentDateString });
@@ -73,7 +76,7 @@ export default function DefaultInputs() {
         </div>
 
         <div>
-          <Label htmlFor="tm">Time Picker Input</Label>
+          <Label htmlFor="tm">{tUi("timePickerInput")}</Label>
           <div className="relative">
             <Input
               type="time"
@@ -88,11 +91,11 @@ export default function DefaultInputs() {
           </div>
         </div>
         <div>
-          <Label htmlFor="tm">Input with Payment</Label>
+          <Label htmlFor="tm">{tUi("inputWithPayment")}</Label>
           <div className="relative">
             <Input
               type="text"
-              placeholder="Card number"
+              placeholder={tUi("cardNumber")}
               className="ps-[62px]"
             />
             <span className="absolute start-0 top-1/2 flex h-11 w-[46px] -translate-y-1/2 items-center justify-center border-e border-gray-200 dark:border-gray-800">

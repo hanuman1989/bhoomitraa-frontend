@@ -9,6 +9,8 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 
 export default function NotificationDropdown() {
+  const tUi = useTranslations("notificationDropdown");
+
   const t = useTranslations("header.notifications");
   const [isOpen, setIsOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
@@ -58,7 +60,7 @@ export default function NotificationDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute -left-13.5 mt-4.25 flex h-120 w-87.5 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg sm:w-90.25 xl:right-0 xl:left-auto dark:border-gray-800 dark:bg-gray-dark"
+        className="shadow-theme-lg dark:bg-gray-dark absolute -left-13.5 mt-4.25 flex h-120 w-87.5 flex-col rounded-2xl border border-gray-200 bg-white p-3 sm:w-90.25 xl:right-0 xl:left-auto dark:border-gray-800"
       >
         <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-700">
           <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -85,7 +87,7 @@ export default function NotificationDropdown() {
           </button>
         </div>
 
-        <ul className="flex custom-scrollbar h-auto flex-col overflow-y-auto">
+        <ul className="custom-scrollbar flex h-auto flex-col overflow-y-auto">
           {/* Example notification items */}
           <li>
             <DropdownItem
@@ -97,24 +99,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-02.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
+                <span className="bg-success-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Terry Franci
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("minAgo", { count: 5 })}</span>
@@ -133,24 +135,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-03.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
+                <span className="bg-success-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Alena Franci
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("minAgo", { count: 8 })}</span>
@@ -170,24 +172,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-04.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
+                <span className="bg-success-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Jocelyn Kenter
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("minAgo", { count: 15 })}</span>
@@ -207,24 +209,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-05.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-error-500 dark:border-gray-900"></span>
+                <span className="bg-error-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Brandon Philips
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("hrAgo", { count: 1 })}</span>
@@ -243,24 +245,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-02.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
+                <span className="bg-success-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Terry Franci
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("minAgo", { count: 5 })}</span>
@@ -279,24 +281,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-03.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
+                <span className="bg-success-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Alena Franci
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("minAgo", { count: 8 })}</span>
@@ -315,24 +317,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-04.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="w-full overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-success-500 dark:border-gray-900"></span>
+                <span className="bg-success-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Jocelyn Kenter
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("minAgo", { count: 15 })}</span>
@@ -352,24 +354,24 @@ export default function NotificationDropdown() {
                   width={40}
                   height={40}
                   src="/images/user/user-05.jpg"
-                  alt="User"
+                  alt={tUi("user")}
                   className="overflow-hidden rounded-full"
                 />
-                <span className="absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white bg-error-500 dark:border-gray-900"></span>
+                <span className="bg-error-500 absolute right-0 bottom-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"></span>
               </span>
 
               <span className="block">
-                <span className="mb-1.5 block space-x-1 text-theme-sm text-gray-500 dark:text-gray-400">
+                <span className="text-theme-sm mb-1.5 block space-x-1 text-gray-500 dark:text-gray-400">
                   <span className="font-medium text-gray-800 dark:text-white/90">
                     Brandon Philips
                   </span>
                   <span>{t("requestsPermission")}</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">
-                    Project - Nganter App
+                    {tUi("projectNganterApp")}
                   </span>
                 </span>
 
-                <span className="flex items-center gap-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span className="text-theme-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
                   <span>{t("project")}</span>
                   <span className="h-1 w-1 rounded-full bg-gray-400"></span>
                   <span>{t("hrAgo", { count: 1 })}</span>

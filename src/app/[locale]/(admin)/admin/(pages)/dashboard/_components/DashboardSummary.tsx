@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/auth/dal";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   searchParams: Promise<{
@@ -9,19 +10,21 @@ interface Props {
 }
 
 export default async function DashboardSummary({ searchParams }: Props) {
+  const tUi = await getTranslations("dashboard.summary");
+
   await requireAdmin();
 
   const { from, to } = await searchParams;
 
   const cards = [
-    { title: "Total Farmers", metric: 20 },
-    { title: "Active Farms", metric: 15 },
-    { title: "Active Crop Cycles", metric: 500 },
-    { title: "Published Crops", metric: 400 },
-    { title: "Seed Rates", metric: 134 },
-    { title: "Pending Reviews", metric: 18 },
-    { title: "Notifications", metric: 42 },
-    { title: "Blocked Accounts", metric: 7 },
+    { title: tUi("totalFarmers"), metric: 20 },
+    { title: tUi("activeFarms"), metric: 15 },
+    { title: tUi("activeCropCycles"), metric: 500 },
+    { title: tUi("publishedCrops"), metric: 400 },
+    { title: tUi("seedRates"), metric: 134 },
+    { title: tUi("pendingReviews"), metric: 18 },
+    { title: tUi("notifications"), metric: 42 },
+    { title: tUi("blockedAccounts"), metric: 7 },
   ];
 
   return (

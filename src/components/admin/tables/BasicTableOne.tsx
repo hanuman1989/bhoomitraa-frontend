@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { useTranslations } from "next-intl";
 
 interface Order {
   id: number;
@@ -110,6 +111,8 @@ const tableData: Order[] = [
 ];
 
 export default function BasicTableOne() {
+  const tUi = useTranslations("ui.basicTableOne");
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
       <div className="max-w-full overflow-x-auto">
@@ -119,33 +122,33 @@ export default function BasicTableOne() {
             <TableRow>
               <TableCell
                 isHeader
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                User
+                {tUi("user")}
               </TableCell>
               <TableCell
                 isHeader
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                Project Name
+                {tUi("projectName")}
               </TableCell>
               <TableCell
                 isHeader
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                Team
+                {tUi("team")}
               </TableCell>
               <TableCell
                 isHeader
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                Status
+                {tUi("status")}
               </TableCell>
               <TableCell
                 isHeader
-                className="px-5 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs px-5 py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                Budget
+                {tUi("budget")}
               </TableCell>
             </TableRow>
           </TableHeader>
@@ -165,19 +168,19 @@ export default function BasicTableOne() {
                       />
                     </div>
                     <div>
-                      <span className="block text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                      <span className="text-theme-sm block font-medium text-gray-800 dark:text-white/90">
                         {order.user.name}
                       </span>
-                      <span className="block text-theme-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-theme-xs block text-gray-500 dark:text-gray-400">
                         {order.user.role}
                       </span>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">
+                <TableCell className="text-theme-sm px-4 py-3 text-start text-gray-500 dark:text-gray-400">
                   {order.projectName}
                 </TableCell>
-                <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">
+                <TableCell className="text-theme-sm px-4 py-3 text-start text-gray-500 dark:text-gray-400">
                   <div className="flex -space-x-2">
                     {order.team.images.map((teamImage, index) => (
                       <div
@@ -188,14 +191,14 @@ export default function BasicTableOne() {
                           width={24}
                           height={24}
                           src={teamImage}
-                          alt={`Team member ${index + 1}`}
+                          alt={tUi("teamMember", { number: index + 1 })}
                           className="w-full"
                         />
                       </div>
                     ))}
                   </div>
                 </TableCell>
-                <TableCell className="px-4 py-3 text-start text-theme-sm text-gray-500 dark:text-gray-400">
+                <TableCell className="text-theme-sm px-4 py-3 text-start text-gray-500 dark:text-gray-400">
                   <Badge
                     size="sm"
                     color={
@@ -206,10 +209,10 @@ export default function BasicTableOne() {
                           : "error"
                     }
                   >
-                    {order.status}
+                    {tUi(`statuses.${order.status}`)}
                   </Badge>
                 </TableCell>
-                <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                <TableCell className="text-theme-sm px-4 py-3 text-gray-500 dark:text-gray-400">
                   {order.budget}
                 </TableCell>
               </TableRow>

@@ -3,8 +3,11 @@ import { useState } from "react";
 import ComponentCard from "../../common/ComponentCard";
 import Input from "../input/InputField";
 import Label from "../Label";
+import { useTranslations } from "next-intl";
 
 export default function InputStates() {
+  const tUi = useTranslations("forms.inputStates");
+
   const [email, setEmail] = useState("");
   const [emailTwo, setEmailTwo] = useState("");
   const [error, setError] = useState(false);
@@ -29,44 +32,44 @@ export default function InputStates() {
   };
   return (
     <ComponentCard
-      title="Input States"
+      title={tUi("inputStates")}
       desc="Validation styles for error, success and disabled states on form controls."
     >
       <div className="space-y-5 sm:space-y-6">
         {/* Error Input */}
         <div>
-          <Label>Email</Label>
+          <Label>{tUi("email")}</Label>
           <Input
             type="email"
             defaultValue={email}
             error={error}
             onChange={handleEmailChange}
-            placeholder="Enter your email"
-            hint={error ? "This is an invalid email address." : ""}
+            placeholder={tUi("enterYourEmail")}
+            hint={error ? tUi("thisIsAnInvalidEmailAddress") : ""}
           />
         </div>
 
         {/* Success Input */}
         <div>
-          <Label>Email</Label>
+          <Label>{tUi("email")}</Label>
           <Input
             type="email"
             defaultValue={emailTwo}
             success={!error}
             onChange={handleEmailTwoChange}
-            placeholder="Enter your email"
-            hint={!error ? "This is an success message." : ""}
+            placeholder={tUi("enterYourEmail")}
+            hint={!error ? tUi("thisIsAnSuccessMessage") : ""}
           />
         </div>
 
         {/* Disabled Input */}
         <div>
-          <Label>Email</Label>
+          <Label>{tUi("email")}</Label>
           <Input
             type="text"
             defaultValue="disabled@example.com"
             disabled={true}
-            placeholder="Disabled email"
+            placeholder={tUi("disabledEmail")}
           />
         </div>
       </div>

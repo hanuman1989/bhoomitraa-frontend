@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { ApiError } from "./ApiError";
 import type { ApiAudience, ApiRequestOptions } from "@/types/api";
 
@@ -91,10 +92,11 @@ export async function apiRequest<T = unknown>(
       message?: unknown;
       errors?: Record<string, string[] | string>;
     } | null;
+    const t = await getTranslations("serverActions.errors");
     const message =
       typeof errorBody?.message === "string"
         ? errorBody.message
-        : "Request failed";
+        : t("requestFailed");
     const errors = Object.fromEntries(
       Object.entries(errorBody?.errors ?? {}).map(([field, messages]) => [
         field,

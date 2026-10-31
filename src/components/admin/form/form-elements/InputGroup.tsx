@@ -1,14 +1,17 @@
 "use client";
 
-import { EnvelopeIcon } from "../../../icons";
+import { EnvelopeIcon } from "@/icons";
 import ComponentCard from "../../common/ComponentCard";
 import Label from "../Label";
 import PhoneInput from "../group-input/PhoneInput";
 import Input from "../input/InputField";
 import CopyInput from "./CopyInput";
 import UrlPrefixInput from "./UrlPrefixInput";
+import { useTranslations } from "next-intl";
 
 export default function InputGroup() {
+  const tUi = useTranslations("forms.inputGroup");
+
   const countries = [
     { code: "US", label: "+1" },
     { code: "GB", label: "+44" },
@@ -20,10 +23,10 @@ export default function InputGroup() {
   };
 
   return (
-    <ComponentCard title="Input Group">
+    <ComponentCard title={tUi("inputGroup")}>
       <div className="space-y-6">
         <div>
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{tUi("email")}</Label>
           <div className="relative">
             <Input
               id="email"
@@ -38,7 +41,7 @@ export default function InputGroup() {
         </div>
 
         <div>
-          <Label htmlFor="phone">Phone</Label>
+          <Label htmlFor="phone">{tUi("phone")}</Label>
           <PhoneInput
             selectPosition="start"
             countries={countries}
@@ -48,7 +51,7 @@ export default function InputGroup() {
         </div>
 
         <div>
-          <Label>Website</Label>
+          <Label>{tUi("website")}</Label>
           <PhoneInput
             selectPosition="end"
             countries={countries}
@@ -58,11 +61,11 @@ export default function InputGroup() {
         </div>
 
         <div>
-          <Label>URL</Label>
+          <Label>{tUi("uRL")}</Label>
           <UrlPrefixInput />
         </div>
         <div>
-          <Label>Website</Label>
+          <Label>{tUi("website")}</Label>
           <CopyInput />
         </div>
       </div>

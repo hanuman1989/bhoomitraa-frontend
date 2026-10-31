@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface Option {
   value: string;
@@ -25,8 +26,11 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
   value,
   onChange,
   disabled = false,
-  placeholder = "Select options",
+  placeholder,
 }) => {
+  const tUi = useTranslations("forms.multiSelect");
+  if (placeholder === undefined) placeholder = tUi("selectOptions");
+
   const isControlled = value !== undefined;
   const [internalSelected, setInternalSelected] =
     useState<string[]>(defaultSelected);
@@ -127,7 +131,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             tabIndex={disabled ? -1 : 0}
           >
             <div
-              className={`mb-2 flex min-h-11 rounded-lg border border-gray-300 px-3 py-1.5 shadow-theme-xs outline-hidden transition focus:border-brand-300 focus:shadow-focus-ring dark:border-gray-700 dark:bg-gray-900 dark:focus:border-brand-300 ${
+              className={`shadow-theme-xs focus:border-brand-300 focus:shadow-focus-ring dark:focus:border-brand-300 mb-2 flex min-h-11 rounded-lg border border-gray-300 px-3 py-1.5 outline-hidden transition dark:border-gray-700 dark:bg-gray-900 ${
                 disabled
                   ? "cursor-not-allowed bg-gray-50 opacity-50 dark:bg-gray-800"
                   : "cursor-pointer"
@@ -152,7 +156,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                           }}
                           disabled={disabled}
                           className="cursor-pointer ps-2 text-gray-500 group-hover:text-gray-400 disabled:cursor-not-allowed dark:text-gray-400"
-                          aria-label={`Remove ${text}`}
+                          aria-label={tUi("removeOption", { name: text })}
                         >
                           <svg
                             className="fill-current"
@@ -212,7 +216,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
           {isOpen && (
             <div
-              className="max-h-select inset-s-0 absolute top-full z-40 w-full overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-900"
+              className="max-h-select absolute inset-s-0 top-full z-40 w-full overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-900"
               onClick={(e) => e.stopPropagation()}
               role="listbox"
               aria-label={label}

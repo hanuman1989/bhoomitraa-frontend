@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { SidebarProvider } from "@/context/SidebarContext";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import AdminShell from "./_components/AdminShell";
 import { requireAdmin } from "@/lib/auth/dal";
 
@@ -36,6 +36,8 @@ export default async function AdminPagesLayout({
   );
 }
 
-function AdminLoading() {
-  return <div className="p-6">Loading admin panel...</div>;
+async function AdminLoading() {
+  const tUi = await getTranslations("ui.adminLoading");
+
+  return <div className="p-6">{tUi("loadingAdminPanel")}</div>;
 }

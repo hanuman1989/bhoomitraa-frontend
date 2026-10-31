@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import "simplebar-react/dist/simplebar.min.css";
 import "swiper/css/bundle";
 import AdminAuthBoundary from "@/providers/AdminAuthBoundary";
@@ -24,10 +24,12 @@ export default async function AdminRootLayout({
   );
 }
 
-function AdminLoading() {
+async function AdminLoading() {
+  const tUi = await getTranslations("ui.adminLoading");
+
   return (
     <div className="flex min-h-screen items-center justify-center">
-      Loading admin...
+      {tUi("loadingAdmin")}
     </div>
   );
 }

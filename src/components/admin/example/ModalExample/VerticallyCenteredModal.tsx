@@ -4,8 +4,11 @@ import { useModal } from "@/hooks/useModal";
 import ComponentCard from "../../common/ComponentCard";
 import Button from "../../ui/button/Button";
 import { Modal } from "../../ui/modal";
+import { useTranslations } from "next-intl";
 
 export default function VerticallyCenteredModal() {
+  const tUi = useTranslations("examples.verticallyCenteredModal");
+
   const { isOpen, openModal, closeModal } = useModal();
 
   const handleSave = () => {
@@ -15,9 +18,9 @@ export default function VerticallyCenteredModal() {
   };
 
   return (
-    <ComponentCard title="Vertically Centered Modal">
+    <ComponentCard title={tUi("verticallyCenteredModal")}>
       <Button size="sm" onClick={openModal}>
-        Open Modal
+        {tUi("openModal")}
       </Button>
       <Modal
         isOpen={isOpen}
@@ -26,20 +29,19 @@ export default function VerticallyCenteredModal() {
         className="max-w-126.75 p-6 lg:p-10"
       >
         <div className="text-center">
-          <h4 className="mb-2 text-2xl font-semibold text-gray-800 sm:text-title-sm dark:text-white/90">
-            All Done! Success Confirmed
+          <h4 className="sm:text-title-sm mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
+            {tUi("allDoneSuccessConfirmed")}
           </h4>
           <p className="text-sm leading-6 text-gray-500 dark:text-gray-400">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-            Pellentesque euismod est quis mauris lacinia pharetra.
+            {tUi("loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque")}
           </p>
 
           <div className="mt-8 flex w-full items-center justify-center gap-3">
             <Button size="sm" variant="outline" onClick={closeModal}>
-              Close
+              {tUi("close")}
             </Button>
             <Button size="sm" onClick={handleSave}>
-              Save Changes
+              {tUi("saveChanges")}
             </Button>
           </div>
         </div>

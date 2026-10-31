@@ -4,6 +4,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
+import AdminToaster from "@/components/admin/common/AdminToaster";
 
 /** @param {{ children: import("react").ReactNode }} props */
 export default function AdminShell({ children }) {
@@ -24,6 +25,7 @@ export default function AdminShell({ children }) {
         <main className="mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
           {children}
         </main>
+        <AdminToaster />
       </div>
     </div>
   );

@@ -2,8 +2,11 @@
 import ComponentCard from "../../common/ComponentCard";
 import FileInput from "../input/FileInput";
 import Label from "../Label";
+import { useTranslations } from "next-intl";
 
 export default function FileInputExample() {
+  const tUi = useTranslations("forms.fileInputExample");
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -12,9 +15,9 @@ export default function FileInputExample() {
   };
 
   return (
-    <ComponentCard title="File Input">
+    <ComponentCard title={tUi("fileInput")}>
       <div>
-        <Label>Upload file</Label>
+        <Label>{tUi("uploadFile")}</Label>
         <FileInput onChange={handleFileChange} className="custom-class" />
       </div>
     </ComponentCard>

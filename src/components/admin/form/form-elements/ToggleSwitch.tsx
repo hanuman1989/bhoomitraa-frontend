@@ -1,40 +1,43 @@
 "use client";
 import ComponentCard from "../../common/ComponentCard";
 import Switch from "../switch/Switch";
+import { useTranslations } from "next-intl";
 
 export default function ToggleSwitch() {
+  const tUi = useTranslations("forms.toggleSwitch");
+
   const handleSwitchChange = (checked: boolean) => {
-    console.log("Switch is now:", checked ? "ON" : "OFF");
+    console.log("Switch is now:", checked ? tUi("oN") : tUi("oFF"));
   };
   return (
-    <ComponentCard title="Toggle switch input">
+    <ComponentCard title={tUi("toggleSwitchInput")}>
       <div className="flex gap-4">
         <Switch
-          label="Default"
+          label={tUi("default")}
           defaultChecked={true}
           onChange={handleSwitchChange}
         />
         <Switch
-          label="Checked"
+          label={tUi("checked")}
           defaultChecked={true}
           onChange={handleSwitchChange}
         />
-        <Switch label="Disabled" disabled={true} />
+        <Switch label={tUi("disabled")} disabled={true} />
       </div>{" "}
       <div className="flex gap-4">
         <Switch
-          label="Default"
+          label={tUi("default")}
           defaultChecked={true}
           onChange={handleSwitchChange}
           color="gray"
         />
         <Switch
-          label="Checked"
+          label={tUi("checked")}
           defaultChecked={true}
           onChange={handleSwitchChange}
           color="gray"
         />
-        <Switch label="Disabled" disabled={true} color="gray" />
+        <Switch label={tUi("disabled")} disabled={true} color="gray" />
       </div>
     </ComponentCard>
   );

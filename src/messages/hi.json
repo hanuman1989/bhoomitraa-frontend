@@ -1,0 +1,737 @@
+{
+  "serverActions": {
+    "errors": {
+      "unexpected": "कुछ गलत हो गया। कृपया दोबारा कोशिश करें।",
+      "unauthenticated": "आपका लॉगिन समय समाप्त हो गया है। कृपया फिर से लॉगिन करें।",
+      "forbidden": "आपको यह काम करने की अनुमति नहीं है।",
+      "notFound": "माँगी गई जानकारी नहीं मिली।",
+      "timeout": "अनुरोध में बहुत समय लग गया। कृपया दोबारा कोशिश करें।",
+      "validation": "कृपया चिन्हित किए गए फ़ील्ड जाँचें।",
+      "tooManyRequests": "बहुत ज़्यादा अनुरोध किए गए हैं। थोड़ी देर बाद फिर कोशिश करें।",
+      "unavailable": "यह सेवा अभी उपलब्ध नहीं है। कृपया थोड़ी देर बाद कोशिश करें।",
+      "requestFailed": "अनुरोध पूरा नहीं हुआ"
+    },
+    "adminUsers": {
+      "saveFailed": "एडमिन यूज़र की जानकारी सेव नहीं हो सकी। फिर कोशिश करें।",
+      "saved": "एडमिन यूज़र की जानकारी सेव हो गई है।",
+      "deleteFailed": "एडमिन यूज़र को हटाया नहीं जा सका। फिर कोशिश करें।",
+      "deleted": "एडमिन यूज़र को सफलतापूर्वक हटा दिया गया है।",
+      "cannotDeleteSelf": "आप अपना अकाउंट खुद नहीं हटा सकते।"
+    }
+  },
+  "adminUsers": {
+    "passwordDialog": {
+      "title": "पासवर्ड बदलें",
+      "description": "{name} के लिए नया पासवर्ड सेट करें।",
+      "password": "नया पासवर्ड",
+      "confirmation": "पासवर्ड की पुष्टि करें",
+      "submit": "पासवर्ड अपडेट करें",
+      "saving": "अपडेट हो रहा है...",
+      "saved": "पासवर्ड सफलतापूर्वक बदल दिया गया है।",
+      "failed": "पासवर्ड अपडेट नहीं हो सका। कृपया दोबारा कोशिश करें।",
+      "validation": {
+        "passwordRequired": "पासवर्ड भरना ज़रूरी है।",
+        "passwordMin": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।",
+        "passwordMax": "पासवर्ड 255 अक्षरों से ज़्यादा नहीं हो सकता।",
+        "confirmationRequired": "कृपया पासवर्ड की पुष्टि करें।",
+        "mismatch": "दोनों पासवर्ड मेल नहीं खाते।"
+      }
+    },
+    "page": {
+      "home": "होम",
+      "adminUsers": "एडमिन यूज़र",
+      "manageAdministratorAccountsAndAccess": "एडमिन अकाउंट और उनकी अनुमतियाँ मैनेज करें।",
+      "loadingAdminUsers": "एडमिन यूज़र लोड हो रहे हैं...",
+      "showingRange": "{from}–{to} दिखाए जा रहे हैं, कुल {total} में से"
+    },
+    "actions": {
+      "edit": "बदलें",
+      "changePassword": "पासवर्ड बदलें",
+      "delete": "हटाएँ",
+      "actionsFor": "{name} के लिए विकल्प"
+    },
+    "deleteDialog": {
+      "closeAdminForm": "एडमिन फ़ॉर्म बंद करें",
+      "deleteAdminUser": "एडमिन यूज़र हटाएँ",
+      "thisActionCannotBeUndoneAndTheUserWill": "इस कार्रवाई को वापस नहीं लिया जा सकता। यूज़र को सिस्टम से हमेशा के लिए हटा दिया जाएगा।",
+      "cancel": "रद्द करें",
+      "deleting": "हटाया जा रहा है...",
+      "delete": "हटाएँ",
+      "failed": "हटाया नहीं जा सका। दोबारा कोशिश करें।",
+      "confirmation": "क्या आप वाकई <strong>{name}</strong> को हटाना चाहते हैं?"
+    },
+    "form": {
+      "closeAdminForm": "एडमिन फ़ॉर्म बंद करें",
+      "editAdmin": "एडमिन की जानकारी बदलें",
+      "addAdmin": "एडमिन जोड़ें",
+      "manageAccountDetailsAndAdministratorAccess": "अकाउंट की जानकारी और एडमिन की अनुमतियाँ मैनेज करें।",
+      "administratorDetails": "एडमिन की जानकारी",
+      "firstName": "पहला नाम",
+      "firstNameIsRequired": "पहला नाम भरना ज़रूरी है।",
+      "firstNameCannotExceed255Characters": "पहला नाम 255 अक्षरों से ज़्यादा नहीं हो सकता।",
+      "lastName": "अंतिम नाम",
+      "lastNameIsRequired": "अंतिम नाम भरना ज़रूरी है।",
+      "lastNameCannotExceed255Characters": "अंतिम नाम 255 अक्षरों से ज़्यादा नहीं हो सकता।",
+      "mobile": "मोबाइल नंबर",
+      "optional": "(वैकल्पिक)",
+      "mobileNumberCannotExceed30Characters": "मोबाइल नंबर 30 अक्षरों से ज़्यादा नहीं हो सकता।",
+      "enterAValidMobileNumber": "सही मोबाइल नंबर दर्ज करें।",
+      "email": "ईमेल",
+      "emailIsRequired": "ईमेल भरना ज़रूरी है।",
+      "emailCannotExceed255Characters": "ईमेल 255 अक्षरों से ज़्यादा नहीं हो सकता।",
+      "enterAValidEmailAddress": "सही ईमेल पता दर्ज करें।",
+      "password": "पासवर्ड",
+      "passwordIsRequired": "पासवर्ड भरना ज़रूरी है।",
+      "passwordMustBeAtLeast8Characters": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।",
+      "passwordCannotExceed255Characters": "पासवर्ड 255 अक्षरों से ज़्यादा नहीं हो सकता।",
+      "confirmPassword": "पासवर्ड की पुष्टि करें",
+      "pleaseConfirmThePassword": "कृपया पासवर्ड की पुष्टि करें।",
+      "passwordsDoNotMatch": "दोनों पासवर्ड मेल नहीं खाते।",
+      "status": "स्थिति",
+      "pleaseSelectAStatus": "कृपया स्थिति चुनें।",
+      "active": "सक्रिय",
+      "inactive": "निष्क्रिय",
+      "cancel": "रद्द करें",
+      "saving": "सेव हो रहा है...",
+      "saveChanges": "बदलाव सेव करें"
+    },
+    "list": {
+      "name": "नाम",
+      "email": "ईमेल",
+      "mobile": "मोबाइल नंबर",
+      "status": "स्थिति",
+      "createdAt": "बनाने की तारीख",
+      "actions": "विकल्प",
+      "adminUsers": "एडमिन यूज़र",
+      "addAdmin": "एडमिन जोड़ें",
+      "administratorAccountsAndAccess": "एडमिन अकाउंट और अनुमतियाँ",
+      "active": "सक्रिय",
+      "inactive": "निष्क्रिय",
+      "noAdminUsersMatchYourFilters": "आपके चुने गए फ़िल्टर से कोई एडमिन यूज़र नहीं मिला।"
+    },
+    "filters": {
+      "filterAdminUsers": "एडमिन यूज़र फ़िल्टर करें",
+      "search": "खोजें",
+      "nameEmailOrMobile": "नाम, ईमेल या मोबाइल नंबर",
+      "status": "स्थिति",
+      "all": "सभी",
+      "active": "सक्रिय",
+      "inactive": "निष्क्रिय",
+      "applying": "लागू हो रहा है...",
+      "applyFilters": "फ़िल्टर लागू करें",
+      "reset": "रीसेट करें"
+    }
+  },
+  "common": {
+    "cancel": "रद्द करें",
+    "close": "बंद करें",
+    "viewMore": "और देखें",
+    "delete": "हटाएँ",
+    "filter": "फ़िल्टर",
+    "seeAll": "सभी देखें"
+  },
+  "sidebar": {
+    "groups": {
+      "menu": "मेन्यू"
+    },
+    "badges": {
+      "new": "नया",
+      "pro": "प्रो"
+    },
+    "items": {
+      "dashboard": "डैशबोर्ड",
+      "adminUser": "एडमिन यूज़र प्रबंधन",
+      "regionManagement": "क्षेत्र प्रबंधन",
+      "regions": "क्षेत्र",
+      "farmersManagement": "किसान प्रबंधन",
+      "knowledgeSources": "जानकारी के स्रोत",
+      "cropManager": "फ़सल प्रबंधन",
+      "cropCategory": "फ़सल की श्रेणी",
+      "crops": "फ़सलें",
+      "farmManager": "खेत प्रबंधन",
+      "farm": "खेत",
+      "seedsManager": "बीज प्रबंधन"
+    },
+    "widget": {
+      "title": "नंबर 1 Tailwind CSS डैशबोर्ड",
+      "description": "500 से ज़्यादा UI कंपोनेंट और पेज वाला शानदार Tailwind CSS एडमिन टेम्पलेट।",
+      "purchasePlan": "प्लान खरीदें"
+    },
+    "logo": "लोगो"
+  },
+  "header": {
+    "searchPlaceholder": "खोजें या कमांड लिखें...",
+    "toggleSidebar": "साइडबार खोलें या बंद करें",
+    "notifications": {
+      "title": "सूचना",
+      "requestsPermission": "बदलाव करने की अनुमति माँग रहा है",
+      "project": "प्रोजेक्ट",
+      "minAgo": "{count} मिनट पहले",
+      "hrAgo": "{count} घंटे पहले",
+      "viewAll": "सभी सूचनाएँ देखें"
+    },
+    "logo": "लोगो"
+  },
+  "userDropdown": {
+    "editProfile": "प्रोफ़ाइल बदलें",
+    "language": "भाषा",
+    "signOut": "लॉग आउट करें",
+    "user": "यूज़र",
+    "loggingOut": "लॉग आउट हो रहा है..."
+  },
+  "ecommerce": {
+    "metrics": {
+      "customers": "ग्राहक",
+      "orders": "ऑर्डर"
+    },
+    "months": {
+      "jan": "जनवरी",
+      "feb": "फ़रवरी",
+      "mar": "मार्च",
+      "apr": "अप्रैल",
+      "may": "मई",
+      "jun": "जून",
+      "jul": "जुलाई",
+      "aug": "अगस्त",
+      "sep": "सितंबर",
+      "oct": "अक्टूबर",
+      "nov": "नवंबर",
+      "dec": "दिसंबर"
+    },
+    "monthlySales": {
+      "title": "मासिक बिक्री",
+      "series": "बिक्री"
+    },
+    "monthlyTarget": {
+      "title": "मासिक लक्ष्य",
+      "subtitle": "हर महीने के लिए तय किया गया लक्ष्य",
+      "earned": "आज आपकी कमाई {amount} है। यह पिछले महीने से ज़्यादा है। ऐसे ही अच्छा काम करते रहें!",
+      "target": "लक्ष्य",
+      "revenue": "आमदनी",
+      "today": "आज",
+      "text20K": "20 हज़ार डॉलर"
+    },
+    "statistics": {
+      "title": "आँकड़े",
+      "subtitle": "हर महीने के लिए तय किया गया लक्ष्य",
+      "sales": "बिक्री",
+      "revenue": "आमदनी",
+      "monthly": "मासिक",
+      "quarterly": "तिमाही",
+      "annually": "सालाना",
+      "selectDateRange": "तारीख की अवधि चुनें"
+    },
+    "recentOrders": {
+      "title": "हाल के ऑर्डर",
+      "products": "उत्पाद",
+      "category": "श्रेणी",
+      "price": "कीमत",
+      "status": "स्थिति",
+      "variants": "{count, plural, one {# प्रकार} other {# प्रकार}}",
+      "categories": {
+        "laptop": "लैपटॉप",
+        "watch": "घड़ी",
+        "smartphone": "स्मार्टफ़ोन",
+        "electronics": "इलेक्ट्रॉनिक सामान",
+        "accessories": "सहायक सामान"
+      },
+      "statuses": {
+        "delivered": "डिलीवर हो गया",
+        "pending": "बाकी है",
+        "canceled": "रद्द किया गया"
+      }
+    },
+    "demographic": {
+      "title": "ग्राहकों की जानकारी",
+      "subtitle": "देश के अनुसार ग्राहकों की संख्या",
+      "customers": "{count} ग्राहक",
+      "usa": "अमेरिका",
+      "france": "फ़्रांस"
+    },
+    "demographicCard": {
+      "usa": "अमेरिका",
+      "france": "फ़्रांस"
+    },
+    "countries": {
+      "unitedStates": "संयुक्त राज्य अमेरिका",
+      "india": "भारत",
+      "unitedKingdom": "यूनाइटेड किंगडम",
+      "sweden": "स्वीडन"
+    }
+  },
+  "notFound": {
+    "error": "त्रुटि",
+    "message": "आप जिस पेज को ढूँढ रहे हैं, वह नहीं मिला!",
+    "backHome": "होम पेज पर जाएँ",
+    "copyright": "© {year} - TailAdmin"
+  },
+  "auth": {
+    "messages": {
+      "invalidAuthenticationResponse": "लॉगिन की पुष्टि का जवाब सही नहीं है।",
+      "signedInSuccessfully": "सफलतापूर्वक लॉगिन हो गया।",
+      "pleaseCheckYourLoginDetails": "कृपया अपनी लॉगिन जानकारी जाँचें।",
+      "invalidEmailOrPassword": "ईमेल या पासवर्ड गलत है।",
+      "tooManyLoginAttemptsPleaseTryAgainLater": "लॉगिन की बहुत कोशिशें की गई हैं। थोड़ी देर बाद फिर कोशिश करें।",
+      "unableToSignInPleaseTryAgain": "लॉगिन नहीं हो सका। दोबारा कोशिश करें।"
+    },
+    "layout": {
+      "backToWebsite": "वेबसाइट पर वापस जाएँ"
+    },
+    "signIn": {
+      "unableToSignIn": "लॉगिन नहीं हो सका।",
+      "unableToSignInPleaseTryAgain": "लॉगिन नहीं हो सका। दोबारा कोशिश करें।",
+      "signIn": "लॉगिन करें",
+      "enterYourEmailAndPasswordToSignIn": "लॉगिन करने के लिए ईमेल और पासवर्ड डालें।",
+      "email": "ईमेल",
+      "emailIsRequired": "ईमेल भरना ज़रूरी है।",
+      "pleaseEnterAValidEmailAddress": "कृपया सही ईमेल पता दर्ज करें।",
+      "emailMustBeAtMost255Characters": "ईमेल अधिकतम 255 अक्षरों का हो सकता है।",
+      "enterYourEmail": "अपना ईमेल दर्ज करें",
+      "password": "पासवर्ड",
+      "passwordIsRequired": "पासवर्ड भरना ज़रूरी है।",
+      "passwordMustBeAtMost255Characters": "पासवर्ड अधिकतम 255 अक्षरों का हो सकता है।",
+      "enterYourPassword": "अपना पासवर्ड दर्ज करें",
+      "hidePassword": "पासवर्ड छिपाएँ",
+      "showPassword": "पासवर्ड दिखाएँ",
+      "keepMeLoggedIn": "मुझे लॉगिन रखें",
+      "signingIn": "लॉगिन हो रहा है…",
+      "signIn2": "लॉगिन करें"
+    },
+    "signInForm": {
+      "backToDashboard": "डैशबोर्ड पर वापस जाएँ",
+      "signIn": "लॉगिन करें",
+      "enterYourEmailAndPasswordToSignIn": "लॉगिन करने के लिए ईमेल और पासवर्ड डालें।",
+      "signInWithGoogle": "Google से लॉगिन करें",
+      "signInWithX": "X से लॉगिन करें",
+      "or": "या",
+      "email": "ईमेल",
+      "password": "पासवर्ड",
+      "enterYourPassword": "अपना पासवर्ड दर्ज करें",
+      "keepMeLoggedIn": "मुझे लॉगिन रखें",
+      "forgotPassword": "पासवर्ड भूल गए?",
+      "signIn2": "लॉगिन करें",
+      "donTHaveAnAccount": "क्या आपका अकाउंट नहीं है?",
+      "signUp": "अकाउंट बनाएँ"
+    },
+    "signUpForm": {
+      "backToDashboard": "डैशबोर्ड पर वापस जाएँ",
+      "signUp": "अकाउंट बनाएँ",
+      "enterYourEmailAndPasswordToSignUp": "अकाउंट बनाने के लिए ईमेल और पासवर्ड भरें।",
+      "signUpWithGoogle": "Google से अकाउंट बनाएँ",
+      "signUpWithX": "X से अकाउंट बनाएँ",
+      "or": "या",
+      "firstName": "पहला नाम",
+      "enterYourFirstName": "अपना पहला नाम लिखें",
+      "lastName": "अंतिम नाम",
+      "enterYourLastName": "अपना अंतिम नाम लिखें",
+      "email": "ईमेल",
+      "enterYourEmail": "अपना ईमेल दर्ज करें",
+      "password": "पासवर्ड",
+      "enterYourPassword": "अपना पासवर्ड दर्ज करें",
+      "alreadyHaveAnAccount": "क्या आपका पहले से अकाउंट है?",
+      "signIn": "लॉगिन करें",
+      "termsNotice": "अकाउंट बनाकर आप हमारे <terms>नियम और शर्तों</terms> तथा <privacy>गोपनीयता नीति</privacy> से सहमत होते हैं।"
+    },
+    "login": {
+      "title": "Next.js लॉगिन पेज | TailAdmin - Next.js डैशबोर्ड टेम्पलेट",
+      "description": "यह TailAdmin डैशबोर्ड टेम्पलेट का Next.js लॉगिन पेज है।"
+    }
+  },
+  "dashboard": {
+    "page": {
+      "home": "होम",
+      "dashboard": "डैशबोर्ड"
+    },
+    "loading": {
+      "loadingDashboardStatistics": "डैशबोर्ड के आँकड़े लोड हो रहे हैं",
+      "loadingDashboardAnalytics": "डैशबोर्ड का विश्लेषण लोड हो रहा है",
+      "loadingDashboardSection": "डैशबोर्ड का हिस्सा लोड हो रहा है",
+      "loadingDashboardData": "डैशबोर्ड की जानकारी लोड हो रही है…"
+    },
+    "summary": {
+      "totalFarmers": "कुल किसान",
+      "activeFarms": "सक्रिय खेत",
+      "activeCropCycles": "सक्रिय फ़सल चक्र",
+      "publishedCrops": "प्रकाशित फ़सलें",
+      "seedRates": "बीज की दरें",
+      "pendingReviews": "बाकी समीक्षाएँ",
+      "notifications": "सूचनाएँ",
+      "blockedAccounts": "ब्लॉक किए गए अकाउंट"
+    }
+  },
+  "ui": {
+    "adminLoading": {
+      "loadingAdminPanel": "एडमिन पैनल लोड हो रहा है...",
+      "loadingAdmin": "एडमिन की जानकारी लोड हो रही है..."
+    },
+    "barChartOne": {
+      "jan": "जनवरी",
+      "feb": "फ़रवरी",
+      "mar": "मार्च",
+      "apr": "अप्रैल",
+      "may": "मई",
+      "jun": "जून",
+      "jul": "जुलाई",
+      "aug": "अगस्त",
+      "sep": "सितंबर",
+      "oct": "अक्टूबर",
+      "nov": "नवंबर",
+      "dec": "दिसंबर",
+      "sales": "बिक्री"
+    },
+    "lineChartOne": {
+      "jan": "जनवरी",
+      "feb": "फ़रवरी",
+      "mar": "मार्च",
+      "apr": "अप्रैल",
+      "may": "मई",
+      "jun": "जून",
+      "jul": "जुलाई",
+      "aug": "अगस्त",
+      "sep": "सितंबर",
+      "oct": "अक्टूबर",
+      "nov": "नवंबर",
+      "dec": "दिसंबर",
+      "sales": "बिक्री",
+      "revenue": "आमदनी"
+    },
+    "gridShape": {
+      "grid": "ग्रिड"
+    },
+    "pageBreadCrumb": {
+      "breadcrumb": "पेज का रास्ता"
+    },
+    "suspenseFallback": {
+      "loadingContent": "जानकारी लोड हो रही है…"
+    },
+    "basicTableOne": {
+      "user": "यूज़र",
+      "projectName": "प्रोजेक्ट का नाम",
+      "team": "टीम",
+      "status": "स्थिति",
+      "budget": "बजट",
+      "teamMember": "टीम सदस्य {number}",
+      "statuses": {
+        "Active": "सक्रिय",
+        "Pending": "बाकी है",
+        "Cancel": "रद्द करें"
+      }
+    },
+    "pagination": {
+      "previous": "पिछला",
+      "next": "अगला"
+    },
+    "avatar": {
+      "userAvatar": "यूज़र की तस्वीर"
+    },
+    "responsiveImage": {
+      "cover": "कवर तस्वीर"
+    },
+    "threeColumnImageGrid": {
+      "grid": "ग्रिड"
+    },
+    "twoColumnImageGrid": {
+      "grid": "ग्रिड"
+    },
+    "modal": {
+      "close": "बंद करें"
+    },
+    "videosExample": {
+      "videoRatio169": "वीडियो का अनुपात 16:9",
+      "videoRatio43": "वीडियो का अनुपात 4:3",
+      "videoRatio219": "वीडियो का अनुपात 21:9",
+      "videoRatio11": "वीडियो का अनुपात 1:1"
+    },
+    "youTubeEmbed": {
+      "youTubeVideo": "YouTube वीडियो"
+    },
+    "fourIsToThree": {
+      "youTubeVideo": "YouTube वीडियो"
+    },
+    "oneIsToOne": {
+      "youTubeVideo": "YouTube वीडियो"
+    },
+    "sixteenIsToNine": {
+      "youTubeVideo": "YouTube वीडियो"
+    },
+    "twentyOneIsToNine": {
+      "youTubeVideo": "YouTube वीडियो"
+    },
+    "imagePreview": {
+      "noImageAvailable": "तस्वीर उपलब्ध नहीं है"
+    },
+    "pageLoader": {
+      "loading": "लोड हो रहा है..."
+    },
+    "alert": {
+      "learnMore": "और जानें"
+    }
+  },
+  "home": {
+    "nextJsLogo": "Next.js लोगो",
+    "vercelLogomark": "Vercel का लोगो",
+    "deployNow": "अभी डिप्लॉय करें",
+    "documentation": "दस्तावेज़",
+    "intro": "शुरू करने के लिए <file>page.js</file> फ़ाइल में बदलाव करें।",
+    "guidance": "शुरू करने या ज़्यादा जानकारी पाने के लिए <templates>टेम्पलेट</templates> या <learning>सीखने के केंद्र</learning> पर जाएँ।"
+  },
+  "calendar": {
+    "calendar": {
+      "eventConf": "इवेंट कॉन्फ़्रेंस",
+      "meeting": "मीटिंग",
+      "workshop": "कार्यशाला",
+      "event": "कार्यक्रम",
+      "newEvent": "नया कार्यक्रम",
+      "more": "और",
+      "addEventButton": "कार्यक्रम जोड़ें +"
+    },
+    "calendarEventModal": {
+      "event": "कार्यक्रम",
+      "newEvent": "नया कार्यक्रम",
+      "editEvent": "कार्यक्रम बदलें",
+      "addEvent": "कार्यक्रम जोड़ें",
+      "planYourNextBigMomentScheduleOrEditAn": "अपने अगले कार्यक्रम की योजना बनाएँ। समय तय करें या कार्यक्रम में बदलाव करें।",
+      "eventTitle": "कार्यक्रम का नाम",
+      "eventColor": "कार्यक्रम का रंग",
+      "enterStartDate": "शुरू होने की तारीख दर्ज करें",
+      "enterEndDate": "खत्म होने की तारीख दर्ज करें",
+      "close": "बंद करें",
+      "updateChanges": "बदलाव अपडेट करें",
+      "levels": {
+        "Danger": "खतरा",
+        "Success": "सफल",
+        "Primary": "मुख्य",
+        "Warning": "चेतावनी"
+      }
+    },
+    "views": {
+      "year": "साल",
+      "month": "महीना",
+      "week": "हफ़्ता",
+      "day": "दिन"
+    }
+  },
+  "examples": {
+    "defaultModal": {
+      "defaultModal": "सामान्य पॉपअप",
+      "openModal": "पॉपअप खोलें",
+      "modalHeading": "पॉपअप का शीर्षक",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque2": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "close": "बंद करें",
+      "saveChanges": "बदलाव सेव करें"
+    },
+    "formInModal": {
+      "formInModal": "पॉपअप में फ़ॉर्म",
+      "openModal": "पॉपअप खोलें",
+      "personalInformation": "निजी जानकारी",
+      "firstName": "पहला नाम",
+      "emirhan": "एमिरहान",
+      "lastName": "अंतिम नाम",
+      "boruch": "बोरुच",
+      "phone": "फ़ोन",
+      "bio": "परिचय",
+      "teamManager": "टीम मैनेजर",
+      "close": "बंद करें",
+      "saveChanges": "बदलाव सेव करें"
+    },
+    "fullScreenModal": {
+      "fullScreenModal": "पूरी स्क्रीन वाला पॉपअप",
+      "openModal": "पॉपअप खोलें",
+      "modalHeading": "पॉपअप का शीर्षक",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque2": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque3": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "close": "बंद करें",
+      "saveChanges": "बदलाव सेव करें"
+    },
+    "modalBasedAlerts": {
+      "modalBasedAlerts": "पॉपअप में सूचनाएँ",
+      "successAlert": "सफलता की सूचना",
+      "infoAlert": "जानकारी की सूचना",
+      "warningAlert": "चेतावनी की सूचना",
+      "dangerAlert": "खतरे की चेतावनी",
+      "wellDone": "बहुत बढ़िया!",
+      "loremIpsumDolorSitAmetConsecteturFeugiatIpsumLibero": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "okayGotIt": "ठीक है, समझ गया",
+      "informationAlert": "ज़रूरी जानकारी!",
+      "warningAlert2": "चेतावनी!",
+      "dangerAlert2": "खतरे की चेतावनी!"
+    },
+    "verticallyCenteredModal": {
+      "verticallyCenteredModal": "बीच में दिखने वाला पॉपअप",
+      "openModal": "पॉपअप खोलें",
+      "allDoneSuccessConfirmed": "काम पूरा हुआ! सफलता की पुष्टि हो गई।",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque": "यह एक उदाहरण के लिए दिया गया संदेश है। यहाँ आप अपनी ज़रूरत के अनुसार जानकारी लिख सकते हैं।",
+      "close": "बंद करें",
+      "saveChanges": "बदलाव सेव करें"
+    }
+  },
+  "forms": {
+    "checkboxComponents": {
+      "checkbox": "चेकबॉक्स",
+      "default": "सामान्य",
+      "checked": "चुना गया",
+      "disabled": "बंद है"
+    },
+    "copyInput": {
+      "copied": "कॉपी हो गया!",
+      "copy": "कॉपी करें",
+      "enterWebsiteURL": "वेबसाइट का URL दर्ज करें"
+    },
+    "defaultInputs": {
+      "marketing": "मार्केटिंग",
+      "template": "टेम्पलेट",
+      "development": "डेवलपमेंट",
+      "defaultInputs": "सामान्य इनपुट",
+      "input": "इनपुट",
+      "regularInput": "साधारण इनपुट",
+      "inputWithPlaceholder": "संकेत वाला इनपुट",
+      "selectInput": "चुनने वाला इनपुट",
+      "selectAnOption": "कोई विकल्प चुनें",
+      "passwordInput": "पासवर्ड इनपुट",
+      "enterYourPassword": "अपना पासवर्ड दर्ज करें",
+      "datePickerInput": "तारीख चुनने वाला इनपुट",
+      "selectADate": "तारीख चुनें",
+      "timePickerInput": "समय चुनने वाला इनपुट",
+      "inputWithPayment": "भुगतान वाला इनपुट",
+      "cardNumber": "कार्ड नंबर"
+    },
+    "dropZone": {
+      "dropzone": "फ़ाइल डालने की जगह",
+      "fileTypeNotSupported": "यह फ़ाइल प्रकार मान्य नहीं है",
+      "dropImagesHere": "तस्वीरें यहाँ डालें",
+      "dropFilesHere": "फ़ाइलें यहाँ डालें",
+      "dragDropFilesHere": "फ़ाइलें खींचकर यहाँ छोड़ें",
+      "onlyPNGJPGWebPAndSVGImagesUpTo": "सिर्फ़ PNG, JPG, WebP और SVG तस्वीरें मान्य हैं, जिनका आकार 5MB तक हो।",
+      "dragAndDropYourPNGJPGWebPSVGImages": "PNG, JPG, WebP या SVG तस्वीरें यहाँ खींचकर छोड़ें या फ़ाइल चुनें।",
+      "browseFile": "फ़ाइल चुनें",
+      "uploadedImages": "अपलोड की गई तस्वीरें (",
+      "clearAll": "सब हटाएँ",
+      "previewImage": "तस्वीर देखें",
+      "removeImage": "तस्वीर हटाएँ",
+      "imagePreview": "तस्वीर की झलक",
+      "previewFile": "{name} देखें",
+      "removeFile": "{name} हटाएँ"
+    },
+    "fileInputExample": {
+      "fileInput": "फ़ाइल इनपुट",
+      "uploadFile": "फ़ाइल अपलोड करें"
+    },
+    "inputGroup": {
+      "inputGroup": "इनपुट समूह",
+      "email": "ईमेल",
+      "phone": "फ़ोन",
+      "website": "वेबसाइट",
+      "uRL": "यूआरएल"
+    },
+    "inputStates": {
+      "inputStates": "इनपुट की स्थितियाँ",
+      "email": "ईमेल",
+      "enterYourEmail": "अपना ईमेल दर्ज करें",
+      "thisIsAnInvalidEmailAddress": "यह ईमेल पता सही नहीं है।",
+      "thisIsAnSuccessMessage": "यह सफलता का संदेश है।",
+      "disabledEmail": "बंद किया गया ईमेल फ़ील्ड"
+    },
+    "radioButtons": {
+      "radioButtons": "रेडियो बटन",
+      "default": "सामान्य",
+      "selected": "चुना गया",
+      "disabled": "बंद है"
+    },
+    "selectInputs": {
+      "marketing": "मार्केटिंग",
+      "template": "टेम्पलेट",
+      "development": "डेवलपमेंट",
+      "option1": "विकल्प 1",
+      "option2": "विकल्प 2",
+      "option3": "विकल्प 3",
+      "option4": "विकल्प 4",
+      "option5": "विकल्प 5",
+      "selectInputs": "चयन वाले इनपुट",
+      "selectInput": "चुनने वाला इनपुट",
+      "selectOption": "विकल्प चुनें",
+      "multipleSelectOptions": "एक से ज़्यादा विकल्प चुनें",
+      "selectedValues": "चुने गए विकल्प:"
+    },
+    "textAreaInput": {
+      "textareaInputField": "बड़ा टेक्स्ट फ़ील्ड",
+      "description": "विवरण",
+      "pleaseEnterAValidMessage": "कृपया सही संदेश लिखें।"
+    },
+    "toggleSwitch": {
+      "oN": "चालू",
+      "oFF": "बंद",
+      "toggleSwitchInput": "चालू या बंद करने वाला स्विच",
+      "default": "सामान्य",
+      "checked": "चुना गया",
+      "disabled": "बंद है"
+    },
+    "textArea": {
+      "enterYourMessage": "अपना संदेश लिखें"
+    },
+    "multiSelect": {
+      "selectOptions": "विकल्प चुनें",
+      "removeOption": "{name} हटाएँ"
+    },
+    "select": {
+      "selectAnOption": "कोई विकल्प चुनें"
+    }
+  },
+  "notificationDropdown": {
+    "user": "यूज़र",
+    "projectNganterApp": "प्रोजेक्ट - Nganter ऐप"
+  },
+  "profile": {
+    "dangerZone": {
+      "dangerZone": "संवेदनशील सेटिंग्स",
+      "logoutAllDevices": "सभी डिवाइस से लॉग आउट करें",
+      "signOutFromEveryActiveSession": "जहाँ-जहाँ लॉगिन हैं, वहाँ से लॉग आउट करें।",
+      "logout": "लॉग आउट करें",
+      "deleteAccount": "अकाउंट हटाएँ",
+      "onceYouDeleteYourAccountThereIsNoGoing": "अकाउंट हटाने के बाद इसे वापस नहीं लाया जा सकता। कृपया अच्छी तरह सोच लें।"
+    },
+    "security": {
+      "security": "सुरक्षा",
+      "changePassword": "पासवर्ड बदलें",
+      "receiveRealTimeNotificationsAndTeamAlerts": "तुरंत सूचनाएँ और टीम के अलर्ट पाएँ।",
+      "twoFactorAuthentication2FA": "दो चरणों वाली सुरक्षा (2FA)",
+      "keepYourAccountSecureByEnabling2FA": "2FA चालू करके अपना अकाउंट सुरक्षित रखें"
+    },
+    "userAddressCard": {
+      "address": "पता",
+      "country": "देश",
+      "unitedStates": "संयुक्त राज्य अमेरिका",
+      "cityState": "शहर/राज्य",
+      "phoenixArizonaUnitedStates": "फ़ीनिक्स, एरिज़ोना, अमेरिका।",
+      "postalCode": "पिन कोड",
+      "tAXID": "टैक्स आईडी",
+      "edit": "बदलें",
+      "editAddress": "पता बदलें",
+      "updateYourDetailsToKeepYourProfileUpTo": "अपनी प्रोफ़ाइल अपडेट रखने के लिए जानकारी बदलें।",
+      "close": "बंद करें",
+      "saveChanges": "बदलाव सेव करें"
+    },
+    "userMetaCard": {
+      "user": "यूज़र",
+      "teamManager": "टीम मैनेजर",
+      "arizonaUnitedStates": "एरिज़ोना, अमेरिका।",
+      "firstName": "पहला नाम",
+      "lastName": "अंतिम नाम",
+      "emailAddress": "ईमेल पता",
+      "phone": "फ़ोन",
+      "bio": "परिचय",
+      "socialLinks": "सोशल मीडिया लिंक",
+      "edit": "बदलें",
+      "editPersonalInformation": "निजी जानकारी बदलें",
+      "updateYourDetailsToKeepYourProfileUpTo": "अपनी प्रोफ़ाइल अपडेट रखने के लिए जानकारी बदलें।",
+      "changeProfilePicture": "प्रोफ़ाइल फ़ोटो बदलें",
+      "profilePicture": "प्रोफ़ाइल फ़ोटो",
+      "uploadASquareImage200200PxInJPEG": "JPEG या PNG फ़ॉर्मेट में 200×200 पिक्सेल की चौकोर तस्वीर अपलोड करें।",
+      "personalInformation": "निजी जानकारी",
+      "emailAddress2": "ईमेल पता",
+      "close": "बंद करें",
+      "saveChanges": "बदलाव सेव करें"
+    }
+  }
+}

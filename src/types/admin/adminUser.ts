@@ -9,10 +9,11 @@ export interface AdminUser {
   mobile: string | null;
   email: string;
   email_verified_at: string | null;
-  status: boolean;
+  status: 0 | 1;
   is_super_user: boolean;
   created_at: string;
   updated_at: string;
+  added_at?: string;
 }
 
 /** Input fields for create/edit; not the API's response record. */

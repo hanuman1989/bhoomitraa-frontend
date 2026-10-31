@@ -2,15 +2,18 @@
 
 import type React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 const CopyInput: React.FC = () => {
+  const tUi = useTranslations("forms.copyInput");
+
   const [website, setWebsite] = useState("www.tailadmin.com");
-  const [copyText, setCopyText] = useState("Copy");
+  const [isCopied, setIsCopied] = useState(false);
 
   const copyWebsite = () => {
     navigator.clipboard.writeText(website).then(() => {
-      setCopyText("Copied!");
-      setTimeout(() => setCopyText("Copy"), 2000);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     });
   };
 
@@ -35,14 +38,14 @@ const CopyInput: React.FC = () => {
             fill=""
           />
         </svg>
-        <div>{copyText}</div>
+        <div>{isCopied ? tUi("copied") : tUi("copy")}</div>
       </button>
       <input
         value={website}
         onChange={(e) => setWebsite(e.target.value)}
         type="url"
-        className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-3 ps-4 pe-[90px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-        placeholder="Enter website URL"
+        className="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-3 ps-4 pe-[90px] text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
+        placeholder={tUi("enterWebsiteURL")}
       />
     </div>
   );

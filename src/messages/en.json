@@ -1,9 +1,130 @@
 {
+  "serverActions": {
+    "errors": {
+      "unexpected": "Something went wrong. Please try again.",
+      "unauthenticated": "Your session has expired. Please sign in again.",
+      "forbidden": "You are not authorized to perform this action.",
+      "notFound": "The requested resource could not be found.",
+      "timeout": "The request timed out. Please try again.",
+      "validation": "Please check the highlighted fields.",
+      "tooManyRequests": "Too many requests. Please try again later.",
+      "unavailable": "The service is temporarily unavailable. Please try again later.",
+      "requestFailed": "Request failed"
+    },
+    "adminUsers": {
+      "saveFailed": "Unable to save admin user. Please try again.",
+      "saved": "Admin user saved successfully.",
+      "deleteFailed": "Unable to delete admin user. Please try again.",
+      "deleted": "Admin user deleted successfully.",
+      "cannotDeleteSelf": "You cannot delete your own account."
+    }
+  },
+  "adminUsers": {
+    "passwordDialog": {
+      "title": "Change password",
+      "description": "Set a new password for {name}.",
+      "password": "New password",
+      "confirmation": "Confirm password",
+      "submit": "Update password",
+      "saving": "Updating...",
+      "saved": "Password updated successfully.",
+      "failed": "Unable to update password. Please try again.",
+      "validation": {
+        "passwordRequired": "Password is required.",
+        "passwordMin": "Password must be at least 8 characters.",
+        "passwordMax": "Password cannot exceed 255 characters.",
+        "confirmationRequired": "Please confirm the password.",
+        "mismatch": "Passwords do not match."
+      }
+    },
+    "page": {
+      "home": "Home",
+      "adminUsers": "Admin Users",
+      "manageAdministratorAccountsAndAccess": "Manage administrator accounts and access.",
+      "loadingAdminUsers": "Loading admin users...",
+      "showingRange": "Showing {from}–{to} of {total}"
+    },
+    "actions": {
+      "edit": "Edit",
+      "changePassword": "Change Password",
+      "delete": "Delete",
+      "actionsFor": "Actions for {name}"
+    },
+    "deleteDialog": {
+      "closeAdminForm": "Close admin form",
+      "deleteAdminUser": "Delete Admin User",
+      "thisActionCannotBeUndoneAndTheUserWill": "This action cannot be undone, and the user will be permanently removed from the system.",
+      "cancel": "Cancel",
+      "deleting": "Deleting...",
+      "delete": "Delete",
+      "failed": "Delete failed. Try again.",
+      "confirmation": "Are you sure you want to delete <strong>{name}</strong>?"
+    },
+    "form": {
+      "closeAdminForm": "Close admin form",
+      "editAdmin": "Edit Admin",
+      "addAdmin": "Add Admin",
+      "manageAccountDetailsAndAdministratorAccess": "Manage account details and administrator access.",
+      "administratorDetails": "Administrator details",
+      "firstName": "First name",
+      "firstNameIsRequired": "First name is required.",
+      "firstNameCannotExceed255Characters": "First name cannot exceed 255 characters.",
+      "lastName": "Last name",
+      "lastNameIsRequired": "Last name is required.",
+      "lastNameCannotExceed255Characters": "Last name cannot exceed 255 characters.",
+      "mobile": "Mobile",
+      "optional": "(optional)",
+      "mobileNumberCannotExceed30Characters": "Mobile number cannot exceed 30 characters.",
+      "enterAValidMobileNumber": "Enter a valid mobile number.",
+      "email": "Email",
+      "emailIsRequired": "Email is required.",
+      "emailCannotExceed255Characters": "Email cannot exceed 255 characters.",
+      "enterAValidEmailAddress": "Enter a valid email address.",
+      "password": "Password",
+      "passwordIsRequired": "Password is required.",
+      "passwordMustBeAtLeast8Characters": "Password must be at least 8 characters.",
+      "passwordCannotExceed255Characters": "Password cannot exceed 255 characters.",
+      "confirmPassword": "Confirm password",
+      "pleaseConfirmThePassword": "Please confirm the password.",
+      "passwordsDoNotMatch": "Passwords do not match.",
+      "status": "Status",
+      "pleaseSelectAStatus": "Please select a status.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes"
+    },
+    "list": {
+      "name": "Name",
+      "email": "Email",
+      "mobile": "Mobile",
+      "status": "Status",
+      "createdAt": "Created at",
+      "actions": "Actions",
+      "adminUsers": "Admin Users",
+      "addAdmin": "Add Admin",
+      "administratorAccountsAndAccess": "Administrator accounts and access",
+      "active": "Active",
+      "inactive": "Inactive",
+      "noAdminUsersMatchYourFilters": "No admin users match your filters."
+    },
+    "filters": {
+      "filterAdminUsers": "Filter admin users",
+      "search": "Search",
+      "nameEmailOrMobile": "Name, email or mobile",
+      "status": "Status",
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive",
+      "applying": "Applying...",
+      "applyFilters": "Apply Filters",
+      "reset": "Reset"
+    }
+  },
   "common": {
-    "home": "Home",
-    "edit": "Edit",
+    "cancel": "Cancel",
     "close": "Close",
-    "saveChanges": "Save Changes",
     "viewMore": "View More",
     "delete": "Delete",
     "filter": "Filter",
@@ -11,9 +132,7 @@
   },
   "sidebar": {
     "groups": {
-      "menu": "Menu",
-      "support": "Support",
-      "others": "Others"
+      "menu": "Menu"
     },
     "badges": {
       "new": "new",
@@ -31,104 +150,14 @@
       "crops": "Crops",
       "farmManager": "Farm Manager",
       "farm": "Farm",
-      "seedsManager": "Seeds Manager",
-      "finance": "Finance",
-      "aiAssistant": "AI Assistant",
-      "textGenerator": "Text Generator",
-      "imageGenerator": "Image Generator",
-      "codeGenerator": "Code Generator",
-      "videoGenerator": "Video Generator",
-      "aiSettings": "AI Settings",
-      "ecommerce": "E-commerce",
-      "products": "Products",
-      "addProduct": "Add Product",
-      "billing": "Billing",
-      "invoices": "Invoices",
-      "singleInvoice": "Single Invoice",
-      "createInvoice": "Create Invoice",
-      "transactions": "Transactions",
-      "singleTransaction": "Single Transaction",
-      "calendar": "Calendar",
-      "userProfile": "User Profile",
-      "task": "Task",
-      "taskList": "List",
-      "kanban": "Kanban",
-      "forms": "Forms",
-      "formElements": "Form Elements",
-      "formLayout": "Form Layout",
-      "tables": "Tables",
-      "basicTables": "Basic Tables",
-      "dataTables": "Data Tables",
-      "pages": "Pages",
-      "fileManager": "File Manager",
-      "pricingTables": "Pricing Tables",
-      "faq": "FAQ",
-      "apiKeys": "API Keys",
-      "integrations": "Integrations",
-      "blankPage": "Blank Page",
-      "error404": "404 Error",
-      "error500": "500 Error",
-      "error503": "503 Error",
-      "comingSoon": "Coming Soon",
-      "maintenance": "Maintenance",
-      "successPage": "Success",
-      "layouts": "Layouts",
-      "layoutOne": "Layout One",
-      "layoutTwo": "Layout Two",
-      "layoutThree": "Layout Three",
-      "layoutFour": "Layout Four",
-      "layoutFive": "Layout Five",
-      "layoutSix": "Layout Six",
-      "charts": "Charts",
-      "lineChart": "Line Chart",
-      "barChart": "Bar Chart",
-      "pieChart": "Pie Chart",
-      "radarChart": "Radar Chart",
-      "radialChart": "Radial Chart",
-      "maps": "Maps",
-      "mapsGoogle": "Maps",
-      "vectorMap": "Vector Map",
-      "uiElements": "UI Elements",
-      "alerts": "Alerts",
-      "avatar": "Avatar",
-      "badge": "Badge",
-      "breadcrumb": "Breadcrumb",
-      "buttons": "Buttons",
-      "buttonsGroup": "Buttons Group",
-      "cards": "Cards",
-      "carousel": "Carousel",
-      "dropdowns": "Dropdowns",
-      "images": "Images",
-      "links": "Links",
-      "listView": "List",
-      "modals": "Modals",
-      "notificationUi": "Notification",
-      "pagination": "Pagination",
-      "popovers": "Popovers",
-      "progressbar": "Progressbar",
-      "ribbons": "Ribbons",
-      "spinners": "Spinners",
-      "tabs": "Tabs",
-      "tooltips": "Tooltips",
-      "videos": "Videos",
-      "authentication": "Authentication",
-      "signIn": "Sign In",
-      "signUp": "Sign Up",
-      "resetPassword": "Reset Password",
-      "twoStepVerification": "Two Step Verification",
-      "chat": "Chat",
-      "supportMenu": "Support",
-      "supportList": "Support List",
-      "supportReply": "Support Reply",
-      "email": "Email",
-      "inbox": "Inbox",
-      "inboxDetails": "Details"
+      "seedsManager": "Seeds Manager"
     },
     "widget": {
       "title": "#1 Tailwind CSS Dashboard",
       "description": "Leading Tailwind CSS Admin Template with 500+ UI Component and Pages.",
       "purchasePlan": "Purchase Plan"
-    }
+    },
+    "logo": "Logo"
   },
   "header": {
     "searchPlaceholder": "Search or type command...",
@@ -140,17 +169,17 @@
       "minAgo": "{count} min ago",
       "hrAgo": "{count} hr ago",
       "viewAll": "View All Notifications"
-    }
+    },
+    "logo": "Logo"
   },
   "userDropdown": {
     "editProfile": "Edit profile",
-    "accountSettings": "Account settings",
-    "support": "Support",
     "language": "Language",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "user": "User",
+    "loggingOut": "Logging out..."
   },
   "ecommerce": {
-    "title": "E-commerce Dashboard",
     "metrics": {
       "customers": "Customers",
       "orders": "Orders"
@@ -179,7 +208,8 @@
       "earned": "You earn {amount} today, it's higher than last month. Keep up your good work!",
       "target": "Target",
       "revenue": "Revenue",
-      "today": "Today"
+      "today": "Today",
+      "text20K": "$20K"
     },
     "statistics": {
       "title": "Statistics",
@@ -217,650 +247,491 @@
       "customers": "{count} Customers",
       "usa": "USA",
       "france": "France"
-    }
-  },
-  "analytics": {
-    "metrics": {
-      "uniqueVisitors": "Unique Visitors",
-      "totalPageviews": "Total Pageviews",
-      "bounceRate": "Bounce Rate",
-      "visitDuration": "Visit Duration",
-      "vsLastMonth": "Vs last month"
     },
-    "barChart": {
-      "title": "Analytics",
-      "subtitle": "Visitor analytics of last 30 days"
+    "demographicCard": {
+      "usa": "usa",
+      "france": "france"
     },
-    "topChannels": {
-      "title": "Top Channels",
-      "source": "Source",
-      "visitors": "Visitors",
-      "channelsReport": "Channels Report"
-    },
-    "topPages": {
-      "title": "Top Pages",
-      "source": "Source",
-      "pageview": "Pageview",
-      "channelsReport": "Channels Report"
-    },
-    "activeUsers": {
-      "title": "Active Users",
-      "liveVisitors": "Live visitors",
-      "avgDaily": "Avg, Daily",
-      "avgWeekly": "Avg, Weekly",
-      "avgMonthly": "Avg, Monthly"
-    },
-    "acquisitionChannels": {
-      "title": "Acquisition Channels"
-    },
-    "session": {
-      "title": "Sessions By Device"
-    },
-    "recentOrders": {
-      "title": "Recent Orders",
-      "products": "Products",
-      "category": "Category",
-      "country": "Country",
-      "cr": "CR",
-      "value": "Value",
-      "categories": {
-        "uiKits": "UI Kits",
-        "templates": "Templates",
-        "saas": "SaaS"
-      },
-      "crDashboard": "Dashboard"
+    "countries": {
+      "unitedStates": "United States",
+      "india": "India",
+      "unitedKingdom": "United Kingdom",
+      "sweden": "Sweden"
     }
   },
   "notFound": {
     "error": "ERROR",
     "message": "We can’t seem to find the page you are looking for!",
-    "backHome": "Back to Home Page"
+    "backHome": "Back to Home Page",
+    "copyright": "© {year} - TailAdmin"
   },
-  "marketing": {
-    "metrics": {
-      "avgClientRating": "Avg. Client Rating",
-      "instagramFollowers": "Instagram Followers",
-      "totalRevenue": "Total Revenue",
-      "vsLastMonth": "Vs last month"
+  "auth": {
+    "messages": {
+      "invalidAuthenticationResponse": "Invalid authentication response.",
+      "signedInSuccessfully": "Signed in successfully.",
+      "pleaseCheckYourLoginDetails": "Please check your login details.",
+      "invalidEmailOrPassword": "Invalid email or password.",
+      "tooManyLoginAttemptsPleaseTryAgainLater": "Too many login attempts. Please try again later.",
+      "unableToSignInPleaseTryAgain": "Unable to sign in. Please try again."
     },
-    "impressionChart": {
-      "title": "Impression & Data Traffic",
-      "totalRevenue": "Total Revenue",
-      "sales": "Sales",
-      "revenue": "Revenue"
+    "layout": {
+      "backToWebsite": "Back To Website"
     },
-    "featuredCampaign": {
-      "title": "Featured Campaigns",
-      "viewMore": "View More",
-      "delete": "Delete",
-      "products": "Products",
-      "campaign": "Campaign",
-      "status": "Status",
-      "adsCampaign": "Ads campaign",
-      "campaigns": {
-        "growBrand": "Grow your brand by...",
-        "betterIdeas": "Make Better Ideas...",
-        "increaseTraffic": "Increase your website tra..."
-      },
-      "statuses": {
-        "success": "Success",
-        "pending": "Pending",
-        "failed": "Failed"
-      }
+    "signIn": {
+      "unableToSignIn": "Unable to sign in.",
+      "unableToSignInPleaseTryAgain": "Unable to sign in. Please try again.",
+      "signIn": "Sign In",
+      "enterYourEmailAndPasswordToSignIn": "Enter your email and password to sign in!",
+      "email": "Email",
+      "emailIsRequired": "Email is required.",
+      "pleaseEnterAValidEmailAddress": "Please enter a valid email address.",
+      "emailMustBeAtMost255Characters": "Email must be at most 255 characters.",
+      "enterYourEmail": "Enter your email",
+      "password": "Password",
+      "passwordIsRequired": "Password is required.",
+      "passwordMustBeAtMost255Characters": "Password must be at most 255 characters.",
+      "enterYourPassword": "Enter your password",
+      "hidePassword": "Hide password",
+      "showPassword": "Show password",
+      "keepMeLoggedIn": "Keep me logged in",
+      "signingIn": "Signing in…",
+      "signIn2": "Sign in"
     },
-    "trafficStats": {
-      "title": "Traffic Stats",
-      "viewMore": "View More",
-      "delete": "Delete",
-      "newSubscribers": "New Subscribers",
-      "conversionRate": "Conversion Rate",
-      "pageBounceRate": "Page Bounce Rate",
-      "thenLastWeek": "then last Week",
-      "newSales": "New Sales"
+    "signInForm": {
+      "backToDashboard": "Back to dashboard",
+      "signIn": "Sign In",
+      "enterYourEmailAndPasswordToSignIn": "Enter your email and password to sign in!",
+      "signInWithGoogle": "Sign in with Google",
+      "signInWithX": "Sign in with X",
+      "or": "Or",
+      "email": "Email",
+      "password": "Password",
+      "enterYourPassword": "Enter your password",
+      "keepMeLoggedIn": "Keep me logged in",
+      "forgotPassword": "Forgot password?",
+      "signIn2": "Sign in",
+      "donTHaveAnAccount": "Don't have an account?",
+      "signUp": "Sign Up"
     },
-    "trafficSource": {
-      "title": "Top Traffic Source",
-      "viewMore": "View More",
-      "delete": "Delete",
-      "viewAll": "View All"
+    "signUpForm": {
+      "backToDashboard": "Back to dashboard",
+      "signUp": "Sign Up",
+      "enterYourEmailAndPasswordToSignUp": "Enter your email and password to sign up!",
+      "signUpWithGoogle": "Sign up with Google",
+      "signUpWithX": "Sign up with X",
+      "or": "Or",
+      "firstName": "First Name",
+      "enterYourFirstName": "Enter your first name",
+      "lastName": "Last Name",
+      "enterYourLastName": "Enter your last name",
+      "email": "Email",
+      "enterYourEmail": "Enter your email",
+      "password": "Password",
+      "enterYourPassword": "Enter your password",
+      "alreadyHaveAnAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "termsNotice": "By creating an account means you agree to the <terms>Terms and Conditions,</terms> and our <privacy>Privacy Policy</privacy>"
+    },
+    "login": {
+      "title": "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
+      "description": "This is Next.js Signin Page TailAdmin Dashboard Template"
     }
   },
-  "crm": {
-    "metrics": {
-      "activeDeal": "Active Deal",
-      "revenueTotal": "Revenue Total",
-      "closedDeals": "Closed Deals",
-      "lastMonth": "last month"
+  "dashboard": {
+    "page": {
+      "home": "Home",
+      "dashboard": "Dashboard"
     },
-    "statistics": {
-      "title": "Statistics",
-      "subtitle": "Target you’ve set for each month",
-      "avgYearlyProfit": "Avg. Yearly Profit",
-      "sales": "Sales",
-      "revenue": "Revenue"
+    "loading": {
+      "loadingDashboardStatistics": "Loading dashboard statistics",
+      "loadingDashboardAnalytics": "Loading dashboard analytics",
+      "loadingDashboardSection": "Loading dashboard section",
+      "loadingDashboardData": "Loading dashboard data…"
     },
-    "estimatedRevenue": {
-      "title": "Estimated Revenue",
-      "subtitle": "Target you’ve set for each month",
-      "goals": "June Goals",
-      "marketing": "Marketing",
+    "summary": {
+      "totalFarmers": "Total Farmers",
+      "activeFarms": "Active Farms",
+      "activeCropCycles": "Active Crop Cycles",
+      "publishedCrops": "Published Crops",
+      "seedRates": "Seed Rates",
+      "pendingReviews": "Pending Reviews",
+      "notifications": "Notifications",
+      "blockedAccounts": "Blocked Accounts"
+    }
+  },
+  "ui": {
+    "adminLoading": {
+      "loadingAdminPanel": "Loading admin panel...",
+      "loadingAdmin": "Loading admin..."
+    },
+    "barChartOne": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec",
       "sales": "Sales"
     },
-    "salesCategory": {
-      "title": "Sales Category",
-      "affiliate": "Affiliate",
-      "direct": "Direct",
-      "adsense": "Adsense",
-      "affiliateProgram": "Affiliate Program",
-      "directBuy": "Direct Buy",
-      "products": "Products",
-      "total": "Total",
-      "usedOf": "Used of"
+    "lineChartOne": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec",
+      "sales": "Sales",
+      "revenue": "Revenue"
     },
-    "upcomingSchedule": {
-      "title": "Upcoming Schedule",
-      "schedules": {
-        "item1": {
-          "title": "Business Analytics Press",
-          "description": "Exploring the Future of Data-Driven +6 more"
-        },
-        "item2": {
-          "title": "Business Sprint",
-          "description": "Techniques from Business Sprint +2 more"
-        },
-        "item3": {
-          "title": "Customer Review Meeting",
-          "description": "Insights from the Customer Review Meeting +8 more"
-        }
-      }
+    "gridShape": {
+      "grid": "grid"
     },
-    "recentOrders": {
-      "title": "Recent Orders",
-      "dealId": "Deal ID",
-      "customer": "Customer",
-      "productService": "Product/Service",
-      "dealValue": "Deal Value",
-      "closeDate": "Close Date",
+    "pageBreadCrumb": {
+      "breadcrumb": "Breadcrumb"
+    },
+    "suspenseFallback": {
+      "loadingContent": "Loading content…"
+    },
+    "basicTableOne": {
+      "user": "User",
+      "projectName": "Project Name",
+      "team": "Team",
       "status": "Status",
-      "action": "Action",
-      "products": {
-        "softwareLicense": "Software License",
-        "cloudHosting": "Cloud Hosting",
-        "webDomain": "Web Domain",
-        "sslCertificate": "SSL Certificate",
-        "premiumSupport": "Premium Support"
-      },
+      "budget": "Budget",
+      "teamMember": "Team member {number}",
       "statuses": {
-        "complete": "Complete",
-        "pending": "Pending",
-        "cancel": "Cancel"
+        "Active": "Active",
+        "Pending": "Pending",
+        "Cancel": "Cancel"
       }
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "avatar": {
+      "userAvatar": "User Avatar"
+    },
+    "responsiveImage": {
+      "cover": "Cover"
+    },
+    "threeColumnImageGrid": {
+      "grid": "grid"
+    },
+    "twoColumnImageGrid": {
+      "grid": "grid"
+    },
+    "modal": {
+      "close": "Close"
+    },
+    "videosExample": {
+      "videoRatio169": "Video Ratio 16:9",
+      "videoRatio43": "Video Ratio 4:3",
+      "videoRatio219": "Video Ratio 21:9",
+      "videoRatio11": "Video Ratio 1:1"
+    },
+    "youTubeEmbed": {
+      "youTubeVideo": "YouTube video"
+    },
+    "fourIsToThree": {
+      "youTubeVideo": "YouTube video"
+    },
+    "oneIsToOne": {
+      "youTubeVideo": "YouTube video"
+    },
+    "sixteenIsToNine": {
+      "youTubeVideo": "YouTube video"
+    },
+    "twentyOneIsToNine": {
+      "youTubeVideo": "YouTube video"
+    },
+    "imagePreview": {
+      "noImageAvailable": "No image available"
+    },
+    "pageLoader": {
+      "loading": "Loading..."
+    },
+    "alert": {
+      "learnMore": "Learn more"
     }
   },
-  "stocks": {
-    "title": "Stocks",
-    "dividend": {
-      "title": "Dividend",
-      "series": "Dividend",
-      "viewMore": "View More",
-      "delete": "Delete"
+  "home": {
+    "nextJsLogo": "Next.js logo",
+    "vercelLogomark": "Vercel logomark",
+    "deployNow": "Deploy Now",
+    "documentation": "Documentation",
+    "intro": "To get started, edit the <file>page.js</file> file.",
+    "guidance": "Looking for a starting point or more instructions? Head over to <templates>Templates</templates> or the <learning>Learning</learning> center."
+  },
+  "calendar": {
+    "calendar": {
+      "eventConf": "Event Conf.",
+      "meeting": "Meeting",
+      "workshop": "Workshop",
+      "event": "Event",
+      "newEvent": "New Event",
+      "more": "more",
+      "addEventButton": "Add Event +"
     },
-    "portfolioPerformance": {
-      "title": "Portfolio Performance",
-      "subtitle": "Here is your performance stats of each month",
-      "series": "Portfolio Performance"
-    },
-    "trendingStocks": {
-      "title": "Trending Stocks",
-      "shortStock": "Short Stock",
-      "buyStock": "Buy Stock"
-    },
-    "watchlist": {
-      "title": "My Watchlist",
-      "viewMore": "View More",
-      "delete": "Delete"
-    },
-    "latestTransactions": {
-      "title": "Latest Transactions",
-      "searchPlaceholder": "Search...",
-      "table": {
-        "name": "Name",
-        "date": "Date",
-        "price": "Price",
-        "category": "Category",
-        "status": "Status"
-      },
-      "actions": {
-        "bought": "Bought {symbol}",
-        "sell": "Sell {symbol}"
-      },
-      "categories": {
-        "finance": "Finance"
-      },
-      "statuses": {
-        "success": "Success",
-        "pending": "Pending",
-        "failed": "Failed"
+    "calendarEventModal": {
+      "event": "Event",
+      "newEvent": "New Event",
+      "editEvent": "Edit Event",
+      "addEvent": "Add Event",
+      "planYourNextBigMomentScheduleOrEditAn": "Plan your next big moment: schedule or edit an event to stay on track",
+      "eventTitle": "Event Title",
+      "eventColor": "Event Color",
+      "enterStartDate": "Enter Start Date",
+      "enterEndDate": "Enter End Date",
+      "close": "Close",
+      "updateChanges": "Update Changes",
+      "levels": {
+        "Danger": "Danger",
+        "Success": "Success",
+        "Primary": "Primary",
+        "Warning": "Warning"
       }
+    },
+    "views": {
+      "year": "Year",
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
     }
   },
-  "saas": {
-    "title": "SaaS",
-    "metrics": {
-      "overview": "Overview",
-      "totalRevenue": "Total Revenue",
-      "activeUsers": "Active Users",
-      "clv": "Customer Lifetime Value",
-      "cac": "Customer Acquisition Cost"
+  "examples": {
+    "defaultModal": {
+      "defaultModal": "Default Modal",
+      "openModal": "Open Modal",
+      "modalHeading": "Modal Heading",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod est quis mauris lacinia pharetra. Sed a ligula ac odio condimentum aliquet a nec nulla. Aliquam bibendum ex sit amet ipsum rutrum feugiat ultrices enim quam.",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque2": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod est quis mauris lacinia pharetra. Sed a ligula ac odio.",
+      "close": "Close",
+      "saveChanges": "Save Changes"
     },
-    "churnRate": {
-      "title": "Churn Rate",
-      "subtitle": "Downgrade to Free plan",
-      "thanLastWeek": "than last Week",
-      "series": "Churn Rate",
-      "viewMore": "View More",
-      "delete": "Delete"
+    "formInModal": {
+      "formInModal": "Form In Modal",
+      "openModal": "Open Modal",
+      "personalInformation": "Personal Information",
+      "firstName": "First Name",
+      "emirhan": "Emirhan",
+      "lastName": "Last Name",
+      "boruch": "Boruch",
+      "phone": "Phone",
+      "bio": "Bio",
+      "teamManager": "Team Manager",
+      "close": "Close",
+      "saveChanges": "Save Changes"
     },
-    "userGrowth": {
-      "title": "User Growth",
-      "subtitle": "New signups website + mobile",
-      "thanLastWeek": "than last Week",
-      "series": "Revenue",
-      "viewMore": "View More",
-      "delete": "Delete"
+    "fullScreenModal": {
+      "fullScreenModal": "Full Screen Modal",
+      "openModal": "Open Modal",
+      "modalHeading": "Modal Heading",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod est quis mauris lacinia pharetra. Sed a ligula ac odio condimentum aliquet a nec nulla. Aliquam bibendum ex sit amet ipsum rutrum feugiat ultrices enim quam.",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque2": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod est quis mauris lacinia pharetra. Sed a ligula ac odio condimentum aliquet a nec nulla. Aliquam bibendum ex sit amet ipsum rutrum feugiat ultrices enim quam odio condimentum aliquet a nec nulla pellentesque euismod est quis mauris lacinia pharetra.",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque3": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod est quis mauris lacinia pharetra.",
+      "close": "Close",
+      "saveChanges": "Save Changes"
     },
-    "conversionFunnel": {
-      "title": "Conversion Funnel",
-      "viewMore": "View More",
-      "delete": "Delete",
-      "series": {
-        "adImpressions": "Ad Impressions",
-        "websiteSession": "Website Session",
-        "appDownload": "App Download",
-        "newUsers": "New Users"
-      }
+    "modalBasedAlerts": {
+      "modalBasedAlerts": "Modal Based Alerts",
+      "successAlert": "Success Alert",
+      "infoAlert": "Info Alert",
+      "warningAlert": "Warning Alert",
+      "dangerAlert": "Danger Alert",
+      "wellDone": "Well Done!",
+      "loremIpsumDolorSitAmetConsecteturFeugiatIpsumLibero": "Lorem ipsum dolor sit amet consectetur. Feugiat ipsum libero tempor felis risus nisi non. Quisque eu ut tempor curabitur.",
+      "okayGotIt": "Okay, Got It",
+      "informationAlert": "Information Alert!",
+      "warningAlert2": "Warning Alert!",
+      "dangerAlert2": "Danger Alert!"
     },
-    "recentInvoices": {
-      "title": "Recent Invoices",
-      "table": {
-        "serialNo": "Serial No:",
-        "closeDate": "Close Date",
-        "user": "User",
-        "amount": "Amount",
-        "status": "Status"
-      },
-      "statuses": {
-        "complete": "Complete",
-        "pending": "Pending",
-        "cancelled": "Cancelled"
-      }
-    },
-    "productPerformance": {
-      "title": "Product Performance",
-      "viewMore": "View More",
-      "delete": "Delete",
-      "tabs": {
-        "dailySales": "Daily Sales",
-        "onlineSales": "Online Sales",
-        "newUsers": "New Users"
-      },
-      "digitalProduct": "Digital Product",
-      "physicalProduct": "Physical Product",
-      "avgDailySales": "Average Daily Sales",
-      "totalOnlineSales": "Total Online Sales",
-      "addedLastMonth": "Added last month",
-      "totalNewUsers": "Total New Users",
-      "series": {
-        "sales": "Sales",
-        "revenue": "Revenue"
-      }
-    },
-    "activities": {
-      "title": "Activities",
-      "viewMore": "View More",
-      "delete": "Delete",
-      "newInvoice": "New invoice",
-      "createdInvoice": "created invoice"
+    "verticallyCenteredModal": {
+      "verticallyCenteredModal": "Vertically Centered Modal",
+      "openModal": "Open Modal",
+      "allDoneSuccessConfirmed": "All Done! Success Confirmed",
+      "loremIpsumDolorSitAmetConsecteturAdipiscingElitPellentesque": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod est quis mauris lacinia pharetra.",
+      "close": "Close",
+      "saveChanges": "Save Changes"
     }
   },
-  "logistics": {
-    "title": "Logistics",
-    "metrics": {
-      "totalOrders": "Total Orders",
-      "ordersInTransit": "Orders in Transit"
+  "forms": {
+    "checkboxComponents": {
+      "checkbox": "Checkbox",
+      "default": "Default",
+      "checked": "Checked",
+      "disabled": "Disabled"
     },
-    "deliveryStatistics": {
-      "title": "Delivery Statistics",
-      "subtitle": "Total number of deliveries 70.5K",
-      "monthly": "Monthly",
-      "yearly": "Yearly",
-      "shipment": "Shipment",
-      "delivery": "Delivery"
+    "copyInput": {
+      "copied": "Copied!",
+      "copy": "Copy",
+      "enterWebsiteURL": "Enter website URL"
     },
-    "revenueEarned": {
-      "totalRevenue": "Total revenue earned",
-      "shippedQuantities": "Shipped quantities",
-      "newSales": "New Sales"
+    "defaultInputs": {
+      "marketing": "Marketing",
+      "template": "Template",
+      "development": "Development",
+      "defaultInputs": "Default Inputs",
+      "input": "Input",
+      "regularInput": "Regular Input",
+      "inputWithPlaceholder": "Input with Placeholder",
+      "selectInput": "Select Input",
+      "selectAnOption": "Select an option",
+      "passwordInput": "Password Input",
+      "enterYourPassword": "Enter your password",
+      "datePickerInput": "Date Picker Input",
+      "selectADate": "Select a date",
+      "timePickerInput": "Time Picker Input",
+      "inputWithPayment": "Input with Payment",
+      "cardNumber": "Card number"
     },
-    "deliveryVehicle": {
-      "title": "Delivery Vehicles",
-      "subtitle": "Vehicles operating on the road",
-      "thanLastWeek": "than last Week",
-      "onRoute": "On-route"
+    "dropZone": {
+      "dropzone": "Dropzone",
+      "fileTypeNotSupported": "File type not supported",
+      "dropImagesHere": "Drop images here",
+      "dropFilesHere": "Drop files here",
+      "dragDropFilesHere": "Drag & Drop Files Here",
+      "onlyPNGJPGWebPAndSVGImagesUpTo": "Only PNG, JPG, WebP, and SVG images up to 5MB are allowed",
+      "dragAndDropYourPNGJPGWebPSVGImages": "Drag and drop your PNG, JPG, WebP, SVG images here or browse",
+      "browseFile": "Browse File",
+      "uploadedImages": "Uploaded Images (",
+      "clearAll": "Clear all",
+      "previewImage": "Preview image",
+      "removeImage": "Remove image",
+      "imagePreview": "Image Preview",
+      "previewFile": "Preview {name}",
+      "removeFile": "Remove {name}"
     },
-    "trackingDelivery": {
-      "title": "Tracking Delivery",
-      "subtitle": "Last viewed delivery history"
+    "fileInputExample": {
+      "fileInput": "File Input",
+      "uploadFile": "Upload file"
     },
-    "trackingProgress": {
-      "trackingId": "Tracking ID",
-      "inTransit": "In Transit",
-      "pickedUp": "Picked up",
-      "delivered": "Delivered"
+    "inputGroup": {
+      "inputGroup": "Input Group",
+      "email": "Email",
+      "phone": "Phone",
+      "website": "Website",
+      "uRL": "URL"
     },
-    "deliveryMan": {
-      "courier": "Courier"
+    "inputStates": {
+      "inputStates": "Input States",
+      "email": "Email",
+      "enterYourEmail": "Enter your email",
+      "thisIsAnInvalidEmailAddress": "This is an invalid email address.",
+      "thisIsAnSuccessMessage": "This is an success message.",
+      "disabledEmail": "Disabled email"
     },
-    "deliveriesActivity": {
-      "title": "Delivery Activities",
-      "subtitle": "Track your recent shipping activities",
-      "tabs": {
-        "all": "All",
-        "delivered": "Delivered",
-        "inTransit": "In-Transit",
-        "pending": "Pending",
-        "processing": "Processing"
-      },
-      "filter": {
-        "button": "Filter",
-        "category": "Category",
-        "searchCategory": "Search category...",
-        "company": "Company",
-        "searchCompany": "Search company...",
-        "apply": "Apply"
-      },
-      "table": {
-        "orderId": "Order ID",
-        "category": "Category",
-        "company": "Company",
-        "arrivalTime": "Arrival Time",
-        "route": "Route",
-        "price": "Price",
-        "status": "Status"
-      },
-      "categories": {
-        "furniture": "Furniture",
-        "clothing": "Clothing",
-        "books": "Books",
-        "automotive": "Automotive",
-        "electronics": "Electronics",
-        "health": "Health",
-        "toys": "Toys",
-        "kitchen": "Kitchen",
-        "beauty": "Beauty",
-        "sports": "Sports"
-      },
-      "statuses": {
-        "delivered": "Delivered",
-        "inTransit": "In Transit",
-        "canceled": "Canceled"
-      },
-      "pagination": {
-        "showing": "Showing",
-        "to": "to",
-        "of": "of",
-        "page": "Page"
-      }
+    "radioButtons": {
+      "radioButtons": "Radio Buttons",
+      "default": "Default",
+      "selected": "Selected",
+      "disabled": "Disabled"
+    },
+    "selectInputs": {
+      "marketing": "Marketing",
+      "template": "Template",
+      "development": "Development",
+      "option1": "Option 1",
+      "option2": "Option 2",
+      "option3": "Option 3",
+      "option4": "Option 4",
+      "option5": "Option 5",
+      "selectInputs": "Select Inputs",
+      "selectInput": "Select Input",
+      "selectOption": "Select Option",
+      "multipleSelectOptions": "Multiple Select Options",
+      "selectedValues": "Selected Values:"
+    },
+    "textAreaInput": {
+      "textareaInputField": "Textarea input field",
+      "description": "Description",
+      "pleaseEnterAValidMessage": "Please enter a valid message."
+    },
+    "toggleSwitch": {
+      "oN": "ON",
+      "oFF": "OFF",
+      "toggleSwitchInput": "Toggle switch input",
+      "default": "Default",
+      "checked": "Checked",
+      "disabled": "Disabled"
+    },
+    "textArea": {
+      "enterYourMessage": "Enter your message"
+    },
+    "multiSelect": {
+      "selectOptions": "Select options",
+      "removeOption": "Remove {name}"
+    },
+    "select": {
+      "selectAnOption": "Select an option"
     }
   },
-  "aiDashboard": {
-    "stats": {
-      "users": "Users",
-      "projects": "Projects",
-      "revenue": "Revenue",
-      "paidUsers": "Paid Users",
-      "last30Days": "Last 30 Days"
-    },
-    "userRevenue": {
-      "title": "Users & Revenue Statistics",
-      "subtitle": "Visualize month-to-month progress and engagement.",
-      "users": "Users",
-      "revenue": "Revenue",
-      "monthly": "Monthly",
-      "quarterly": "Quarterly",
-      "annually": "Annually"
-    },
-    "apiToken": {
-      "title": "API Token Usages",
-      "totalApiTokenUsed": "Total API Token Used",
-      "tokenUsed": "Token used",
-      "configuredKey": "{count, plural, one {# API key configured} other {# API keys configured}}",
-      "viewAllUsageDetails": "View All Usage Details"
-    },
-    "userAnalytics": {
-      "title": "User Analytics",
-      "subtitle": "Platform user insights",
-      "totalUsers": "Total Users",
-      "freeUsers": "Free Users",
-      "paidUsers": "Paid Users",
-      "ofTotalUser": "of total user",
-      "thisMonth": "This Month",
-      "fromLastMonth": "from last month",
-      "thisYear": "This Year",
-      "fromLastYear": "from last year"
-    },
-    "projectAnalytics": {
-      "title": "Projects Analytics",
-      "subtitle": "View detailed project insights",
-      "totalProjects": "Total Projects",
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "projectCreated": "Project created",
-      "thisMonth": "This Month",
-      "fromLastMonth": "from last month",
-      "thisYear": "This Year",
-      "fromLastYear": "from last year"
-    },
-    "recentTransactions": {
-      "title": "Recent Transactions",
-      "searchPlaceholder": "Search...",
-      "filter": "Filter",
-      "table": {
-        "paidBy": "Paid By",
-        "packageName": "Package Name",
-        "price": "Price",
-        "paidDate": "Paid Date",
-        "status": "Status",
-        "actions": "Actions"
-      },
-      "packages": {
-        "starterMonthly": "Starter - Monthly",
-        "growthYearly": "Growth - Yearly",
-        "premiumMonthly": "Premium - Monthly"
-      },
-      "statuses": {
-        "active": "Active",
-        "expired": "Expired"
-      },
-      "pagination": {
-        "previous": "Previous",
-        "next": "Next",
-        "pageOf": "Page {current} of {total}"
-      }
-    }
+  "notificationDropdown": {
+    "user": "User",
+    "projectNganterApp": "Project - Nganter App"
   },
-  "sales": {
-    "salesStats": {
-      "title": "Sales Dashboard",
-      "subtitle": "Track revenue, performance, and sales growth in real-time",
-      "selectDateRange": "Select date range",
-      "export": "Export",
-      "totalRevenue": "Total Revenue",
-      "totalSales": "Total Sales",
-      "conversionRate": "Conversion Rate",
-      "refundRate": "Refund Rate",
-      "vsLastMonth": "vs last month",
-      "newSales": "New Sales"
+  "profile": {
+    "dangerZone": {
+      "dangerZone": "Danger Zone",
+      "logoutAllDevices": "Logout all devices",
+      "signOutFromEveryActiveSession": "Sign out from every active session.",
+      "logout": "Logout",
+      "deleteAccount": "Delete account",
+      "onceYouDeleteYourAccountThereIsNoGoing": "Once you delete your account, there is no going back. Please be certain."
     },
-    "userRevenueStats": {
-      "title": "Users & Revenue Statistics",
-      "subtitle": "Visualize month-to-month progress and engagement.",
-      "daily": "Daily",
-      "weekly": "Weekly",
-      "monthly": "Monthly",
-      "onlineSales": "Online Sales",
-      "offlineSales": "Offline Sales"
+    "security": {
+      "security": "Security",
+      "changePassword": "Change Password",
+      "receiveRealTimeNotificationsAndTeamAlerts": "Receive real-time notifications and team alerts.",
+      "twoFactorAuthentication2FA": "Two-factor authentication (2FA)",
+      "keepYourAccountSecureByEnabling2FA": "Keep your account secure by enabling 2FA"
     },
-    "userRetention": {
-      "title": "User Retention",
-      "subtitle": "User engagement over time",
-      "increasedVsLastWeek": "Increased vs last week"
+    "userAddressCard": {
+      "address": "Address",
+      "country": "Country",
+      "unitedStates": "United States",
+      "cityState": "City/State",
+      "phoenixArizonaUnitedStates": "Phoenix, Arizona, United States.",
+      "postalCode": "Postal Code",
+      "tAXID": "TAX ID",
+      "edit": "Edit",
+      "editAddress": "Edit Address",
+      "updateYourDetailsToKeepYourProfileUpTo": "Update your details to keep your profile up-to-date.",
+      "close": "Close",
+      "saveChanges": "Save Changes"
     },
-    "salesByChannel": {
-      "title": "Sales by Channel",
-      "subtitle": "Channel performance overview",
-      "increasedVsLastWeek": "Increased vs last week",
-      "channels": {
-        "website": "Website",
-        "email": "Email",
-        "socialMedia": "Social Media"
-      },
-      "table": {
-        "channels": "Channels",
-        "metric": "Metric",
-        "total": "Total"
-      }
-    },
-    "salesByCountry": {
-      "title": "Sales by Country",
-      "subtitle": "Country-wise sales overview",
-      "countries": {
-        "usa": "USA",
-        "france": "France",
-        "japan": "Japan",
-        "germany": "Germany"
-      }
-    },
-    "topProducts": {
-      "title": "Top Products",
-      "table": {
-        "productName": "Product Name",
-        "category": "Category",
-        "sales": "Sales",
-        "earnings": "Earnings",
-        "stocks": "Stocks",
-        "status": "Status"
-      },
-      "products": {
-        "classicDenimJacket": "Classic Denim Jacket",
-        "slimFitChinos": "Slim Fit Chinos",
-        "organicCottonTShirt": "Organic Cotton T-Shirt",
-        "leatherAnkleBoots": "Leather Ankle Boots"
-      },
-      "variants": {
-        "threeSizes": "3 Sizes",
-        "fourColors": "4 Colors",
-        "fiveColors": "5 Colors",
-        "sixSizes": "6 Sizes"
-      },
-      "categories": {
-        "jacket": "Jacket",
-        "pants": "Pants",
-        "tShirt": "T-Shirt",
-        "footwear": "Footwear"
-      },
-      "statuses": {
-        "inStock": "In Stock",
-        "lowStock": "Low Stock",
-        "outOfStock": "Out of Stock"
-      }
-    }
-  },
-  "finance": {
-    "totalBalanceOverview": {
-      "title": "Total Balance",
-      "overview": "Overview of your current funds",
-      "thanLastMonth": "than last month",
-      "primaryAccount": "Primary Account:",
-      "seeDetails": "See Details",
-      "transfer": "Transfer",
-      "received": "Received",
-      "balance": "Balance"
-    },
-    "stats": {
-      "totalBalance": "Total Balance",
-      "monthlyIncome": "Monthly Income",
-      "totalSpent": "Total Spent",
-      "savingRate": "Saving Rate",
-      "thanLastMonth": "than last month",
-      "goalProgress": "Goal: 30% - 3.9% to go"
-    },
-    "cashflow": {
-      "title": "Cashflow Overview",
-      "totalRevenue": "Total Revenue",
-      "income": "Income",
-      "expense": "Expense"
-    },
-    "spending": {
-      "title": "Spending",
-      "yearly": "Yearly",
-      "monthly": "Monthly",
-      "total": "Total",
-      "categories": {
-        "activity": "Activity",
-        "onlinePurchases": "Online Purchases",
-        "groceries": "Groceries",
-        "digitalGoods": "Digital Goods",
-        "stationery": "Stationery",
-        "others": "Others"
-      }
-    },
-    "quickSend": {
-      "title": "Quick send",
-      "sendFrom": "Send From",
-      "currency": "Currency",
-      "amount": "Amount",
-      "sendMoney": "Send Money"
-    },
-    "myCards": {
-      "title": "My Cards",
-      "addCard": "Add Card",
-      "virtualCard": "Virtual Card",
-      "recentTransactions": "Recent Transactions",
-      "seeAllTransactions": "See All Transactions",
-      "transactions": {
-        "paymentReceived": "Payment Received",
-        "cashbackDesc": "Cashback from Stellar Rewards",
-        "netflixSubscription": "Netflix Subscription",
-        "netflixDesc": "September subscription charge",
-        "moneyReceived": "Money received",
-        "paypalDesc": "Payment received via PayPal",
-        "googleAds": "Google Ads",
-        "googleAdsDesc": "Payment received form google ads"
-      }
-    },
-    "transactionsTable": {
-      "title": "Recent Transactions",
-      "searchPlaceholder": "Search...",
-      "filter": "Filter",
-      "table": {
-        "orderId": "Order ID",
-        "activity": "Activity",
-        "price": "Price",
-        "date": "Date",
-        "status": "Status"
-      },
-      "activities": {
-        "hotelBooking": "Hotel Booking",
-        "onlineShopping": "Online Shopping",
-        "gamePurchase": "Game Purchase",
-        "utilityBillPayment": "Utility Bill Payment",
-        "onlineCourseEnrollment": "Online Course Enrollment"
-      },
-      "statuses": {
-        "completed": "Completed",
-        "inProgress": "In Progress"
-      }
+    "userMetaCard": {
+      "user": "user",
+      "teamManager": "Team Manager",
+      "arizonaUnitedStates": "Arizona, United States.",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "emailAddress": "Email address",
+      "phone": "Phone",
+      "bio": "Bio",
+      "socialLinks": "Social Links",
+      "edit": "Edit",
+      "editPersonalInformation": "Edit Personal Information",
+      "updateYourDetailsToKeepYourProfileUpTo": "Update your details to keep your profile up-to-date.",
+      "changeProfilePicture": "Change Profile Picture",
+      "profilePicture": "Profile Picture",
+      "uploadASquareImage200200PxInJPEG": "Upload a square image (200×200 px) in JPEG or PNG format.",
+      "personalInformation": "Personal Information",
+      "emailAddress2": "Email Address",
+      "close": "Close",
+      "saveChanges": "Save Changes"
     }
   }
 }
