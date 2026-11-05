@@ -32,6 +32,8 @@ export async function loginAdmin(
       };
     }
 
+    console.log(token);
+
     // IMPORTANT: the session setter must cap cookie expiration to
     // response.data.expires_at (Laravel token expiration).
     await setAdminToken(token, isChecked);

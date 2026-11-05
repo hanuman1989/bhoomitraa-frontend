@@ -3,7 +3,7 @@ import { UsFlagIcon, InFlagIcon } from "@/icons";
 import type { Locale } from "./routing";
 
 export interface Language {
-  id: Locale;
+  id: string;
   name: string;
   shortName: string;
   dir: "ltr" | "rtl";
@@ -26,32 +26,9 @@ export const languages: Language[] = [
     dir: "ltr",
     FlagIcon: InFlagIcon,
   },
-  // Add languages according to requirement
-  // {
-  //   id: "ar",
-  //   name: "Arabic (Saudi)",
-  //   shortName: "Arabic",
-  //   dir: "rtl",
-  //   FlagIcon: SaFlagIcon,
-  //   badge: "RTL",
-  // },
-  // {
-  //   id: "es",
-  //   name: "Español",
-  //   shortName: "Español",
-  //   dir: "ltr",
-  //   FlagIcon: EsFlagIcon,
-  // },
-  // {
-  //   id: "de",
-  //   name: "Deutsch",
-  //   shortName: "Deutsch",
-  //   dir: "ltr",
-  //   FlagIcon: InFlagIcon,
-  // },
 ];
 
-export function getLanguage(locale: Locale): Language {
+export function getLanguage(locale: string): Language {
   return languages.find((l) => l.id === locale) || languages[0];
 }
 

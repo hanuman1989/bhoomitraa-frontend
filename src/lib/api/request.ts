@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ApiError } from "./ApiError";
 import type { ApiAudience, ApiRequestOptions } from "@/types/api";
 
@@ -15,10 +15,24 @@ const TOKEN_COOKIES: Record<Exclude<ApiAudience, "public">, string> = {
  * T is the entire JSON response shape, e.g. ApiResponse<User>.
  * Never import this module into a Client Component.
  */
+export function apiRequest(
+  path: string,
+  options: ApiRequestOptions & { responseType: "binary" },
+): Promise<Blob>;
+export function apiRequest<T = unknown>(
+  path: string,
+  options?: ApiRequestOptions & { responseType?: "json" },
+): Promise<T>;
 export async function apiRequest<T = unknown>(
   path: string,
-  { method = "GET", data, params, audience = "admin" }: ApiRequestOptions = {},
-): Promise<T> {
+  {
+    method = "GET",
+    data,
+    params,
+    audience = "admin",
+    responseType = "json",
+  }: ApiRequestOptions = {},
+): Promise<T | Blob> {
   // Only allow relative backend API paths, never arbitrary URLs.
   if (!/^\/(?!\/)[a-zA-Z0-9/_-]+$/.test(path) || path.includes("..")) {
     throw new Error("Invalid API path");
@@ -42,7 +56,11 @@ export async function apiRequest<T = unknown>(
     }
   }
 
-  const headers = new Headers({ Accept: "application/json" });
+  const locale = await getLocale();
+  const headers = new Headers({
+    Accept: "application/json",
+    "X-Locale": locale,
+  });
 
   if (audience !== "public") {
     const cookieStore = await cookies();
@@ -73,6 +91,10 @@ export async function apiRequest<T = unknown>(
   } catch (error) {
     throw new ApiError("Backend service unavailable", 503);
   }
+
+  // Only successful binary responses bypass JSON parsing. Errors retain the
+  // existing status, validation, and safe-message handling below.
+  if (response.ok && responseType === "binary") return response.blob();
 
   let result: unknown = null;
   if (response.status !== 204) {

@@ -218,6 +218,23 @@ Inspect `src/lib/auth/{dal.ts,session.js,admin.js}`, `src/hooks/useAdminAuth.ts`
 - Do not rename/remove existing keys without approval. For an authorized cleanup, audit dynamic references as well as literal calls before deletion; preserve used values and matching language structures.
 - Current English/Hindi layouts are LTR. Preserve `isRtl(locale)` and direction-aware behavior for future RTL languages; do not claim Arabic is currently enabled.
 
+### Dynamic translation fields in forms
+
+For editable record translations, use the shared language catalog:
+
+```ts
+import { getLanguage, languages } from "@/i18n/languages";
+```
+
+- Generate translation groups from `languages`; use each language's `id` as the translation key and `getLanguage(id)` for its name and direction. Do not hardcode English/Hindi groups, duplicate locale arrays, or branch on individual locale IDs to generate fields. Keep each group's name, description, and other supported inputs explicitly declared inside the language loop.
+- Build create defaults, edit defaults, submission payloads, and successful-create resets from the same catalog. Load existing values by language ID, initialize missing fields appropriately, and preserve the feature's existing optional/null handling and partial-save retry state.
+- Use locale-keyed types such as `Record<string, { name: string; description: string }>` with the feature's actual fields and nullability. Do not restrict record translation keys to `"en" | "hi"` or the interface's routing `Locale` type.
+- Register fields with dynamic paths such as `translations.${id}.name` and map backend validation errors to the matching configured-language fields. Use stable language-specific input/error IDs, accessible labels, `lang={id}`, and the language's `dir`. Preserve the verified field limits and required-name rules for that feature.
+- Where mutation actions allowlist translation data, derive their locale keys from `languages` and retain only writable fields. Do not silently drop a configured language through a fixed payload shape, or delete omitted stored translations. Preserve the verified backend update semantics.
+- Keep placeholders, validation, help text, and accessibility text in matching English/Hindi message keys. Use interpolation such as `{language}` for catalog-provided names; avoid wording that assumes exactly two translation languages. Record translation data and language metadata are separate from interface message translations.
+- Adding a language to the catalog must not require editing each form. Verify that Laravel's supported-language configuration and endpoint validation also accept it before enabling saves for that language. Adding a record translation language does not automatically enable an interface locale; preserve `routing.ts` and the existing locale selector behavior unless that change is explicitly requested.
+- When changing this flow, cover an additional configured language in regression checks, including edit defaults, submission, field errors, direction, and create reset. Preserve existing status/publication, hierarchy, filtering, pagination, and retry behavior. Use the Crop, Crop Category, and Region forms as current implementation references.
+
 ## TailAdmin theme and styling
 
 Inspect a similar page/component before building UI. Follow TailAdmin v2.3 typography, spacing, colors, borders, responsive design, and consistent loading/disabled/hover/active/focus/error states. Support light/dark modes and reuse existing components; do not introduce another UI framework.
@@ -239,7 +256,7 @@ Inspect a similar page/component before building UI. Follow TailAdmin v2.3 typog
 Use `AdminUserForm.jsx`, `UpdatePassword.tsx`, and `AdminUserDeleteConfirm.tsx` as UI/CRUD references while following the new-code TypeScript rule. Reuse admin form controls and existing Headless UI `Dialog`, `DialogBackdrop`, `DialogPanel`, `DialogTitle`, and `Description` patterns.
 
 - All new admin forms use typed `react-hook-form`/`useForm`. Keep user-facing field validation in that form component; do not create separate validation files or add another schema/form validation library without approval.
-- **Declare every form field individually. Do not generate inputs with `.map()` or field-configuration arrays.** Mapping records or select options is separate from generating fields.
+- **Declare ordinary form fields individually; do not generate them from field-configuration arrays.** Translation groups must be generated from `languages` as described above: mapping languages is required, while each input within the group remains explicitly declared. Mapping records or select options is also allowed.
 - Backend validation/authorization remains authoritative. Do not duplicate Laravel validation/normalization unnecessarily in actions; client validation is not an authentication or authorization boundary.
 - Map backend `ActionResult.errors` to matching fields with `setError`, show useful form-level failures, and allow correction/retry. Use translated validation messages and existing TailAdmin error styles.
 - Provide accessible labels, error associations, dialog descriptions, and focus behavior. Use loading/submission state to disable relevant controls, prevent duplicate requests, and guard dismissal during mutations.
@@ -248,6 +265,22 @@ Use `AdminUserForm.jsx`, `UpdatePassword.tsx`, and `AdminUserDeleteConfirm.tsx` 
 - Successful add/update/password-change/delete operations show one success toast using the action message with a translated fallback, then close the dialog. Cancel/dismiss actions must not show success/failure toasts or pass click events as action results.
 - Failures need appropriate translated error toasts and inline field/form feedback without duplicate notifications. Keep recoverable failures open for retry. Do not use browser `alert()` for normal feedback.
 - **Every destructive deletion requires confirmation.** Show the record name/title, consequences, Cancel/Delete actions, and an in-progress state. Never execute deletion before confirmation or use `window.confirm()`; close on success and follow existing toast/error patterns.
+
+### Single-image form uploads
+
+**Every admin form field that uploads one image must use the shared component**, following `src/app/[locale]/(admin)/admin/(pages)/crops/_components/CropForm.tsx`:
+
+```ts
+import ImageUpload from "@/components/admin/common/ImageUpload";
+```
+
+- Reuse this component for single-image fields such as a main image, thumbnail, avatar, or banner. Do not create feature-specific copies, duplicate its file-input/drop-area/preview UI, or introduce another upload library. Multiple-file attachments have a separate workflow; display-only images can use `ImagePreview` directly.
+- Keep field validation and upload/removal state in the typed React Hook Form parent. Provide a unique `id`, translated `label`, backend-provided `existingImageUrl`, controlled `selectedFile`, `inputProps={register("image", { validate: validateImage })}`, `error={errors.image?.message}`, and submission-driven `disabled`. Use the feature's actual field name when it differs from `image`.
+- The parent's `onChange(files)` handler must guard submissions, update the registered file array with `setValue(..., { shouldValidate: true, shouldDirty: true })`, and return `false` for invalid selections or `true` after accepting the selection. Match the verified backend file-count, type, extension, nonempty-file, and size requirements. Pass the corresponding `maxSizeMB` for accurate guidance; that prop displays the limit and does not replace validation. The shared component currently accepts JPEG, PNG, and WebP; do not copy CropForm's 5 MB limit into unrelated features without checking their backend rules.
+- Selecting or discarding a replacement is a local draft change. Discarding the selected file must restore the existing image preview when one exists. Keep backend requests, authentication, feature actions, and record-specific confirmation outside `ImageUpload`.
+- Existing-image removal requires confirmation and must be staged using `removalPending`, `onRemoveExisting`, and `onUndoRemove`. Confirmation marks the image for removal and allows Undo; it must not immediately modify the database or delete a stored file. Apply removal only when the user submits the form successfully. Cancellation and failed saves must leave the stored image intact and preserve recoverable form state.
+- Save image changes with the record through the verified create/update endpoint when supported. Use the existing Server Action -> feature client -> `apiRequest()` flow, native `FormData` for selected files, and the backend's required multipart update method. Omit an unchanged image; send an explicit removal value only as defined by the verified backend contract. Laravel owns database updates and stored-file cleanup. Do not invent a removal flag, endpoint, storage path, or a separate upload request.
+- After a successful save, clear the selected file and removal draft and reset the uploader's local/native-input state, using CropForm's reset-key pattern where needed for preserved pages. Keep selections and pending removal available after recoverable failures. Preserve the shared preview, cloud icon, configurable size guidance, accessibility, light/dark styling, and English/Hindi `ui.imageUpload` messages.
 
 ## Tables, filters, pagination, and loading
 
@@ -278,6 +311,6 @@ Do not infer approval for unrelated refactoring from a feature request. Never in
 1. **Inspect:** read relevant files, similar modules, packages/configuration, shared types, theme, and translation conventions. Read the applicable installed Next.js guide before coding. Identify route ownership and reusable UI.
 2. **Verify backend:** apply the blocking rule before backend-dependent implementation; report missing access/contracts instead of guessing.
 3. **Check architecture:** choose existing routes, `_components`, actions, feature clients, utilities, and types. Resolve required approvals before structural/unrelated changes.
-4. **Implement narrowly:** use TypeScript, TailAdmin light/dark UI, explicit React Hook Form fields, English/Hindi messages, existing feedback/confirmation, and the prescribed action/client/Fetch flow. Preserve API contracts and user changes.
+4. **Implement narrowly:** use TypeScript, TailAdmin light/dark UI, explicit React Hook Form fields with catalog-driven translation groups, English/Hindi messages, existing feedback/confirmation, and the prescribed action/client/Fetch flow. Preserve API contracts and user changes.
 5. **Validate proportionately:** run applicable TypeScript (`npx tsc --noEmit`), ESLint (`npm run lint` or targeted ESLint), formatting, and existing relevant tests. Check translations/interpolation, form validation, loading/error/empty states, filters/pagination, light/dark/responsive behavior, and backend contracts. Documentation-only changes need Markdown formatting and diff/scope checks; do not modify application code to fix unrelated checks.
 6. **Review and report:** check the diff for unintended files, duplicate APIs/helpers, and contract changes. Summarize created/modified files, endpoints/actions used or changed, translation updates, checks actually executed, and remaining issues where relevant. Distinguish existing failures from regressions. Never claim a check passed or a backend endpoint was verified without executing/inspecting it.

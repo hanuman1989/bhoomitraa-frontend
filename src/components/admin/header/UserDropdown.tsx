@@ -1,9 +1,9 @@
 "use client";
 
 import { useClickOutside } from "@/hooks/useClickOutside";
-import { getLanguage, languages } from "@/i18n/languages";
+import { getLanguage } from "@/i18n/languages";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 import { ChevronDownIcon } from "@/icons";
 import { cn } from "@/utils";
 import { useLocale, useTranslations } from "next-intl";
@@ -178,7 +178,8 @@ export default function UserDropdown() {
             {isSubDropdownOpen && (
               <div className="shadow-theme-lg dark:bg-gray-dark absolute top-11 w-62.5 rounded-2xl border border-gray-200 bg-white p-2 md:top-0 ltr:-left-2 ltr:md:right-[calc(100%+14px)] ltr:md:left-auto rtl:-right-2 rtl:md:right-auto rtl:md:left-[calc(100%+14px)] dark:border-gray-800">
                 <ul className="flex flex-col gap-1">
-                  {languages.map((language) => {
+                  {routing.locales.map((id) => {
+                    const language = getLanguage(id);
                     const isSelected = locale === language.id;
                     const FlagIcon = language.FlagIcon;
 
@@ -188,7 +189,7 @@ export default function UserDropdown() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleSelectLanguage(language.id);
+                            handleSelectLanguage(id);
                           }}
                           className={cn(
                             "text-theme-sm flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-start font-medium transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white",

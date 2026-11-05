@@ -66,14 +66,17 @@ const navItems: NavItem[] = [
   {
     icon: <KnowledgeSourcesIcon />,
     key: "knowledgeSources",
-    subItems: [{ key: "knowledgeSources", path: "/admin/knowledge-sources" }],
+    path: "/admin/knowledge-sources",
   },
   {
     icon: <LeafIcon />,
     key: "cropManager",
     subItems: [
-      { key: "cropCategory", path: "/admin/crop-category" },
-      { key: "crops", path: "/crops" },
+      { key: "cropCategory", path: "/admin/crop-categories" },
+      { key: "crops", path: "/admin/crops" },
+      { key: "cropVarieties", path: "/admin/crop-varieties" },
+      { key: "cropStages", path: "/admin/crop-stages" },
+      { key: "stageTimelines", path: "/admin/crop-stage-timelines" },
     ],
   },
   {
@@ -85,6 +88,11 @@ const navItems: NavItem[] = [
     icon: <SeedIcon />,
     key: "seedsManager",
     subItems: [{ key: "seedsManager", path: "/admin/seeds" }],
+  },
+  {
+    icon: <CalenderIcon />,
+    key: "seasons",
+    subItems: [{ key: "seasonManager", path: "/admin/seasons" }],
   },
 ];
 
@@ -256,7 +264,15 @@ const AppSidebar: React.FC = () => {
 
   // const isActive = (path: string) => path === pathname;
 
-  const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  const isActive = useCallback(
+    (path: string) =>
+      path === pathname ||
+      ((path === "/admin/knowledge-sources" ||
+        path === "/admin/crop-categories" ||
+        path === "/admin/crops") &&
+        pathname.startsWith(`${path}/`)),
+    [pathname],
+  );
 
   useEffect(() => {
     // Check if the current path matches any submenu item

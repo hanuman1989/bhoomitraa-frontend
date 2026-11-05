@@ -1,0 +1,35 @@
+import { Suspense } from "react";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import KnowledgeSourcesHeader from "../_components/KnowledgeSourcesHeader";
+import SuspenseFallback from "@/components/admin/common/SuspenseFallback";
+import KnowledgeSourceEditor from "../_components/KnowledgeSourceEditor";
+
+export const instant = false;
+
+export default async function KnowledgeSourceDetailsPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("knowledgeSources");
+  return (
+    <>
+      <KnowledgeSourcesHeader
+        title={t("detailsTitle")}
+        description={t("formDescription")}
+        breadcrumbs={[
+          { label: t("home"), href: "/admin/dashboard" },
+          { label: t("title"), href: "/admin/knowledge-sources" },
+          { label: t("detailsTitle") },
+        ]}
+      />
+      <Suspense
+        fallback={<SuspenseFallback variant="page" title={t("loading")} />}
+      >
+        <KnowledgeSourceEditor id={id} readOnly />
+      </Suspense>
+    </>
+  );
+}
