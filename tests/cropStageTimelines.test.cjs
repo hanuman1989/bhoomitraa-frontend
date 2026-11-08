@@ -84,6 +84,7 @@ function harness(responses = [], admin = true) {
     "@/lib/api/request": { apiRequest: request },
     "@/lib/api/ApiError": { ApiError },
     "@/lib/apis/admin/crops": { cropsAPI: client("crops") },
+    "@/lib/apis/admin/seeds": { seedsAPI: client("seeds") },
     "@/lib/apis/admin/cropStages": { cropStagesAPI: client("crop-stages") },
     "@/lib/apis/admin/cropVarieties": {
       cropVarietiesAPI: client("crop-varieties"),
@@ -93,6 +94,7 @@ function harness(responses = [], admin = true) {
       knowledgeSourcesAPI: client("knowledge-sources"),
     },
     "@/lib/apis/admin/regions": { regionsAPI: client("regions") },
+    "@/lib/apis/admin/activityCategories": { activityCategoriesAPI: client("activity-categories") },
   });
   const actions = load("src/actions/admin/cropStageTimelines.ts", {
     "next/cache": { revalidatePath: (route) => invalidations.push(route) },
@@ -289,7 +291,7 @@ const states = [
 ];
 function treeHarness(selectedIds = [], disabled = false) {
   const state = hooks();
-  const Tree = load(`${root}_components/DistrictCheckboxTree.tsx`, {
+  const Tree = load("src/components/admin/common/DistrictCheckboxTree.tsx", {
     ...ui,
     react: state.react,
   }).default;
@@ -628,6 +630,11 @@ test("changing crop clears only dependent stage/variety fields; timing validates
 
 test("All Regions hides the tree, Specific requires districts, and saved inactive selections remain valid drafts", () => {
   let scope = "all";
+  const shared = load("src/components/admin/common/RegionScopeSelector.tsx", {
+    ...ui,
+    "@/components/admin/common/ComponentCard": { __esModule: true, default: "card" },
+    "./DistrictCheckboxTree": { __esModule: true, default: "tree" },
+  });
   const Regions = load(`${root}_components/StageTimelineRegions.tsx`, {
     ...ui,
     "react-hook-form": { Controller: "controller", useWatch: () => scope },
@@ -636,6 +643,7 @@ test("All Regions hides the tree, Specific requires districts, and saved inactiv
       default: "card",
     },
     "./DistrictCheckboxTree": { __esModule: true, default: "tree" },
+    "@/components/admin/common/RegionScopeSelector": shared,
   }).default;
   const form = {
     control: {},
@@ -644,13 +652,17 @@ test("All Regions hides the tree, Specific requires districts, and saved inactiv
     formState: { errors: {} },
   };
   const render = () => Regions({ form, states, savedIds: [104], busy: false });
+  const renderSelector = (controller) => {
+    const element = controller.props.render({ field: { value: [104] } });
+    return shared.default(element.props);
+  };
   let controller = findAll(
     render(),
     (element) => element.type === "controller",
   )[0];
   assert.equal(
     findAll(
-      controller.props.render({ field: { value: [104] } }),
+      renderSelector(controller),
       (element) => element.type === "tree",
     ).length,
     0,
@@ -667,7 +679,7 @@ test("All Regions hides the tree, Specific requires districts, and saved inactiv
   assert.equal(controller.props.rules.validate([999]), "validation.districts");
   assert.equal(
     findAll(
-      controller.props.render({ field: { value: [104] } }),
+      renderSelector(controller),
       (element) => element.type === "tree",
     ).length,
     1,

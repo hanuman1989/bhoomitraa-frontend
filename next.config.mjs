@@ -9,7 +9,7 @@ const nextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
-    serverActions: { bodySizeLimit: "11mb" },
+    serverActions: { bodySizeLimit: "42mb" },
   },
   turbopack: {
     rules: {

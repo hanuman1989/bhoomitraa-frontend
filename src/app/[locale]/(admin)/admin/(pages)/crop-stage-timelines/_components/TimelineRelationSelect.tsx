@@ -36,6 +36,10 @@ export default function TimelineRelationSelect({
   required = false,
   error,
   emptyLabel,
+  placeholder,
+  clearable = false,
+  onSelectionChange,
+  seedVarietyId = null,
 }: {
   kind: TimelineRelationKind;
   id: string;
@@ -52,6 +56,10 @@ export default function TimelineRelationSelect({
   required?: boolean;
   error?: string;
   emptyLabel?: string;
+  placeholder?: string;
+  clearable?: boolean;
+  onSelectionChange?: (option: TimelineOption | null) => void;
+  seedVarietyId?: number | null;
 }) {
   const t = useTranslations("stageTimelines");
   const [search, setSearch] = useState({ keyword: "", page: 1, attempt: 0 });
@@ -64,7 +72,16 @@ export default function TimelineRelationSelect({
   const [selected, setSelected] = useState(initialSelection);
   const current = result.key === key ? result : undefined;
   const loading = !current;
-  const options = current?.page?.options ?? [];
+  // The Seeds API can filter by crop, but has no variety-or-generic filter.
+  // Keep its paginated results and show the compatible choices on each page.
+  const options =
+    kind === "seed" && seedVarietyId !== null
+      ? (current?.page?.options ?? []).filter(
+          (option) =>
+            option.seed?.crop_variety_id === null ||
+            option.seed?.crop_variety_id === seedVarietyId,
+        )
+      : (current?.page?.options ?? []);
   const selection =
     options.find((option) => String(option.id) === value) ??
     (selected && String(selected.id) === value ? selected : null);
@@ -122,9 +139,10 @@ export default function TimelineRelationSelect({
         disabled={disabled}
         immediate
         onChange={(next: string | null) => {
-          setSelected(
-            options.find((option) => String(option.id) === next) ?? null,
-          );
+          const option =
+            options.find((option) => String(option.id) === next) ?? null;
+          setSelected(option);
+          onSelectionChange?.(option);
           onChange(next ?? "");
         }}
         onClose={() => setSearch({ keyword: "", page: 1, attempt: 0 })}
@@ -141,7 +159,7 @@ export default function TimelineRelationSelect({
             onChange={(event) =>
               setSearch({ keyword: event.target.value, page: 1, attempt: 0 })
             }
-            placeholder={t("relations.search")}
+            placeholder={placeholder ?? t("relations.search")}
             maxLength={150}
             autoComplete="off"
             aria-required={required}
@@ -161,7 +179,7 @@ export default function TimelineRelationSelect({
           aria-busy={loading}
           className="shadow-theme-lg z-99999 max-h-72 w-(--input-width) overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
         >
-          {!required && (
+          {(!required || clearable) && (
             <ComboboxOption
               value=""
               className="data-focus:bg-brand-50 rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-200 dark:data-focus:bg-gray-800"

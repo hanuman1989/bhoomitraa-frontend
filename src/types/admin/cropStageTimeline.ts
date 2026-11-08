@@ -56,13 +56,29 @@ export interface StageTimelineFilters {
   status: "" | "1" | "0";
 }
 export type TimelineRelationKind =
-  "crop" | "stage" | "variety" | "season" | "source";
+  | "crop"
+  | "stage"
+  | "variety"
+  | "season"
+  | "source"
+  | "category"
+  | "district"
+  | "seed";
 export interface TimelineOption {
   id: number;
   label: string;
   crop_id?: number;
   is_active: boolean;
   verified?: boolean;
+  seed?: import("@/types/admin/seedLot").LotSeedProduct &
+    Partial<
+      Pick<
+        import("@/types/admin/seed").SeedListItem,
+        | "default_unit_code"
+        | "reference_pack_quantity"
+        | "reference_pack_unit_code"
+      >
+    >;
 }
 export interface TimelineOptionPage {
   options: TimelineOption[];

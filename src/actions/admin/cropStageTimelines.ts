@@ -115,7 +115,16 @@ export async function searchTimelineOptions(
   try {
     await requireAdmin();
     if (
-      !["crop", "stage", "variety", "season", "source"].includes(kind) ||
+      ![
+        "crop",
+        "stage",
+        "variety",
+        "season",
+        "source",
+        "category",
+        "district",
+        "seed",
+      ].includes(kind) ||
       (cropId !== null && !validId(cropId)) ||
       typeof eligible !== "boolean" ||
       typeof keyword !== "string" ||

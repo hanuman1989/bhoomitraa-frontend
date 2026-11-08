@@ -24,6 +24,8 @@ import {
   LeafIcon,
   AgricultureIcon,
   SeedIcon,
+  ChartNoAxesColumnIncreasingIcon,
+  FlaskConicalIcon,
 } from "../icons/index";
 import SidebarWidget from "./SidebarWidget";
 
@@ -39,6 +41,7 @@ type NavItem = {
     pro?: boolean;
     new?: boolean;
     target?: string;
+    disabled?: boolean;
   }[];
 };
 
@@ -82,17 +85,44 @@ const navItems: NavItem[] = [
   {
     icon: <AgricultureIcon />,
     key: "farmManager",
-    subItems: [{ key: "farm", path: "/admin/farms" }],
+    subItems: [
+      { key: "farm", path: "/admin/farms" },
+      { key: "activityCategories", path: "/admin/activity-categories" },
+      { key: "cropActivityTemplates", path: "/admin/crop-activity-templates" },
+      { key: "farmerSmartTimeline", path: "/admin/farmer-smart-timeline" },
+    ],
   },
   {
     icon: <SeedIcon />,
     key: "seedsManager",
-    subItems: [{ key: "seedsManager", path: "/admin/seeds" }],
+    subItems: [
+      { key: "seeds", path: "/admin/seeds" },
+      { key: "seedLots", path: "/admin/seed-lots" },
+      { key: "seedPrices", path: "/admin/seed-prices" },
+      { key: "cropSeedRates", path: "/admin/crop-seed-rates" },
+    ],
   },
   {
     icon: <CalenderIcon />,
     key: "seasons",
     subItems: [{ key: "seasonManager", path: "/admin/seasons" }],
+  },
+  {
+    icon: <FlaskConicalIcon />,
+    key: "fertilizersManager",
+    subItems: [{ key: "fertilizers", path: "/admin/fertilizers" }],
+  },
+  {
+    icon: <ChartNoAxesColumnIncreasingIcon />,
+    key: "yieldAdvisoryManager",
+    subItems: [
+      { key: "cropYieldBenchmarks", path: "/admin/crop-yield-benchmarks" },
+      {
+        key: "fertilizerRecommendations",
+        path: "/admin/fertilizer-recommendations",
+        disabled: true,
+      },
+    ],
   },
 ];
 
@@ -208,41 +238,51 @@ const AppSidebar: React.FC = () => {
               <ul className="ms-9 mt-2 space-y-1">
                 {nav.subItems.map((subItem) => (
                   <li key={subItem.key}>
-                    <Link
-                      href={subItem.path}
-                      target={subItem.target}
-                      className={`menu-dropdown-item ${
-                        isActive(subItem.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
-                    >
-                      {t(`items.${subItem.key}`)}
-                      <span className="ms-auto flex items-center gap-1">
-                        {subItem.new && (
-                          <span
-                            className={`ms-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-active"
-                                : "menu-dropdown-badge-inactive"
-                            } menu-dropdown-badge`}
-                          >
-                            {t("badges.new")}
-                          </span>
-                        )}
-                        {subItem.pro && (
-                          <span
-                            className={`ms-auto ${
-                              isActive(subItem.path)
-                                ? "menu-dropdown-badge-pro-active"
-                                : "menu-dropdown-badge-pro-inactive"
-                            } menu-dropdown-badge-pro`}
-                          >
-                            {t("badges.pro")}
-                          </span>
-                        )}
+                    {subItem.disabled ? (
+                      <span
+                        aria-disabled="true"
+                        title={t("badges.comingSoon")}
+                        className="menu-dropdown-item menu-dropdown-item-inactive cursor-default opacity-50"
+                      >
+                        {t(`items.${subItem.key}`)}
                       </span>
-                    </Link>
+                    ) : (
+                      <Link
+                        href={subItem.path}
+                        target={subItem.target}
+                        className={`menu-dropdown-item ${
+                          isActive(subItem.path)
+                            ? "menu-dropdown-item-active"
+                            : "menu-dropdown-item-inactive"
+                        }`}
+                      >
+                        {t(`items.${subItem.key}`)}
+                        <span className="ms-auto flex items-center gap-1">
+                          {subItem.new && (
+                            <span
+                              className={`ms-auto ${
+                                isActive(subItem.path)
+                                  ? "menu-dropdown-badge-active"
+                                  : "menu-dropdown-badge-inactive"
+                              } menu-dropdown-badge`}
+                            >
+                              {t("badges.new")}
+                            </span>
+                          )}
+                          {subItem.pro && (
+                            <span
+                              className={`ms-auto ${
+                                isActive(subItem.path)
+                                  ? "menu-dropdown-badge-pro-active"
+                                  : "menu-dropdown-badge-pro-inactive"
+                              } menu-dropdown-badge-pro`}
+                            >
+                              {t("badges.pro")}
+                            </span>
+                          )}
+                        </span>
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

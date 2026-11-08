@@ -8,6 +8,9 @@ import { cropVarietiesAPI } from "@/lib/apis/admin/cropVarieties";
 import { seasonsAPI } from "@/lib/apis/admin/seasons";
 import { knowledgeSourcesAPI } from "@/lib/apis/admin/knowledgeSources";
 import { regionsAPI } from "@/lib/apis/admin/regions";
+import { activityCategoriesAPI } from "@/lib/apis/admin/activityCategories";
+import { seedsAPI } from "@/lib/apis/admin/seeds";
+import type { SeedListItem } from "@/types/admin/seed";
 import type { ApiParams, ApiResponse } from "@/types/api";
 import type { Region } from "@/types/admin/region";
 import type {
@@ -23,6 +26,29 @@ import type {
 } from "@/types/admin/cropStageTimeline";
 
 const endpoint = "/admin/crop-stage-timelines";
+function seedOption(seed: SeedListItem): TimelineOption {
+  return {
+    id: seed.id,
+    label: seed.name ?? seed.slug,
+    is_active: seed.is_active,
+    seed: {
+      id: seed.id,
+      name: seed.name,
+      sku: seed.sku,
+      material_type: seed.material_type,
+      is_active: seed.is_active,
+      setup_status: seed.setup_status,
+      crop_id: seed.crop_id,
+      crop_name: seed.crop_name,
+      crop_variety_id: seed.crop_variety_id,
+      crop_variety_name: seed.crop_variety_name,
+      primary_image: seed.primary_image,
+      default_unit_code: seed.default_unit_code,
+      reference_pack_quantity: seed.reference_pack_quantity,
+      reference_pack_unit_code: seed.reference_pack_unit_code,
+    },
+  };
+}
 export const stageTimelinesAPI = {
   list: (params: ApiParams = {}) =>
     apiRequest<StageTimelinesResponse>(endpoint, { params }),
@@ -50,6 +76,31 @@ export async function getTimelineOption(
   id: number,
 ): Promise<TimelineOption> {
   switch (kind) {
+    case "seed": {
+      const r = await seedsAPI.show(id);
+      if (!r.status || !r.data?.id)
+        throw new ApiError("Invalid seed response", 502);
+      return seedOption(r.data);
+    }
+    case "district": {
+      const r = await regionsAPI.show(id);
+      if (!r.status || r.data.region_type !== "district")
+        throw new ApiError("Invalid district response", 502);
+      return {
+        id,
+        label: r.data.name ?? String(id),
+        is_active: r.data.is_active,
+      };
+    }
+    case "category": {
+      const r = await activityCategoriesAPI.show(id);
+      if (!r.status) throw new ApiError("Invalid category response", 502);
+      return {
+        id,
+        label: r.data.name ?? r.data.slug,
+        is_active: r.data.is_active,
+      };
+    }
     case "crop": {
       const r = await cropsAPI.show(id);
       if (!r.status) throw new ApiError("Invalid crop response", 502);
@@ -110,6 +161,53 @@ export async function getTimelineOptions(
 ): Promise<TimelineOptionPage> {
   const params = { keyword: keyword || undefined, page, per_page: 20 };
   switch (kind) {
+    case "seed": {
+      const r = await seedsAPI.list({
+        ...params,
+        ...(cropId && { crop_id: cropId }),
+        ...(eligible && {
+          is_active: 1,
+          setup_status: "completed",
+          verification_status: "verified",
+        }),
+      });
+      if (!r.status || !r.pagination)
+        throw new ApiError("Invalid seed response", 502);
+      return { options: r.data.map(seedOption), pagination: r.pagination };
+    }
+    case "district": {
+      const r = await regionsAPI.list({
+        ...params,
+        region_type: "district",
+        ...(eligible && { is_active: 1 }),
+      });
+      if (!r.status || !r.pagination)
+        throw new ApiError("Invalid districts response", 502);
+      return {
+        options: r.data.map((district) => ({
+          id: district.id,
+          label: district.name ?? String(district.id),
+          is_active: district.is_active,
+        })),
+        pagination: r.pagination,
+      };
+    }
+    case "category": {
+      const r = await activityCategoriesAPI.list({
+        ...params,
+        ...(eligible && { status: 1 }),
+      });
+      if (!r.status || !r.pagination)
+        throw new ApiError("Invalid category response", 502);
+      return {
+        options: r.data.map((category) => ({
+          id: category.id,
+          label: category.name ?? category.slug,
+          is_active: category.is_active,
+        })),
+        pagination: r.pagination,
+      };
+    }
     case "crop": {
       const r = await cropsAPI.list({
         ...params,

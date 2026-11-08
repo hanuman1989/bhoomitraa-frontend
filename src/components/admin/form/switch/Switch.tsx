@@ -5,6 +5,7 @@ import { useState } from "react";
 interface SwitchProps {
   label?: string;
   defaultChecked?: boolean;
+  checked?: boolean;
   disabled?: boolean;
   onChange?: (checked: boolean) => void;
   color?: "blue" | "gray"; // Added prop to toggle color theme
@@ -13,11 +14,13 @@ interface SwitchProps {
 const Switch: React.FC<SwitchProps> = ({
   label,
   defaultChecked = false,
+  checked,
   disabled = false,
   onChange,
   color = "blue", // Default to blue color
 }) => {
-  const [isChecked, setIsChecked] = useState(defaultChecked);
+  const [localChecked, setIsChecked] = useState(defaultChecked);
+  const isChecked = checked ?? localChecked;
 
   const handleToggle = () => {
     if (disabled) return;
@@ -52,9 +55,15 @@ const Switch: React.FC<SwitchProps> = ({
       className={`flex cursor-pointer items-center gap-3 text-sm font-medium select-none ${
         disabled ? "text-gray-400" : "text-gray-700 dark:text-gray-400"
       }`}
-      onClick={handleToggle} // Toggle when the label itself is clicked
     >
-      <div className="relative">
+      <input
+        type="checkbox"
+        className="peer sr-only"
+        checked={isChecked}
+        disabled={disabled}
+        onChange={handleToggle}
+      />
+      <div className="peer-focus-visible:outline-brand-500 relative rounded-full peer-focus-visible:outline-2">
         <div
           className={`block h-6 w-11 rounded-full transition duration-150 ease-linear ${
             disabled
@@ -63,7 +72,7 @@ const Switch: React.FC<SwitchProps> = ({
           }`}
         ></div>
         <div
-          className={`inset-s-0.5 absolute top-0.5 h-5 w-5 transform rounded-full shadow-theme-sm duration-150 ease-linear ${switchColors.knob}`}
+          className={`shadow-theme-sm absolute inset-s-0.5 top-0.5 h-5 w-5 transform rounded-full duration-150 ease-linear ${switchColors.knob}`}
         ></div>
       </div>
       {label}
