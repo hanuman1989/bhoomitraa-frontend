@@ -124,7 +124,7 @@ export default function Step2NutrientComposition({
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="grid items-start gap-3 border-b border-gray-100 pb-4 sm:grid-cols-7 dark:border-gray-800"
+                  className="grid items-start gap-3 border-b border-gray-100 pb-4 sm:grid-cols-8 dark:border-gray-800"
                 >
                   <div className="min-w-0 sm:col-span-3">
                     <FilterSelect
@@ -253,10 +253,10 @@ export default function Step2NutrientComposition({
                     aria-label={t("composition.removeRow", {
                       number: index + 1,
                     })}
-                    className="border-error-200 text-error-600 dark:border-error-800 dark:text-error-400 flex items-center justify-center gap-2 rounded-lg border p-2 text-sm sm:col-span-7 sm:justify-self-end"
+                    className="border-error-200 text-error-600 dark:border-error-800 dark:text-error-400 flex items-center justify-center gap-2 rounded-lg border p-2 text-sm sm:mt-7 sm:justify-self-end"
                   >
                     <TrashBinIcon aria-hidden="true" className="size-4" />
-                    {t("composition.remove")}
+                    <span className="sr-only">{t("composition.remove")}</span>
                   </button>
                 </div>
               ))}
@@ -357,7 +357,11 @@ export default function Step2NutrientComposition({
       {removing && (
         <SeedConfirmDialog
           title={t("composition.removeTitle")}
-          description={t("composition.removeConfirm")}
+          description={t("composition.removeConfirm", {
+            name:
+              rows[fields.findIndex((field) => field.id === removing)]
+                ?.nutrient_code || t("composition.nutrient"),
+          })}
           confirmLabel={t("composition.remove")}
           busy={busy}
           destructive

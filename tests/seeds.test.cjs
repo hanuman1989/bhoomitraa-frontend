@@ -840,6 +840,10 @@ function wizardHarness(record, step, responses, throwNavigation = false) {
         finalizeSeed: action("finalize"),
       },
       "./Step1BasicDetails": { __esModule: true, default: "basic" },
+      "@/components/admin/common/ProductWizardSteps": {
+        __esModule: true,
+        default: "stepper",
+      },
       "./Step2Translations": { __esModule: true, default: "translations" },
       "./Step3MediaSource": { __esModule: true, default: "media" },
       "./Step4ReviewSave": { __esModule: true, default: "review" },

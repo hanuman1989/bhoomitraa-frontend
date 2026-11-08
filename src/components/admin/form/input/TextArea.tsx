@@ -1,7 +1,11 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 
-interface TextareaProps {
+interface TextareaProps extends Omit<
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  "onChange" | "value"
+> {
+  ref?: React.Ref<HTMLTextAreaElement>;
   placeholder?: string; // Placeholder text
   rows?: number; // Number of rows
   value?: string; // Current value
@@ -21,6 +25,7 @@ const TextArea: React.FC<TextareaProps> = ({
   disabled = false, // Disabled state
   error = false, // Error state
   hint = "", // Default hint text
+  ...props
 }) => {
   const tUi = useTranslations("forms.textArea");
   if (placeholder === undefined) placeholder = tUi("enterYourMessage");
@@ -44,6 +49,7 @@ const TextArea: React.FC<TextareaProps> = ({
   return (
     <div className="relative">
       <textarea
+        {...props}
         placeholder={placeholder}
         rows={rows}
         value={value}

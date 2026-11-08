@@ -80,6 +80,8 @@ const navItems: NavItem[] = [
       { key: "cropVarieties", path: "/admin/crop-varieties" },
       { key: "cropStages", path: "/admin/crop-stages" },
       { key: "stageTimelines", path: "/admin/crop-stage-timelines" },
+      { key: "activityCategories", path: "/admin/activity-categories" },
+      { key: "cropActivityTemplates", path: "/admin/crop-activity-templates" },
     ],
   },
   {
@@ -87,8 +89,7 @@ const navItems: NavItem[] = [
     key: "farmManager",
     subItems: [
       { key: "farm", path: "/admin/farms" },
-      { key: "activityCategories", path: "/admin/activity-categories" },
-      { key: "cropActivityTemplates", path: "/admin/crop-activity-templates" },
+
       { key: "farmerSmartTimeline", path: "/admin/farmer-smart-timeline" },
     ],
   },
@@ -120,7 +121,6 @@ const navItems: NavItem[] = [
       {
         key: "fertilizerRecommendations",
         path: "/admin/fertilizer-recommendations",
-        disabled: true,
       },
     ],
   },
