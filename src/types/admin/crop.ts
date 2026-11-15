@@ -12,6 +12,7 @@ export interface CropPayload {
   slug: string;
   scientific_name: string | null;
   crop_code: string | null;
+  crop_color?: string | null;
   is_active: boolean;
   ai_diagnosis_enabled?: boolean;
   translations: Record<string, { name: string; description: string | null }>;
@@ -24,6 +25,7 @@ export interface Crop {
   slug: string;
   scientific_name: string | null;
   crop_code: string | null;
+  crop_color: string | null;
   image_url: string | null;
   name: string | null;
   is_active: boolean;
@@ -40,6 +42,7 @@ export interface CropFormValues {
   slug: string;
   scientific_name: string;
   crop_code: string;
+  crop_color: string | null;
   is_active: boolean;
   ai_diagnosis_enabled: boolean;
   translations: Record<string, { name: string; description: string }>;

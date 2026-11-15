@@ -13,6 +13,7 @@ export interface CropStageListItem {
   id: number;
   crop_id: number;
   crop_name: string | null;
+  crop_color?: string | null;
   code: string;
   sequence: number;
   is_active: boolean;
@@ -50,6 +51,7 @@ export interface CropStagesFilterValues {
 export interface CropStageCropOption {
   id: number;
   name: string;
+  crop_color?: string | null;
 }
 
 export type CropStagesListResponse = PaginatedResponse<CropStageListItem>;

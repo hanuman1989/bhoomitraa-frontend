@@ -17,6 +17,7 @@ export interface CropActivityTemplateListItem {
   id: number;
   crop_id: number;
   crop_name: string | null;
+  crop_color?: string | null;
   crop_variety_id: number | null;
   crop_variety_name: string | null;
   category_id: number;

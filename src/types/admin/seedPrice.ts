@@ -21,6 +21,7 @@ export type SeedPriceProduct = Pick<
   | "material_type"
   | "crop_id"
   | "crop_name"
+  | "crop_color"
   | "crop_variety_id"
   | "crop_variety_name"
   | "primary_image"

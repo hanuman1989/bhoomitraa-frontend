@@ -40,6 +40,7 @@ function seedOption(seed: SeedListItem): TimelineOption {
       setup_status: seed.setup_status,
       crop_id: seed.crop_id,
       crop_name: seed.crop_name,
+      crop_color: seed.crop_color,
       crop_variety_id: seed.crop_variety_id,
       crop_variety_name: seed.crop_variety_name,
       primary_image: seed.primary_image,
@@ -70,7 +71,7 @@ export const stageTimelinesAPI = {
     apiRequest<ApiResponse<null>>(`${endpoint}/${id}`, { method: "DELETE" }),
 };
 
-// Only labels and eligibility flags reach the dropdown; source attachments stay server-side.
+// Only selection metadata reaches the dropdown; source attachments stay server-side.
 export async function getTimelineOption(
   kind: TimelineRelationKind,
   id: number,
@@ -107,6 +108,7 @@ export async function getTimelineOption(
       return {
         id,
         label: r.data.name ?? r.data.slug,
+        crop_color: r.data.crop_color,
         is_active: r.data.is_active,
       };
     }
@@ -219,6 +221,7 @@ export async function getTimelineOptions(
         options: r.data.map((crop) => ({
           id: crop.id,
           label: crop.name ?? crop.slug,
+          crop_color: crop.crop_color,
           is_active: crop.is_active,
         })),
         pagination: r.pagination,

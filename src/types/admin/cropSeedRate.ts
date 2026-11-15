@@ -37,9 +37,13 @@ export interface CropSeedRateListItem {
   notes: string | null;
   is_active: boolean;
   crop_name: string | null;
+  crop_color?: string | null;
   crop_variety_name: string | null;
   season_name: string | null;
-  crop: { id: number; name: string | null } | null;
+  crop: Pick<
+    import("@/types/admin/crop").Crop,
+    "id" | "name" | "crop_color"
+  > | null;
   crop_variety: { id: number; name: string | null } | null;
   season: { id: number; name: string | null } | null;
   seed: Omit<SeedPriceProduct, "crop_name" | "crop_variety_name"> | null;

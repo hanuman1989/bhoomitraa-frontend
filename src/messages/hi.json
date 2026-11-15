@@ -1172,6 +1172,13 @@
     "imagePreview": {
       "noImageAvailable": "तस्वीर उपलब्ध नहीं है"
     },
+    "colorPicker": {
+      "select": "रंग चुनें",
+      "selectFor": "{label} के लिए रंग चुनें",
+      "clear": "रंग हटाएँ",
+      "preview": "पूर्वावलोकन",
+      "notAssigned": "रंग निर्धारित नहीं है"
+    },
     "imageUpload": {
       "discardExisting": "चित्र हटाएँ",
       "removalPending": "बदलाव सहेजने पर चित्र हटाया जाएगा।",
@@ -1690,6 +1697,8 @@
       "category": "श्रेणी",
       "scientificName": "वैज्ञानिक नाम",
       "cropCode": "फसल कोड",
+      "cropColor": "फसल का रंग",
+      "color": "रंग",
       "slug": "स्लग",
       "status": "स्थिति",
       "addedAt": "जोड़ने का समय",
@@ -1722,6 +1731,7 @@
       "required": "यह फ़ील्ड आवश्यक है।",
       "category": "मान्य फसल श्रेणी चुनें।",
       "activeCategory": "सक्रिय फसल की श्रेणी भी सक्रिय होनी चाहिए।",
+      "cropColor": "कृपया छह अंकों वाला मान्य HEX रंग कोड दर्ज करें, जैसे #FFC107।",
       "max": "अधिकतम {count} अक्षर दर्ज करें।",
       "slug": "छोटे अंग्रेज़ी अक्षर, अंक और शब्दों के बीच एक हाइफ़न उपयोग करें।"
     },
@@ -1739,6 +1749,7 @@
       "slugPlaceholder": "जैसे, wheat",
       "scientificPlaceholder": "जैसे, Triticum aestivum",
       "codePlaceholder": "जैसे, WHEAT001",
+      "colorHelp": "कैलेंडर, डैशबोर्ड, चार्ट और खेती की समयरेखा में इस फसल को दर्शाने के लिए रंग चुनें।",
       "translationsTitle": "अनुवाद",
       "translationsHelp": "हर निर्धारित भाषा में फसल का नाम और वैकल्पिक विवरण जोड़ें। सभी भाषाओं में नाम आवश्यक हैं।",
       "english": "अंग्रेज़ी",

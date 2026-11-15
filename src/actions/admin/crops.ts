@@ -31,6 +31,9 @@ export async function saveCrop(
       !validId(values.category_id) ||
       typeof values.slug !== "string" ||
       typeof values.is_active !== "boolean" ||
+      (values.crop_color !== undefined &&
+        values.crop_color !== null &&
+        typeof values.crop_color !== "string") ||
       languages.some(
         ({ id: locale }) =>
           typeof values.translations?.[locale]?.name !== "string",
@@ -66,6 +69,7 @@ export async function saveCrop(
       slug: values.slug,
       scientific_name: values.scientific_name,
       crop_code: values.crop_code,
+      ...(values.crop_color !== undefined && { crop_color: values.crop_color }),
       is_active: values.is_active,
       ...(values.ai_diagnosis_enabled !== undefined && {
         ai_diagnosis_enabled: values.ai_diagnosis_enabled,
@@ -87,6 +91,9 @@ export async function saveCrop(
       data.append("slug", payload.slug);
       data.append("scientific_name", payload.scientific_name ?? "");
       data.append("crop_code", payload.crop_code ?? "");
+      // Laravel converts an empty multipart field to null; omission preserves it.
+      if (payload.crop_color !== undefined)
+        data.append("crop_color", payload.crop_color ?? "");
       data.append("is_active", payload.is_active ? "1" : "0");
       if (payload.ai_diagnosis_enabled !== undefined)
         data.append(

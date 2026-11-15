@@ -20,6 +20,7 @@ export type LotSeedProduct = Pick<
   | "setup_status"
   | "crop_id"
   | "crop_name"
+  | "crop_color"
   | "crop_variety_id"
   | "crop_variety_name"
   | "primary_image"

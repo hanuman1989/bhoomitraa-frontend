@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ImagePreview from "@/components/common/ImagePreview";
 import Badge from "@/components/admin/ui/badge/Badge";
+import ColorSwatch from "@/components/admin/common/ColorSwatch";
 import {
   Table,
   TableBody,
@@ -42,6 +43,7 @@ export default function CropsList({
               {[
                 "image",
                 "name",
+                "color",
                 "category",
                 "scientificName",
                 "slug",
@@ -81,6 +83,9 @@ export default function CropsList({
                   >
                     {crop.name ?? t("unnamed")}
                   </Link>
+                </TableCell>
+                <TableCell className={cell}>
+                  <ColorSwatch value={crop.crop_color} />
                 </TableCell>
                 <TableCell className={`${cell} whitespace-nowrap`}>
                   <Badge color="primary">

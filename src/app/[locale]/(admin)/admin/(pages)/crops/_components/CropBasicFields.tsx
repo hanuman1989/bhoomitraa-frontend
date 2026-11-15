@@ -1,10 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { UseFormReturn } from "react-hook-form";
+import { Controller, type UseFormReturn } from "react-hook-form";
 import { Link } from "@/i18n/navigation";
 import Input from "@/components/admin/form/input/InputField";
 import Label from "@/components/admin/form/Label";
+import ColorPicker from "@/components/admin/form/ColorPicker";
+import { isHexColor } from "@/components/admin/common/ColorSwatch";
 import type { Crop, CropFormValues } from "@/types/admin/crop";
 import type { CropCategory } from "@/types/admin/cropCategory";
 
@@ -14,10 +16,12 @@ export default function CropBasicFields({
   form,
   categories,
   crop,
+  busy,
 }: {
   form: UseFormReturn<CropFormValues>;
   categories: CropCategory[];
   crop: Crop | null;
+  busy: boolean;
 }) {
   const t = useTranslations("crops");
   const {
@@ -157,6 +161,26 @@ export default function CropBasicFields({
         <p id="crop-code-error" role="alert" className={errorClass}>
           {errors.crop_code?.message}
         </p>
+      </div>
+      <div className="sm:col-span-2">
+        <Controller
+          name="crop_color"
+          control={form.control}
+          rules={{
+            validate: (value) =>
+              value === null || isHexColor(value) || t("validation.cropColor"),
+          }}
+          render={({ field }) => (
+            <ColorPicker
+              {...field}
+              id="crop-color"
+              label={t("fields.cropColor")}
+              helperText={t("form.colorHelp")}
+              error={errors.crop_color?.message}
+              disabled={busy}
+            />
+          )}
+        />
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ export interface CropYieldBenchmarkListItem extends Pick<
   | "notes"
   | "is_active"
   | "crop_name"
+  | "crop_color"
   | "crop_variety_name"
   | "season_name"
   | "crop"

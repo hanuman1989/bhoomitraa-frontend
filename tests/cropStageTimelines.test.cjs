@@ -471,6 +471,40 @@ test("region loader restores saved inactive districts and inactive parents witho
   assert.equal(result[0].districts[0].is_active, false);
 });
 
+test("crop selection mappings retain relationship colors for searches, saved selections and seed metadata", async () => {
+  const crop = {
+    id: 3,
+    name: "Wheat",
+    slug: "wheat",
+    is_active: true,
+    crop_color: "#FFC107",
+  };
+  const seed = {
+    id: 4,
+    name: "Seed",
+    crop_id: 3,
+    crop_name: "Wheat",
+    crop_color: "#FFC107",
+    is_active: true,
+  };
+  const h = harness([
+    { status: true, data: [crop], pagination: { last_page: 1 } },
+    { status: true, data: crop },
+    { status: true, data: [seed], pagination: { last_page: 1 } },
+    { status: true, data: { ...crop, crop_color: null } },
+  ]);
+  assert.equal(
+    (await h.getTimelineOptions("crop", null, true)).options[0].crop_color,
+    "#FFC107",
+  );
+  assert.equal((await h.getTimelineOption("crop", 3)).crop_color, "#FFC107");
+  assert.equal(
+    (await h.getTimelineOptions("seed", 3, true)).options[0].seed.crop_color,
+    "#FFC107",
+  );
+  assert.equal((await h.getTimelineOption("crop", 3)).crop_color, null);
+});
+
 test("dependent option lookups apply crop and status filters and never serialize source attachments", async () => {
   const h = harness([
     {

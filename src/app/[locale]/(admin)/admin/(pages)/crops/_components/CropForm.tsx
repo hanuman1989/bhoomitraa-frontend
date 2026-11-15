@@ -23,6 +23,7 @@ const emptyValues: CropFormValues = {
   slug: "",
   scientific_name: "",
   crop_code: "",
+  crop_color: null,
   is_active: false,
   ai_diagnosis_enabled: false,
   translations: Object.fromEntries(
@@ -56,6 +57,7 @@ export default function CropForm({
       slug: initialCrop?.slug ?? "",
       scientific_name: initialCrop?.scientific_name ?? "",
       crop_code: initialCrop?.crop_code ?? "",
+      crop_color: initialCrop?.crop_color ?? null,
       is_active: initialCrop?.is_active ?? false,
       ai_diagnosis_enabled: initialCrop?.ai_diagnosis_enabled ?? false,
       translations: Object.fromEntries(
@@ -129,6 +131,7 @@ export default function CropForm({
             slug: values.slug.trim(),
             scientific_name: values.scientific_name.trim() || null,
             crop_code: values.crop_code.trim() || null,
+            crop_color: values.crop_color,
             is_active: values.is_active,
             ...(canManageAI && {
               ai_diagnosis_enabled: values.ai_diagnosis_enabled,
@@ -154,6 +157,7 @@ export default function CropForm({
               case "slug":
               case "scientific_name":
               case "crop_code":
+              case "crop_color":
               case "is_active":
               case "ai_diagnosis_enabled":
               case "image":
@@ -180,7 +184,11 @@ export default function CropForm({
           return;
         }
         setCrop(result.data);
-        reset({ ...values, image: [] });
+        reset({
+          ...values,
+          crop_color: result.data.crop_color ?? null,
+          image: [],
+        });
         toast.success(result.message || t("feedback.saved"));
         finishSave();
       } catch {
@@ -223,6 +231,7 @@ export default function CropForm({
               form={form}
               categories={categories}
               crop={initialCrop}
+              busy={pending}
             />
             <CropTranslationFields form={form} />
           </ComponentCard>

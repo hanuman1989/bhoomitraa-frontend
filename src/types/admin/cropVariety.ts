@@ -33,6 +33,7 @@ export interface CropVariety extends Omit<
   id: number;
   name: string | null;
   crop_name: string | null;
+  crop_color?: Crop["crop_color"];
   crop_slug: string | null;
   knowledge_sources: CropVarietySourceOption[];
   translations: Record<string, CropVarietyTranslation>;

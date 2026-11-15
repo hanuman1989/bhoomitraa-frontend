@@ -291,6 +291,7 @@ const cropValues = {
   slug: "wheat",
   scientific_name: "Triticum aestivum",
   crop_code: "WHEAT001",
+  crop_color: "#FFC107",
   is_active: false,
   ai_diagnosis_enabled: false,
   translations: {
@@ -673,17 +674,62 @@ test("Crop Manager resets completed creates, flags, selected image and ID before
     },
   });
   form.render();
+  assert.equal(form.values().crop_color, null);
   form.fill(cropValues);
   await form.submit();
   assert.equal(form.values().slug, "");
   assert.equal(form.values().is_active, false);
   assert.equal(form.values().ai_diagnosis_enabled, false);
+  assert.equal(form.values().crop_color, null);
   assert.equal(cropImage(form).props.existingImageUrl, undefined);
   assert.equal(cropImage(form).props.selectedFile, null);
   enabled(form);
   form.fill({ ...cropValues, slug: "rice" });
   await form.submit();
   assert.deepEqual(ids, [null, null]);
+});
+
+test("separate crop records initialize their own saved or nullable color", () => {
+  for (const [id, color] of [[42, "#FFC107"], [43, null], [44, "#000000"], [45, undefined]]) {
+    const form = formHarness("crops/_components/CropForm.tsx", { ...cropProps, crop: { ...cropRecord, id, crop_color: color } }, {});
+    form.render();
+    assert.equal(form.values().crop_color, color ?? null);
+  }
+});
+
+test("crop edit preserves colors for unrelated updates, maps backend errors, and retries explicit removal", async () => {
+  const sent = [];
+  const form = formHarness(
+    "crops/_components/CropForm.tsx",
+    { ...cropProps, crop: cropRecord },
+    {
+      saveCrop: async (id, payload) => {
+        sent.push({ id, payload });
+        return sent.length === 1
+          ? {
+              success: false,
+              message: "Invalid color",
+              errors: { crop_color: ["Use six HEX digits"] },
+            }
+          : { success: true, data: { ...cropRecord, crop_color: null } };
+      },
+    },
+  );
+  form.render();
+  assert.equal(form.values().crop_color, "#FFC107");
+  form.fill({ ...form.values(), scientific_name: "Changed name" });
+  await form.submit();
+  assert.equal(sent[0].payload.crop_color, "#FFC107");
+  assert.equal(form.values().crop_color, "#FFC107");
+  assert.equal(form.navigations.length, 0);
+  assert.deepEqual(form.fieldErrors, [
+    { field: "crop_color", type: "server", message: "Use six HEX digits" },
+  ]);
+  form.fill({ ...form.values(), crop_color: null });
+  await form.submit();
+  assert.equal(sent[1].id, cropRecord.id);
+  assert.equal(sent[1].payload.crop_color, null);
+  assert.equal(form.values().crop_color, null);
 });
 
 test("a failed combined crop save retains metadata and image, then retries the full create", async () => {

@@ -73,6 +73,7 @@ export interface TimelinePreviewData {
   input: TimelinePreviewInput;
   selection: {
     crop_name: string | null;
+    crop_color?: string | null;
     crop_variety_name: string | null;
     season_name: string | null;
     district_name: string | null;

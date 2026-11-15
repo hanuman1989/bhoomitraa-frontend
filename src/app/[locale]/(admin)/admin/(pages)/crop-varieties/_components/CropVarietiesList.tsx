@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PlusIcon, DocsIcon, CropCategoryIcon } from "@/icons";
 import Badge from "@/components/admin/ui/badge/Badge";
+import ColorSwatch, { isHexColor } from "@/components/admin/common/ColorSwatch";
 import {
   Table,
   TableBody,
@@ -95,6 +96,11 @@ export default function CropVarietiesList({
                       variety.crop_slug ??
                       t("notAvailable")}
                   </Badge>
+                  {isHexColor(variety.crop_color) && (
+                    <div className="mt-2">
+                      <ColorSwatch value={variety.crop_color} />
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className={`${cell} whitespace-nowrap`}>
                   {variety.variety_code ?? t("notAvailable")}

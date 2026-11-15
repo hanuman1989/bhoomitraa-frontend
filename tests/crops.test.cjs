@@ -169,6 +169,94 @@ test("crop metadata allowlists fields and sends both translations in one JSON re
   assert.deepEqual(plain(requests[0].options.data), payload);
 });
 
+test("crop colors create, replace and clear in JSON; undefined preserves the stored color", async () => {
+  for (const [id, color] of [
+    [null, "#FFC107"],
+    [null, null],
+    [42, "#aBcDeF"],
+    [42, null],
+    [42, undefined],
+  ]) {
+    const saved = {
+      ...crop,
+      crop_color: color === undefined ? "#FFC107" : color,
+    };
+    const h = harness([success(saved)]);
+    const result = await h.actions.saveCrop(id, {
+      ...payload,
+      crop_color: color,
+    });
+    assert.equal(result.success, true);
+    assert.equal(result.data.crop_color, saved.crop_color);
+    assert.equal(h.requests[0].options.method, id === null ? "POST" : "PATCH");
+    const sent = h.requests[0].options.data;
+    assert.equal(Object.hasOwn(sent, "crop_color"), color !== undefined);
+    assert.equal(sent.crop_color, color);
+    assert.ok(
+      Object.values(sent.translations).every(
+        (value) => !Object.hasOwn(value, "crop_color"),
+      ),
+    );
+    assert.deepEqual(h.invalidations, [
+      "/[locale]/admin/crops",
+      "/[locale]/admin/crops/[id]/edit",
+    ]);
+  }
+});
+
+test("multipart crop colors preserve explicit null and omission alongside images and extra languages", async () => {
+  for (const color of ["#000000", null, undefined]) {
+    const saved = { ...crop, crop_color: color ?? null };
+    const h = harness([success(saved)], undefined, [
+      { id: "en" },
+      { id: "hi" },
+      { id: "ar" },
+    ]);
+    const file = new File(["image"], "crop.png", { type: "image/png" });
+    const data = new FormData();
+    data.append("image", file);
+    const result = await h.actions.saveCrop(
+      42,
+      {
+        ...payload,
+        crop_color: color,
+        translations: {
+          ...payload.translations,
+          ar: { name: "Arabic", description: null },
+        },
+      },
+      data,
+    );
+    assert.equal(result.success, true);
+    const sent = h.requests[0].options.data;
+    assert.equal(h.requests[0].options.method, "POST");
+    assert.equal(sent.get("_method"), "PATCH");
+    assert.equal(sent.has("crop_color"), color !== undefined);
+    // Laravel ConvertEmptyStringsToNull turns this explicit empty field into null.
+    assert.equal(sent.get("crop_color"), color === null ? "" : (color ?? null));
+    assert.notEqual(sent.get("crop_color"), "null");
+    assert.equal(sent.get("translations[ar][name]"), "Arabic");
+    assert.equal(sent.get("image").name, "crop.png");
+    assert.equal(h.requests.length, 1);
+  }
+});
+
+test("backend crop color validation errors remain recoverable and do not invalidate cached pages", async () => {
+  const failure = Object.assign(new Error("Invalid color"), {
+    errors: { crop_color: ["Use six HEX digits"] },
+  });
+  const h = harness([failure]);
+  const result = await h.actions.saveCrop(42, {
+    ...payload,
+    crop_color: "#ABC",
+  });
+  assert.equal(result.success, false);
+  assert.deepEqual(plain(result.errors), {
+    crop_color: ["Use six HEX digits"],
+  });
+  assert.deepEqual(h.invalidations, []);
+});
+
 test("crop creates and updates include additional configured languages and strip read-only translation fields", async () => {
   const { actions, requests } = harness(
     [success(crop), success(crop)],

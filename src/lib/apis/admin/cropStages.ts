@@ -57,6 +57,7 @@ export async function getCropStageCropOptions(
       ...response.data.map((crop) => ({
         id: crop.id,
         name: crop.name ?? crop.slug,
+        crop_color: crop.crop_color,
       })),
     );
     lastPage = response.pagination.last_page;

@@ -1172,6 +1172,13 @@
     "imagePreview": {
       "noImageAvailable": "No image available"
     },
+    "colorPicker": {
+      "select": "Select color",
+      "selectFor": "Select color for {label}",
+      "clear": "Clear color",
+      "preview": "Preview",
+      "notAssigned": "Not assigned"
+    },
     "imageUpload": {
       "discardExisting": "Discard image",
       "removalPending": "The image will be removed when you save your changes.",
@@ -1690,6 +1697,8 @@
       "category": "Category",
       "scientificName": "Scientific Name",
       "cropCode": "Crop Code",
+      "cropColor": "Crop Color",
+      "color": "Color",
       "slug": "Slug",
       "status": "Status",
       "addedAt": "Added At",
@@ -1722,6 +1731,7 @@
       "required": "This field is required.",
       "category": "Select a valid crop category.",
       "activeCategory": "An active crop must belong to an active category.",
+      "cropColor": "Please enter a valid six-digit HEX color code, such as #FFC107.",
       "max": "Use no more than {count} characters.",
       "slug": "Use lowercase letters, numbers, and single hyphens between words."
     },
@@ -1739,6 +1749,7 @@
       "slugPlaceholder": "e.g., wheat",
       "scientificPlaceholder": "e.g., Triticum aestivum",
       "codePlaceholder": "e.g., WHEAT001",
+      "colorHelp": "Choose a color to represent this crop in calendars, dashboards, charts and farming timelines.",
       "translationsTitle": "Translations",
       "translationsHelp": "Add a crop name and optional description for each configured language. All names are required.",
       "english": "English",

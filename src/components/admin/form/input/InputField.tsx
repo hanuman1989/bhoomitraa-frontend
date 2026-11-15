@@ -5,6 +5,7 @@ interface InputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   "success" | "error" | "hint" | "step"
 > {
+  ref?: React.Ref<HTMLInputElement>;
   success?: boolean;
   error?: boolean;
   hint?: string;

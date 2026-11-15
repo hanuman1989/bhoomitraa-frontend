@@ -73,6 +73,7 @@ export interface SeedListItem {
   crop_variety_id: number | null;
   name: string | null;
   crop_name: string | null;
+  crop_color?: string | null;
   crop_variety_name: string | null;
   slug: string;
   sku: string | null;

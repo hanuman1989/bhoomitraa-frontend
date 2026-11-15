@@ -6,6 +6,7 @@ export interface StageTimelineListItem {
   id: number;
   crop_id: number | null;
   crop_name: string | null;
+  crop_color?: string | null;
   crop_stage_id: number;
   crop_stage_name: string | null;
   crop_variety_id: number | null;
@@ -67,6 +68,7 @@ export type TimelineRelationKind =
 export interface TimelineOption {
   id: number;
   label: string;
+  crop_color?: string | null;
   crop_id?: number;
   is_active: boolean;
   verified?: boolean;

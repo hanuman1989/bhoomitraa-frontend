@@ -291,19 +291,19 @@ test("crop options load all pages, apply active-only on create and retain backen
   const h = harness([
     {
       status: true,
-      data: [{ id: 1, name: "Wheat", slug: "wheat" }],
+      data: [{ id: 1, name: "Wheat", slug: "wheat", crop_color: "#FFC107" }],
       pagination: { last_page: 2 },
     },
     {
       status: true,
-      data: [{ id: 2, name: "Rice", slug: "rice" }],
+      data: [{ id: 2, name: "Rice", slug: "rice", crop_color: null }],
       pagination: { last_page: 2 },
     },
   ]);
   const options = await h.getCropStageCropOptions(true);
   assert.deepEqual(clone(options), [
-    { id: 1, name: "Wheat" },
-    { id: 2, name: "Rice" },
+    { id: 1, name: "Wheat", crop_color: "#FFC107" },
+    { id: 2, name: "Rice", crop_color: null },
   ]);
   assert.equal(h.requests[1].options.params.page, 2);
   assert.equal(h.requests[0].options.params.is_active, 1);
