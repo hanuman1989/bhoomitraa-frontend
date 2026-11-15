@@ -3,6 +3,7 @@ import CropVarietyBasicFields from "./CropVarietyBasicFields";
 import CropVarietySettings from "./CropVarietySettings";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { useRouter } from "@/i18n/navigation";
@@ -11,10 +12,10 @@ import { saveCropVariety } from "@/actions/admin/cropVarieties";
 import ComponentCard from "@/components/admin/common/ComponentCard";
 import { CheckLineIcon } from "@/icons";
 import type { Crop } from "@/types/admin/crop";
-import type { KnowledgeSource } from "@/types/admin/knowledgeSource";
 import type {
   CropVariety,
   CropVarietyFormValues,
+  CropVarietySourceOption,
   VarietyRelationPage,
 } from "@/types/admin/cropVariety";
 import CropVarietyTranslations from "./CropVarietyTranslations";
@@ -24,16 +25,19 @@ export default function CropVarietyForm({
   cropOptions,
   sourceOptions,
   initialCrop,
-  initialSource,
+  initialSources,
 }: {
   variety: CropVariety | null;
   cropOptions: VarietyRelationPage;
   sourceOptions: VarietyRelationPage;
   initialCrop: Crop | null;
-  initialSource: KnowledgeSource | null;
+  initialSources: CropVarietySourceOption[];
 }) {
   const t = useTranslations("cropVarieties");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryCropId = !variety ? searchParams.get("crop_id") : null;
+  const listUrl = `/admin/crop-varieties${searchParams.size ? `?${searchParams.toString()}` : ""}`;
   const saving = useRef(false);
   const [failure, setFailure] = useState("");
   const locales = [
@@ -45,7 +49,9 @@ export default function CropVarietyForm({
   const [formVersion, setFormVersion] = useState(0);
   const form = useForm<CropVarietyFormValues>({
     defaultValues: {
-      crop_id: variety ? String(variety.crop_id) : "",
+      crop_id: variety
+        ? String(variety.crop_id)
+        : (queryCropId ?? initialCrop?.id.toString() ?? ""),
       slug: variety?.slug ?? "",
       variety_code: variety?.variety_code ?? "",
       maturity_days_min:
@@ -56,7 +62,9 @@ export default function CropVarietyForm({
         variety?.maturity_days_max == null
           ? ""
           : String(variety.maturity_days_max),
-      source_id: variety?.source_id == null ? "" : String(variety.source_id),
+      knowledge_sources: (variety?.knowledge_sources ?? []).map(
+        (source) => source.id,
+      ),
       is_active: variety?.is_active ?? false,
       translations: Object.fromEntries(
         locales.map((locale) => [
@@ -94,7 +102,7 @@ export default function CropVarietyForm({
           values.maturity_days_max === ""
             ? null
             : Number(values.maturity_days_max),
-        source_id: values.source_id === "" ? null : Number(values.source_id),
+        knowledge_sources: values.knowledge_sources,
         is_active: values.is_active,
         translations: Object.fromEntries(
           locales
@@ -116,13 +124,22 @@ export default function CropVarietyForm({
       if (!result.success || !result.data) {
         for (const [field, messages] of Object.entries(result.errors ?? {})) {
           if (!messages[0]) continue;
+          if (
+            field === "knowledge_sources" ||
+            field.startsWith("knowledge_sources.")
+          ) {
+            setError("knowledge_sources", {
+              type: "server",
+              message: messages[0],
+            });
+            continue;
+          }
           switch (field) {
             case "crop_id":
             case "slug":
             case "variety_code":
             case "maturity_days_min":
             case "maturity_days_max":
-            case "source_id":
             case "is_active":
               setError(field, { type: "server", message: messages[0] });
               break;
@@ -158,7 +175,7 @@ export default function CropVarietyForm({
         reset(values);
       }
       toast.success(result.message || t("feedback.saved"));
-      router.push("/admin/crop-varieties");
+      router.push(listUrl);
     } catch {
       setFailure(t("feedback.saveFailed"));
       toast.error(t("feedback.saveFailed"));
@@ -207,8 +224,7 @@ export default function CropVarietyForm({
         <CropVarietySettings
           form={form}
           sourceOptions={sourceOptions}
-          initialSource={initialSource}
-          formVersion={formVersion}
+          initialSources={initialSources}
           isSubmitting={isSubmitting}
         />
       </fieldset>
@@ -216,7 +232,7 @@ export default function CropVarietyForm({
         <button
           type="button"
           disabled={isSubmitting}
-          onClick={() => router.push("/admin/crop-varieties")}
+          onClick={() => router.push(listUrl)}
           className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
         >
           {t("cancel")}

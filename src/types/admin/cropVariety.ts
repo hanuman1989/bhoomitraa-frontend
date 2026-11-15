@@ -17,19 +17,24 @@ export interface CropVarietyPayload {
   variety_code: string | null;
   maturity_days_min: number | null;
   maturity_days_max: number | null;
-  source_id: number | null;
+  knowledge_sources: number[];
   is_active: boolean;
   translations: Record<
     string,
     { name: string; description: string | null; region_notes: string | null }
   >;
 }
-export interface CropVariety extends Omit<CropVarietyPayload, "translations"> {
+export type CropVarietySourceOption = Pick<KnowledgeSource, "id" | "title"> &
+  Partial<Pick<KnowledgeSource, "is_active" | "verification_status">>;
+export interface CropVariety extends Omit<
+  CropVarietyPayload,
+  "translations" | "knowledge_sources"
+> {
   id: number;
   name: string | null;
   crop_name: string | null;
   crop_slug: string | null;
-  source_title: string | null;
+  knowledge_sources: CropVarietySourceOption[];
   translations: Record<string, CropVarietyTranslation>;
   added_at: string | null;
   created_at: string | null;
@@ -41,7 +46,7 @@ export interface CropVarietyFormValues {
   variety_code: string;
   maturity_days_min: string;
   maturity_days_max: string;
-  source_id: string;
+  knowledge_sources: number[];
   is_active: boolean;
   translations: Record<
     string,

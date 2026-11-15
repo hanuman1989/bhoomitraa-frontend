@@ -1,8 +1,5 @@
-import { Suspense } from "react";
-import { setRequestLocale, getTranslations } from "next-intl/server";
-import "simplebar-react/dist/simplebar.min.css";
-import "swiper/css/bundle";
-import UserAuthBoundary from "@/providers/UserAuthBoundary";
+import { setRequestLocale } from "next-intl/server";
+import AppToaster from "@/components/common/AppToaster";
 
 export default async function UserRootLayout({
   children,
@@ -15,18 +12,9 @@ export default async function UserRootLayout({
   setRequestLocale(locale);
 
   return (
-    <Suspense fallback={<AdminLoading />}>
-      <UserAuthBoundary>{children}</UserAuthBoundary>
-    </Suspense>
-  );
-}
-
-async function AdminLoading() {
-  const tUi = await getTranslations("ui.adminLoading");
-
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      {tUi("loadingAdmin")}
-    </div>
+    <>
+      {children}
+      <AppToaster />
+    </>
   );
 }

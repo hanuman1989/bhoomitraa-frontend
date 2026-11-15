@@ -4,66 +4,37 @@ import { useTranslations } from "next-intl";
 import ComponentCard from "@/components/admin/common/ComponentCard";
 import Switch from "@/components/admin/form/switch/Switch";
 import { DocsIcon, InfoIcon } from "@/icons";
-import type { KnowledgeSource } from "@/types/admin/knowledgeSource";
 import type {
   CropVarietyFormValues,
+  CropVarietySourceOption,
   VarietyRelationPage,
 } from "@/types/admin/cropVariety";
-import VarietyRelationSelect from "./VarietyRelationSelect";
+import CropVarietyKnowledgeSources from "./CropVarietyKnowledgeSources";
 const errorClass = "mt-1 text-xs text-error-600 dark:text-error-400";
 export default function CropVarietySettings({
   form,
   sourceOptions,
-  initialSource,
-  formVersion,
+  initialSources,
   isSubmitting,
 }: {
   form: UseFormReturn<CropVarietyFormValues>;
   sourceOptions: VarietyRelationPage;
-  initialSource: KnowledgeSource | null;
-  formVersion: number;
+  initialSources: CropVarietySourceOption[];
   isSubmitting: boolean;
 }) {
   const t = useTranslations("cropVarieties");
-  const {
-    control,
-    getValues,
-    formState: { errors },
-  } = form;
+  const { control, formState: { errors } } = form;
   return (
     <aside className="min-w-0 space-y-5">
       <ComponentCard
         title={t("form.sourceTitle")}
         className="rounded-xl [&>div:first-child>h3]:text-xl [&>div:first-child>h3]:font-semibold"
       >
-        <Controller
-          name="source_id"
-          control={control}
-          rules={{
-            validate: (value) =>
-              !getValues("is_active") ||
-              (!getValues("maturity_days_min") &&
-                !getValues("maturity_days_max")) ||
-              !!value ||
-              t("validation.source"),
-          }}
-          render={({ field }) => (
-            <VarietyRelationSelect
-              key={`source-${formVersion}`}
-              kind="source"
-              id="variety-source"
-              label={t("fields.source")}
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              inputRef={field.ref}
-              initialPage={sourceOptions}
-              initialSelection={initialSource}
-              eligible
-              disabled={isSubmitting}
-              error={errors.source_id?.message}
-            />
-          )}
+        <CropVarietyKnowledgeSources
+          form={form}
+          initialPage={sourceOptions}
+          initialSources={initialSources}
+          disabled={isSubmitting}
         />
         <p className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
           <InfoIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />

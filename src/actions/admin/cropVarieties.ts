@@ -36,7 +36,9 @@ export async function saveCropVariety(
       !validId(values.crop_id) ||
       typeof values.slug !== "string" ||
       typeof values.is_active !== "boolean" ||
-      (values.source_id !== null && !validId(values.source_id)) ||
+      !Array.isArray(values.knowledge_sources) ||
+      values.knowledge_sources.some((sourceId) => !validId(sourceId)) ||
+      new Set(values.knowledge_sources).size !== values.knowledge_sources.length ||
       [values.maturity_days_min, values.maturity_days_max].some(
         (value) =>
           value !== null && (!Number.isSafeInteger(value) || value < 1),
@@ -52,7 +54,7 @@ export async function saveCropVariety(
       variety_code: values.variety_code,
       maturity_days_min: values.maturity_days_min,
       maturity_days_max: values.maturity_days_max,
-      source_id: values.source_id,
+      knowledge_sources: values.knowledge_sources,
       is_active: values.is_active,
       translations: Object.fromEntries(
         Object.entries(values.translations)

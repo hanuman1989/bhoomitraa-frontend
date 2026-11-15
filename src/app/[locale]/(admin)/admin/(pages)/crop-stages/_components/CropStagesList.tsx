@@ -88,10 +88,8 @@ export default function CropStagesList({
                     </Link>
                   </TableCell>
                   <TableCell className={cell}>
-                    <Badge color="primary">
-                      {stage.crop_name ??
-                        t("form.missingCrop", { id: stage.crop_id })}
-                    </Badge>
+                    {stage.crop_name ??
+                      t("form.missingCrop", { id: stage.crop_id })}
                   </TableCell>
                   <TableCell className={cell}>{stage.code}</TableCell>
                   <TableCell className={cell}>{stage.sequence}</TableCell>

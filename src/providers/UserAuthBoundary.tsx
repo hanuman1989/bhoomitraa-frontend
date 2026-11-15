@@ -2,17 +2,22 @@ import "server-only";
 
 import type { ReactNode } from "react";
 
-import { getCurrentAdmin } from "@/lib/auth/dal";
+import { requireUser } from "@/lib/userAuth/dal";
 import Providers from "@/providers/Providers";
+import UserSessionGuard from "@/providers/UserSessionGuard";
 
-interface AdminAuthBoundaryProps {
+interface UserAuthBoundaryProps {
   children: ReactNode;
 }
 
 export default async function UserAuthBoundary({
   children,
-}: AdminAuthBoundaryProps) {
-  const admin = await getCurrentAdmin();
+}: UserAuthBoundaryProps) {
+  const user = await requireUser();
 
-  return <Providers initialAdminUser={admin}>{children}</Providers>;
+  return (
+    <Providers initialUser={user}>
+      <UserSessionGuard>{children}</UserSessionGuard>
+    </Providers>
+  );
 }

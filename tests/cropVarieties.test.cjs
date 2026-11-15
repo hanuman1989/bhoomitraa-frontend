@@ -99,13 +99,13 @@ function harness(
 
 const payload = {
   crop_id: 3, slug: "hd-2967", variety_code: null,
-  maturity_days_min: null, maturity_days_max: null, source_id: null, is_active: false,
+  maturity_days_min: null, maturity_days_max: null, knowledge_sources: [10, 12, 15], is_active: false,
   translations: {
     en: { name: "HD 2967", description: null, region_notes: null },
     hi: { name: "Hindi variety", description: "Description", region_notes: "Region notes" },
   },
 };
-const variety = { id: 42, ...payload, name: "HD 2967", crop_name: "Wheat", source_title: null };
+const variety = { id: 42, ...payload, name: "HD 2967", crop_name: "Wheat" };
 const success = data => ({ status: true, data, message: "Saved" });
 const plain = value => JSON.parse(JSON.stringify(value));
 
@@ -116,7 +116,7 @@ test("variety list uses the real status and source filters and preserves inactiv
   assert.deepEqual(plain(requests[0].options.params), { keyword: "hd", crop_id: 3, source_id: 12, status: "0", page: 2, per_page: 15 });
 });
 
-test("a variety and all selected translations save together with nullable maturity and source", async () => {
+test("a variety and all selected translations save together with multiple sources", async () => {
   const { actions, requests } = harness([success(variety)]);
   assert.equal((await actions.saveCropVariety(null, { ...payload, review_status: "verified", id: 999 })).success, true);
   assert.equal(requests.length, 1);
@@ -124,9 +124,15 @@ test("a variety and all selected translations save together with nullable maturi
   assert.deepEqual(plain(requests[0].options.data), payload);
 });
 
+test("an empty knowledge-sources array is submitted when no sources are selected", async () => {
+  const { actions, requests } = harness([success({ ...variety, knowledge_sources: [] })]);
+  assert.equal((await actions.saveCropVariety(null, { ...payload, knowledge_sources: [] })).success, true);
+  assert.deepEqual(plain(requests[0].options.data.knowledge_sources), []);
+});
+
 test("variety edits retain configured extra translations and allowlist their writable fields", async () => {
   const { actions, requests } = harness([success(variety)], undefined, [{ id: "en" }, { id: "hi" }, { id: "ar" }]);
-  const values = { ...payload, maturity_days_min: 135, source_id: 12, translations: { ...payload.translations, ar: { name: "Arabic name", description: "Description", region_notes: "Notes", id: 12 }, fr: { name: "Saved legacy" } } };
+  const values = { ...payload, maturity_days_min: 135, knowledge_sources: [12, 15], translations: { ...payload.translations, ar: { name: "Arabic name", description: "Description", region_notes: "Notes", id: 12 }, fr: { name: "Saved legacy" } } };
   assert.equal((await actions.saveCropVariety(42, values)).success, true);
   assert.equal(requests[0].url, "/admin/crop-varieties/42");
   assert.equal(requests[0].options.method, "PATCH");
@@ -134,24 +140,25 @@ test("variety edits retain configured extra translations and allowlist their wri
   assert.deepEqual(plain(sent.translations.ar), { name: "Arabic name", description: "Description", region_notes: "Notes" });
   assert.equal("fr" in sent.translations, false);
   assert.equal(sent.maturity_days_max, null);
-  assert.equal(sent.source_id, 12);
+  assert.deepEqual(plain(sent.knowledge_sources), [12, 15]);
+  assert.equal("source_id" in sent, false);
 });
 
 test("invalid IDs and non-finite or non-integer maturity values cannot reach Laravel", async () => {
   const { actions, requests } = harness([]);
   for (const maturity_days_min of [NaN, Infinity, 0, -1, 1.5]) assert.equal((await actions.saveCropVariety(null, { ...payload, maturity_days_min })).success, false);
-  for (const source_id of [NaN, 0, -1]) assert.equal((await actions.saveCropVariety(null, { ...payload, source_id })).success, false);
+  for (const knowledge_sources of [[NaN], [0], [-1], [10, 10]]) assert.equal((await actions.saveCropVariety(null, { ...payload, knowledge_sources })).success, false);
   assert.equal((await actions.saveCropVariety(-1, payload)).success, false);
   assert.equal(requests.length, 0);
 });
 
 test("nested 422 errors and source eligibility errors survive without cache invalidation", async () => {
-  const validation = Object.assign(new Error("Validation failed"), { errors: { "translations.hi.region_notes": ["Too long"], source_id: ["Verified source required"] } });
+  const validation = Object.assign(new Error("Validation failed"), { errors: { "translations.hi.region_notes": ["Too long"], "knowledge_sources.0": ["An active verified source is required"] } });
   const { actions, invalidations } = harness([validation]);
   const result = await actions.saveCropVariety(42, payload);
   assert.equal(result.success, false);
   assert.equal(result.errors["translations.hi.region_notes"][0], "Too long");
-  assert.equal(result.errors.source_id[0], "Verified source required");
+  assert.equal(result.errors["knowledge_sources.0"][0], "An active verified source is required");
   assert.equal(invalidations.length, 0);
 });
 

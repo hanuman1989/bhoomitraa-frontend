@@ -1,18 +1,24 @@
 import { ChevronDownIcon } from "@/icons";
-import { useState } from "react";
+import { useState, type Ref, type SelectHTMLAttributes } from "react";
 import { useTranslations } from "next-intl";
 
 interface Option {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
-interface SelectProps {
+interface SelectProps extends Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  "onChange" | "defaultValue" | "value"
+> {
   options: Option[];
   placeholder?: string;
   onChange: (value: string) => void;
   className?: string;
   defaultValue?: string;
+  value?: string;
+  ref?: Ref<HTMLSelectElement>;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -21,6 +27,9 @@ const Select: React.FC<SelectProps> = ({
   onChange,
   className = "",
   defaultValue = "",
+  value,
+  ref,
+  ...inputProps
 }) => {
   const tUi = useTranslations("forms.select");
   if (placeholder === undefined) placeholder = tUi("selectAnOption");
@@ -38,11 +47,13 @@ const Select: React.FC<SelectProps> = ({
     <div className="relative">
       <select
         className={`shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pe-11 text-sm placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${
-          selectedValue
+          (value ?? selectedValue)
             ? "text-gray-800 dark:text-white/90"
             : "text-gray-400 dark:text-gray-400"
         } ${className}`}
-        value={selectedValue}
+        {...inputProps}
+        ref={ref}
+        value={value ?? selectedValue}
         onChange={handleChange}
       >
         {/* Placeholder option */}
@@ -58,6 +69,7 @@ const Select: React.FC<SelectProps> = ({
           <option
             key={option.value}
             value={option.value}
+            disabled={option.disabled}
             className="text-gray-700 dark:bg-gray-900 dark:text-gray-400"
           >
             {option.label}

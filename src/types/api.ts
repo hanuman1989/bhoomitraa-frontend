@@ -32,6 +32,7 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 }
 
 export interface ApiRequestOptions {
+  idempotencyKey?: string;
   responseType?: "json" | "binary";
   method?: ApiMethod;
   data?: unknown;

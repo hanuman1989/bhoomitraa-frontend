@@ -9,8 +9,10 @@ import CropVarietyConfirmDialog from "./CropVarietyConfirmDialog";
 
 export default function CropVarietyRowActions({
   variety,
+  returnQuery,
 }: {
   variety: CropVariety;
+  returnQuery: string;
 }) {
   const t = useTranslations("cropVarieties");
   const [operation, setOperation] = useState<
@@ -36,7 +38,7 @@ export default function CropVarietyRowActions({
         >
           <MenuItem>
             <Link
-              href={`/admin/crop-varieties/${variety.id}/edit`}
+              href={`/admin/crop-varieties/${variety.id}/edit${returnQuery ? `?${returnQuery}` : ""}`}
               className={item}
             >
               <PencilIcon aria-hidden="true" className="size-4" />

@@ -31,6 +31,7 @@ export async function apiRequest<T = unknown>(
     params,
     audience = "admin",
     responseType = "json",
+    idempotencyKey,
   }: ApiRequestOptions = {},
 ): Promise<T | Blob> {
   // Only allow relative backend API paths, never arbitrary URLs.
@@ -61,6 +62,12 @@ export async function apiRequest<T = unknown>(
     Accept: "application/json",
     "X-Locale": locale,
   });
+  if (idempotencyKey !== undefined) {
+    if (method !== "POST" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+      throw new Error("Invalid idempotency key");
+    }
+    headers.set("Idempotency-Key", idempotencyKey);
+  }
 
   if (audience !== "public") {
     const cookieStore = await cookies();

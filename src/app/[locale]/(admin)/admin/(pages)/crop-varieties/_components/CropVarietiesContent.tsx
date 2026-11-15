@@ -17,6 +17,15 @@ export default async function CropVarietiesContent({
 }: PageProps) {
   const t = await getTranslations("cropVarieties");
   const params = await searchParams;
+  const query = new URLSearchParams();
+  for (const [key, entry] of Object.entries(params)) {
+    if (Array.isArray(entry)) {
+      for (const value of entry) query.append(key, value);
+    } else if (entry !== undefined) {
+      query.append(key, entry);
+    }
+  }
+  const returnQuery = query.toString();
   const value = (key: string) => {
     const entry = params[key];
     return Array.isArray(entry) ? (entry[0] ?? "") : (entry ?? "");
@@ -90,6 +99,7 @@ export default async function CropVarietiesContent({
       list: {
         result,
         filtered: Object.values(filters).some(Boolean),
+        returnQuery,
       },
     };
   } catch (error: unknown) {

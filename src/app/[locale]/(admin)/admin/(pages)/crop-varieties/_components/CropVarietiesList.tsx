@@ -16,9 +16,11 @@ import CropVarietyRowActions from "./CropVarietyRowActions";
 export default function CropVarietiesList({
   result,
   filtered,
+  returnQuery,
 }: {
   result: CropVarietiesListResponse;
   filtered: boolean;
+  returnQuery: string;
 }) {
   const t = useTranslations("cropVarieties");
   const cell = "px-4 py-4 text-start text-sm text-gray-700 dark:text-gray-300";
@@ -34,7 +36,7 @@ export default function CropVarietiesList({
           </Badge>
         </div>
         <Link
-          href="/admin/crop-varieties/create"
+          href={`/admin/crop-varieties/create${returnQuery ? `?${returnQuery}` : ""}`}
           className="bg-success-700 hover:bg-success-800 inline-flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
@@ -51,7 +53,6 @@ export default function CropVarietiesList({
                 "crop",
                 "code",
                 "maturity",
-                "source",
                 "status",
                 "addedAt",
                 "actions",
@@ -74,7 +75,7 @@ export default function CropVarietiesList({
               >
                 <TableCell className={`${cell} min-w-40 font-semibold`}>
                   <Link
-                    href={`/admin/crop-varieties/${variety.id}/edit`}
+                    href={`/admin/crop-varieties/${variety.id}/edit${returnQuery ? `?${returnQuery}` : ""}`}
                     className="text-brand-600 dark:text-brand-400"
                   >
                     {variety.name ?? variety.slug}
@@ -111,27 +112,7 @@ export default function CropVarietiesList({
                         ? t("maturity.to", { max: variety.maturity_days_max })
                         : t("notAvailable")}
                 </TableCell>
-                <TableCell className={cell}>
-                  {variety.source_id && variety.source_title ? (
-                    <Link
-                      href={`/admin/knowledge-sources/${variety.source_id}`}
-                    >
-                      <Badge
-                        color="info"
-                        startIcon={
-                          <DocsIcon
-                            aria-hidden="true"
-                            className="block size-4 shrink-0"
-                          />
-                        }
-                      >
-                        {variety.source_title}
-                      </Badge>
-                    </Link>
-                  ) : (
-                    t("notLinked")
-                  )}
-                </TableCell>
+
                 <TableCell className={cell}>
                   <Badge color={variety.is_active ? "success" : "light"}>
                     {variety.is_active ? t("active") : t("inactive")}
@@ -141,7 +122,10 @@ export default function CropVarietiesList({
                   {variety.added_at ?? t("notAvailable")}
                 </TableCell>
                 <TableCell className={cell}>
-                  <CropVarietyRowActions variety={variety} />
+                  <CropVarietyRowActions
+                    variety={variety}
+                    returnQuery={returnQuery}
+                  />
                 </TableCell>
               </TableRow>
             ))}

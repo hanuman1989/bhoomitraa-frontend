@@ -7,10 +7,29 @@ import { handleActionError } from "@/lib/api/handleActionError";
 import { cropVarietiesAPI } from "@/lib/apis/admin/cropVarieties";
 import { cropsAPI } from "@/lib/apis/admin/crops";
 import { knowledgeSourcesAPI } from "@/lib/apis/admin/knowledgeSources";
+import type { PageSearchParams } from "@/types/api";
 import CropVarietyForm from "./CropVarietyForm";
 
-export default async function CropVarietyEditor({ id }: { id?: string }) {
+export default async function CropVarietyEditor({
+  id,
+  searchParams,
+}: {
+  id?: string;
+  searchParams?: Promise<PageSearchParams>;
+}) {
   const t = await getTranslations("cropVarieties");
+  const params = searchParams ? await searchParams : {};
+  const cropIdParam = params.crop_id;
+  const cropIdValue = Array.isArray(cropIdParam)
+    ? cropIdParam[0]
+    : cropIdParam;
+  const parsedCropId = Number(cropIdValue);
+  const queryCropId =
+    id === undefined &&
+    Number.isSafeInteger(parsedCropId) &&
+    parsedCropId > 0
+      ? parsedCropId
+      : null;
   let data: ComponentProps<typeof CropVarietyForm>;
   try {
     await requireAdmin();
@@ -26,8 +45,6 @@ export default async function CropVarietyEditor({ id }: { id?: string }) {
         : cropVarietiesAPI.show(numericId),
       cropsAPI.list({ is_active: 1, page: 1, per_page: 20 }),
       knowledgeSourcesAPI.list({
-        is_active: 1,
-        verification_status: "verified",
         sort_by: "title",
         sort_direction: "asc",
         page: 1,
@@ -41,31 +58,40 @@ export default async function CropVarietyEditor({ id }: { id?: string }) {
     )
       throw new ApiError(t("feedback.loadFailed"), 502);
     const variety = response?.data ?? null;
-    const [crop, source] = await Promise.all([
+    const [crop, initialSources] = await Promise.all([
       variety
         ? cropsAPI.show(variety.crop_id).catch((error: unknown) => {
             if (error instanceof ApiError && error.status === 404) return null;
             throw error;
           })
-        : Promise.resolve(null),
-      variety?.source_id
-        ? knowledgeSourcesAPI
-            .show(variety.source_id)
-            .catch((error: unknown) => {
-              if (error instanceof ApiError && error.status === 404)
-                return null;
+        : queryCropId
+          ? cropsAPI.show(queryCropId).catch((error: unknown) => {
+              if (error instanceof ApiError && error.status === 404) return null;
               throw error;
             })
-        : Promise.resolve(null),
+          : Promise.resolve(null),
+      Promise.all(
+          (variety?.knowledge_sources ?? []).map(async (source) => {
+            try {
+              const response = await knowledgeSourcesAPI.show(source.id);
+              if (!response.status || !response.data?.id)
+                throw new ApiError(t("feedback.loadFailed"), 502);
+              return response.data;
+            } catch (error: unknown) {
+              if (error instanceof ApiError && error.status === 404) return source;
+              throw error;
+            }
+          }),
+      ),
     ]);
-    if ((crop && !crop.status) || (source && !source.status))
+    if ((crop && !crop.status) || !sourceOptions.status)
       throw new ApiError(t("feedback.loadFailed"), 502);
     data = {
       variety,
       cropOptions,
       sourceOptions,
       initialCrop: crop?.data ?? null,
-      initialSource: source?.data ?? null,
+      initialSources,
     };
   } catch (error: unknown) {
     if (error instanceof ApiError && error.status === 404) notFound();
