@@ -27,6 +27,12 @@ function load(path, deps = {}, globals = {}) {
     crypto: require("node:crypto").webcrypto,
     setTimeout,
     clearTimeout,
+    setInterval: (...args) => {
+      const timer = setInterval(...args);
+      timer.unref();
+      return timer;
+    },
+    clearInterval,
     ...globals,
     require: (name) =>
       name === "react/jsx-runtime"
@@ -35,9 +41,11 @@ function load(path, deps = {}, globals = {}) {
           ? deps[name]
           : Object.hasOwn(areaFixture.dependencies, name)
             ? areaFixture.dependencies[name]
-            : (() => {
-                throw Error(`Unexpected dependency ${name}`);
-              })(),
+            : name === geoPath
+              ? geometry
+              : (() => {
+                  throw Error(`Unexpected dependency ${name}`);
+                })(),
   });
   return module.exports;
 }

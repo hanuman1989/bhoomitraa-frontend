@@ -31,6 +31,7 @@ export async function saveCrop(
       !validId(values.category_id) ||
       typeof values.slug !== "string" ||
       typeof values.is_active !== "boolean" ||
+      typeof values.is_recommendate !== "boolean" ||
       (values.crop_color !== undefined &&
         values.crop_color !== null &&
         typeof values.crop_color !== "string") ||
@@ -71,6 +72,7 @@ export async function saveCrop(
       crop_code: values.crop_code,
       ...(values.crop_color !== undefined && { crop_color: values.crop_color }),
       is_active: values.is_active,
+      is_recommendate: values.is_recommendate,
       ...(values.ai_diagnosis_enabled !== undefined && {
         ai_diagnosis_enabled: values.ai_diagnosis_enabled,
       }),
@@ -95,6 +97,10 @@ export async function saveCrop(
       if (payload.crop_color !== undefined)
         data.append("crop_color", payload.crop_color ?? "");
       data.append("is_active", payload.is_active ? "1" : "0");
+      data.append(
+        "is_recommendate",
+        payload.is_recommendate ? "1" : "0",
+      );
       if (payload.ai_diagnosis_enabled !== undefined)
         data.append(
           "ai_diagnosis_enabled",

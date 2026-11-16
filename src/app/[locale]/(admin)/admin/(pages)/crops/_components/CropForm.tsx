@@ -25,6 +25,7 @@ const emptyValues: CropFormValues = {
   crop_code: "",
   crop_color: null,
   is_active: false,
+  is_recommendate: false,
   ai_diagnosis_enabled: false,
   translations: Object.fromEntries(
     languages.map(({ id }) => [id, { name: "", description: "" }]),
@@ -59,6 +60,7 @@ export default function CropForm({
       crop_code: initialCrop?.crop_code ?? "",
       crop_color: initialCrop?.crop_color ?? null,
       is_active: initialCrop?.is_active ?? false,
+      is_recommendate: initialCrop?.is_recommendate ?? false,
       ai_diagnosis_enabled: initialCrop?.ai_diagnosis_enabled ?? false,
       translations: Object.fromEntries(
         languages.map(({ id }) => [
@@ -133,6 +135,7 @@ export default function CropForm({
             crop_code: values.crop_code.trim() || null,
             crop_color: values.crop_color,
             is_active: values.is_active,
+            is_recommendate: values.is_recommendate,
             ...(canManageAI && {
               ai_diagnosis_enabled: values.ai_diagnosis_enabled,
             }),
@@ -159,6 +162,7 @@ export default function CropForm({
               case "crop_code":
               case "crop_color":
               case "is_active":
+              case "is_recommendate":
               case "ai_diagnosis_enabled":
               case "image":
                 setError(field, { type: "server", message: messages[0] });

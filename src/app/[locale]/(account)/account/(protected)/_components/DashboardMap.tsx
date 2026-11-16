@@ -12,6 +12,11 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import FarmInfoOverlay from "@/components/common/maps/FarmInfoOverlay";
+import CropInfoWindow, {
+  type CropInfoAction,
+} from "@/components/common/maps/CropInfoWindow";
+import type { FarmInfoAction } from "@/components/common/maps/FarmInfoWindow";
+import type { CropMapRecord } from "@/types/account/farmCrop";
 import { LocationPinIcon } from "@/icons";
 import {
   DEFAULT_FARM_COLOR,
@@ -22,6 +27,7 @@ import {
   farmAnchor,
   farmFeature,
   farmPositions,
+  farmLocation,
   isMapPosition,
 } from "./farmGeometry";
 import {
@@ -65,11 +71,17 @@ interface Props {
   onSelect: (id: number) => void;
   onReady: (ready: boolean) => void;
   bottomPadding?: number;
+  crops?: CropMapRecord[];
+  selectedCrop?: CropMapRecord | null;
+  onSelectCrop?: (id: number) => void;
+  onCropAction?: (action: CropInfoAction, id: number) => void;
+  onFarmAction?: (action: FarmInfoAction, id: number) => void;
 }
 interface Resources {
   sdk: MapsSDK;
   map: MapsInstance;
   farms: MapsData;
+  crops: MapsData;
   location: MapsData;
 }
 
@@ -89,6 +101,11 @@ export default function DashboardMap({
   onSelect,
   onReady,
   bottomPadding = 0,
+  crops,
+  selectedCrop = null,
+  onSelectCrop,
+  onCropAction,
+  onFarmAction,
 }: Props) {
   const t = useTranslations("farmerDashboard.map");
   const locale = useLocale();
@@ -149,13 +166,21 @@ export default function DashboardMap({
   const [popupDismissed, setPopupDismissed] = useState(false);
   const [popupRequest, setPopupRequest] = useState(0);
   const selectedFarm = farms.find((farm) => farm.id === selectedFarmId) ?? null;
+  const cropAnchor = selectedCrop
+    ? farmAnchor({
+        id: selectedCrop.id,
+        name: selectedCrop.crop_name ?? "",
+        boundary: selectedCrop.boundary,
+        location: farmLocation(selectedCrop.latitude, selectedCrop.longitude),
+      })
+    : null;
   const anchor = useMemo(
     () => (selectedFarm ? farmAnchor(selectedFarm) : null),
     [selectedFarm],
   );
   useEffect(() => {
     startTransition(() => setPopupDismissed(false));
-  }, [selectedFarmId, farmerId]);
+  }, [selectedFarmId, selectedCrop?.id, farmerId]);
   const closePopup = useCallback(() => setPopupDismissed(true), []);
   function reopenPopup() {
     setPopupDismissed(false);
@@ -210,6 +235,7 @@ export default function DashboardMap({
           map,
           farms: new sdk.Data({ map }),
           location: new sdk.Data({ map }),
+          crops: new sdk.Data({ map }),
         };
         lifecycle.current = {
           owner: initial.current.farmerId,
@@ -243,8 +269,10 @@ export default function DashboardMap({
       if (current) {
         cancelViewportAdjustment(current.map);
         current.farms.setMap(null);
+        current.crops.setMap(null);
         current.location.setMap(null);
         current.sdk.event.clearInstanceListeners(current.farms);
+        current.sdk.event.clearInstanceListeners(current.crops);
         current.sdk.event.clearInstanceListeners(current.location);
         current.sdk.event.clearInstanceListeners(current.map);
       }
@@ -275,6 +303,49 @@ export default function DashboardMap({
     });
     return () => listener.remove();
   }, [farms, generation, onSelect]);
+  useEffect(() => {
+    const current = resources.current;
+    if (!current) return;
+    current.crops.forEach((feature) => current.crops.remove(feature));
+    const features = (crops ?? [])
+      .filter((crop) => crop.status === "active")
+      .map((crop) =>
+        farmFeature({
+          id: crop.id,
+          name: crop.crop_name ?? "",
+          boundary: crop.boundary,
+          location: farmLocation(crop.latitude, crop.longitude),
+        }),
+      )
+      .filter((feature): feature is object => feature !== null);
+    if (features.length)
+      current.crops.addGeoJson({ type: "FeatureCollection", features });
+    current.crops.setStyle((feature) => {
+      const id = Number(feature.getId());
+      const record = crops?.find((crop) => crop.id === id);
+      const selected = id === selectedCrop?.id;
+      return {
+        fillColor: record?.crop_color || farmMapColor(id + 1),
+        fillOpacity: selected ? 0.6 : 0.35,
+        strokeColor: selected
+          ? "#ffffff"
+          : record?.crop_color || farmMapColor(id + 1),
+        strokeWeight: selected ? 5 : 3,
+        zIndex: selected ? 20 : 10,
+        clickable: true,
+        editable: false,
+        draggable: false,
+        title: record?.crop_name ?? "",
+      };
+    });
+    const listener = current.crops.addListener("click", ({ feature }) => {
+      if (!view.current.blocked) {
+        reopenPopup();
+        onSelectCrop?.(Number(feature.getId()));
+      }
+    });
+    return () => listener.remove();
+  }, [crops, generation, selectedCrop?.id, onSelectCrop]);
 
   function stopAutomaticViewport() {
     lifecycle.current.manual = true;
@@ -580,13 +651,39 @@ export default function DashboardMap({
           farm={selectedFarm}
           areaLabel={selectedFarm?.areaLabel}
           anchor={anchor}
-          open={!popupDismissed && authReady && Boolean(selectedFarm && anchor)}
+          open={
+            !selectedCrop &&
+            !popupDismissed &&
+            authReady &&
+            Boolean(selectedFarm && anchor)
+          }
           blocked={automaticViewportBlocked}
           request={popupRequest}
           viewport={{ ...viewport, sidebarWidth }}
           panelHeight={bottomPadding}
           onClose={closePopup}
+          onAction={onFarmAction}
         />
+      )}
+      {generation && status === "ready" && selectedCrop && onCropAction && (
+        <FarmInfoOverlay
+          sdk={generation.sdk}
+          map={generation.map}
+          farm={{ id: selectedCrop.id, name: selectedCrop.crop_name ?? "" }}
+          anchor={cropAnchor}
+          open={!popupDismissed && authReady && Boolean(cropAnchor)}
+          blocked={automaticViewportBlocked}
+          request={popupRequest}
+          viewport={{ ...viewport, sidebarWidth }}
+          panelHeight={bottomPadding}
+          onClose={closePopup}
+        >
+          <CropInfoWindow
+            crop={selectedCrop}
+            onClose={closePopup}
+            onAction={onCropAction}
+          />
+        </FarmInfoOverlay>
       )}
       {status !== "ready" && (
         <div className="from-success-50 to-success-100 dark:to-success-950 absolute inset-0 flex items-center justify-center bg-linear-to-br via-gray-50 p-6 dark:from-gray-900 dark:via-gray-950">

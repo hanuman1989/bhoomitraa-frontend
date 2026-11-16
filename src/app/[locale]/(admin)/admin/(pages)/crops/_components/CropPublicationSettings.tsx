@@ -4,6 +4,7 @@ import { Controller, type UseFormReturn } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import ComponentCard from "@/components/admin/common/ComponentCard";
 import Switch from "@/components/admin/form/switch/Switch";
+import { ShootingStarIcon } from "@/icons";
 import type { CropFormValues } from "@/types/admin/crop";
 import type { CropCategory } from "@/types/admin/cropCategory";
 
@@ -83,6 +84,60 @@ export default function CropPublicationSettings({
           className="text-error-600 dark:text-error-400 mt-1 text-xs"
         >
           {errors.is_active?.message}
+        </p>
+      </div>
+      <div className="border-t border-gray-100 pt-4 dark:border-gray-800">
+        <Controller
+          name="is_recommendate"
+          control={control}
+          render={({ field }) => (
+            <div
+              ref={field.ref}
+              role="switch"
+              aria-checked={field.value}
+              aria-disabled={busy}
+              aria-label={t("form.recommended")}
+              aria-describedby="crop-recommended-help crop-recommended-error"
+              aria-invalid={!!errors.is_recommendate}
+              tabIndex={busy ? -1 : 0}
+              onBlur={field.onBlur}
+              onKeyDown={(event) => {
+                if (!busy && (event.key === " " || event.key === "Enter")) {
+                  event.preventDefault();
+                  field.onChange(!field.value);
+                }
+              }}
+              className="focus-visible:outline-brand-500 inline-flex items-center gap-3 rounded-lg p-1 focus-visible:outline-2"
+            >
+              <Switch
+                key={String(field.value)}
+                defaultChecked={field.value}
+                onChange={field.onChange}
+                disabled={busy}
+                label={
+                  <span className="inline-flex items-center gap-2">
+                    <span className="bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400 inline-flex size-6 items-center justify-center rounded-md">
+                      <ShootingStarIcon aria-hidden="true" className="size-4" />
+                    </span>
+                    {t("form.recommended")}
+                  </span>
+                }
+              />
+            </div>
+          )}
+        />
+        <p
+          id="crop-recommended-help"
+          className="mt-2 text-xs leading-5 text-gray-500 dark:text-gray-400"
+        >
+          {t("form.recommendedHelp")}
+        </p>
+        <p
+          id="crop-recommended-error"
+          role="alert"
+          className="text-error-600 dark:text-error-400 mt-1 text-xs"
+        >
+          {errors.is_recommendate?.message}
         </p>
       </div>
       <div className="border-t border-gray-100 pt-4 dark:border-gray-800">

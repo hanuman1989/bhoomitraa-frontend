@@ -13,6 +13,7 @@ import Label from "@/components/admin/form/Label";
 import Switch from "@/components/admin/form/switch/Switch";
 import type { Season, SeasonFormValues } from "@/types/admin/season";
 import SeasonTranslations from "./SeasonTranslations";
+import SeasonPresentationFields from "./SeasonPresentationFields";
 
 const cardClass =
   "rounded-xl shadow-theme-xs [&>div:first-child>h3]:text-xl [&>div:first-child>h3]:font-semibold";
@@ -35,6 +36,9 @@ export default function SeasonForm({ season }: { season: Season | null }) {
     defaultValues: {
       slug: season?.slug ?? "",
       is_active: season?.is_active ?? false,
+      start_month: season?.start_month ?? null,
+      end_month: season?.end_month ?? null,
+      icon: season?.icon ?? null,
       translations: Object.fromEntries(
         locales.map((locale) => [
           locale,
@@ -69,6 +73,9 @@ export default function SeasonForm({ season }: { season: Season | null }) {
           persistedId.current,
           {
             slug: values.slug,
+            start_month: values.start_month,
+            end_month: values.end_month,
+            icon: values.icon,
             translations: Object.fromEntries(
               locales
                 .filter((locale) =>
@@ -92,7 +99,13 @@ export default function SeasonForm({ season }: { season: Season | null }) {
         if (!result.success || !result.data) {
           for (const [field, messages] of Object.entries(result.errors ?? {})) {
             if (!messages[0]) continue;
-            if (field === "slug" || field === "is_active") {
+            if (
+              field === "slug" ||
+              field === "is_active" ||
+              field === "start_month" ||
+              field === "end_month" ||
+              field === "icon"
+            ) {
               setError(field, { type: "server", message: messages[0] });
             } else {
               for (const locale of locales) {
@@ -118,6 +131,9 @@ export default function SeasonForm({ season }: { season: Season | null }) {
           reset({
             slug: "",
             is_active: false,
+            start_month: null,
+            end_month: null,
+            icon: null,
             translations: Object.fromEntries(
               languages.map(({ id }) => [id, { name: "", description: "" }]),
             ),
@@ -199,6 +215,17 @@ export default function SeasonForm({ season }: { season: Season | null }) {
                 {errors.slug?.message}
               </p>
             </div>
+          </ComponentCard>
+          <ComponentCard
+            title={t("form.presentation")}
+            desc={t("form.presentationDescription")}
+            className={cardClass}
+          >
+            <SeasonPresentationFields
+              form={form}
+              locales={locales}
+              disabled={busy}
+            />
           </ComponentCard>
           <ComponentCard title={t("translations.title")} className={cardClass}>
             <SeasonTranslations form={form} locales={locales} />

@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CalenderIcon, PlusIcon } from "@/icons";
 import Badge from "@/components/admin/ui/badge/Badge";
@@ -10,6 +10,8 @@ import {
   TableRow,
 } from "@/components/admin/ui/table";
 import UrlPagination from "@/components/admin/common/UrlPagination";
+import SeasonIcon from "@/components/admin/common/SeasonIcon";
+import { formatSeasonPeriod } from "@/lib/seasons/presentation";
 import type { SeasonsListResponse } from "@/types/admin/season";
 import SeasonRowActions from "./SeasonRowActions";
 
@@ -21,6 +23,7 @@ export default function SeasonList({
   filtered: boolean;
 }) {
   const t = useTranslations("seasons");
+  const locale = useLocale();
   const cell = "px-5 py-4 text-start text-sm text-gray-700 dark:text-gray-300";
   return (
     <section
@@ -52,7 +55,15 @@ export default function SeasonList({
           <caption className="sr-only">{t("description")}</caption>
           <TableHeader className="border-y border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800/50">
             <TableRow>
-              {["name", "slug", "status", "addedAt", "actions"].map((key) => (
+              {[
+                "name",
+                "icon",
+                "period",
+                "slug",
+                "status",
+                "addedAt",
+                "actions",
+              ].map((key) => (
                 <TableCell
                   key={key}
                   isHeader
@@ -82,6 +93,25 @@ export default function SeasonList({
                         {season.description}
                       </p>
                     )}
+                  </TableCell>
+                  <TableCell className={cell}>
+                    {season.icon ? (
+                      <span className="inline-flex items-center gap-2">
+                        <SeasonIcon icon={season.icon} className="size-6" />
+                        <span className="sr-only">
+                          {t(`icons.${season.icon}`)}
+                        </span>
+                      </span>
+                    ) : (
+                      t("notAvailable")
+                    )}
+                  </TableCell>
+                  <TableCell className={`${cell} whitespace-nowrap`}>
+                    {formatSeasonPeriod(
+                      season.start_month,
+                      season.end_month,
+                      locale,
+                    ) ?? t("notAvailable")}
                   </TableCell>
                   <TableCell className={cell}>{season.slug}</TableCell>
                   <TableCell className={cell}>

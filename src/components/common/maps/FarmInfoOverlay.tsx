@@ -1,7 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import FarmInfoWindow, { type FarmInfoWindowProps } from "./FarmInfoWindow";
+import FarmInfoWindow, {
+  type FarmInfoWindowProps,
+  type FarmInfoAction,
+} from "./FarmInfoWindow";
 import type { MapPosition } from "@/app/[locale]/(account)/account/(protected)/_components/dashboardTypes";
 import type {
   MapsInstance,
@@ -25,6 +28,8 @@ interface Props {
   viewport: MapViewport;
   panelHeight: number;
   onClose: () => void;
+  onAction?: (action: FarmInfoAction, id: number) => void;
+  children?: ReactNode;
 }
 
 /** One supported OverlayView host. React stays in the dashboard's provider tree. */
@@ -40,6 +45,8 @@ export default function FarmInfoOverlay({
   viewport,
   panelHeight,
   onClose,
+  onAction,
+  children,
 }: Props) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const overlayRef = useRef<MapsOverlay | null>(null);
@@ -232,7 +239,14 @@ export default function FarmInfoOverlay({
 
   return container && farm
     ? createPortal(
-        <FarmInfoWindow farm={farm} areaLabel={areaLabel} onClose={close} />,
+        children ?? (
+          <FarmInfoWindow
+            farm={farm}
+            areaLabel={areaLabel}
+            onClose={close}
+            onAction={onAction}
+          />
+        ),
         container,
       )
     : null;

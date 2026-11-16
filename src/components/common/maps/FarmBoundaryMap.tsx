@@ -19,7 +19,11 @@ import {
 } from "@/app/[locale]/(account)/account/(protected)/_components/googleMaps";
 import { DEFAULT_MAP_VIEW } from "@/app/[locale]/(account)/account/(protected)/_components/dashboardState";
 import { fitMapPositions } from "@/app/[locale]/(account)/account/(protected)/_components/mapViewport";
-import type { MapPosition } from "@/app/[locale]/(account)/account/(protected)/_components/dashboardTypes";
+import type {
+  MapPosition,
+  FarmGeometry,
+} from "@/app/[locale]/(account)/account/(protected)/_components/dashboardTypes";
+import { farmPositions } from "@/app/[locale]/(account)/account/(protected)/_components/farmGeometry";
 import { PlusIcon, MinusIcon, LocationPinIcon } from "@/icons";
 import { cn } from "@/utils";
 
@@ -40,6 +44,8 @@ export default function FarmBoundaryMap({
   onEdit,
   children,
   className,
+  referenceLayers = [],
+  displayGeometry,
 }: {
   points: MapPosition[];
   editable?: boolean;
@@ -51,15 +57,24 @@ export default function FarmBoundaryMap({
   onEdit?: (points: MapPosition[]) => void;
   children?: ReactNode;
   className?: string;
+  referenceLayers?: {
+    id: string;
+    name: string;
+    boundary: FarmGeometry;
+    color: string;
+    fillOpacity?: number;
+  }[];
+  displayGeometry?: FarmGeometry | null;
 }) {
   const t = useTranslations("farmerFarms");
   const locale = useLocale();
   const host = useRef<HTMLDivElement>(null);
   const resources = useRef<{ sdk: MapsSDK; map: MapsInstance } | null>(null);
   const callbacks = useRef({ onAdd, onEdit, drawing });
-  const initial = useRef({ points, location, locale });
+  const initial = useRef({ points, location, locale, referenceLayers });
   const polygonRef = useRef<PolygonResources | null>(null);
   const showPolygon = !drawing && !gps && points.length >= 3;
+  const hasDisplayGeometry = Boolean(displayGeometry);
   const [attempt, setAttempt] = useState(0);
   const [generation, setGeneration] = useState(0);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -111,7 +126,21 @@ export default function FarmBoundaryMap({
           if (latLng && callbacks.current.drawing)
             callbacks.current.onAdd?.({ lat: latLng.lat(), lng: latLng.lng() });
         });
-        if (initial.current.points.length)
+        if (initial.current.referenceLayers.length)
+          fitMapPositions(
+            sdk,
+            map,
+            initial.current.referenceLayers.flatMap((layer) =>
+              farmPositions({
+                id: 0,
+                name: layer.name,
+                boundary: layer.boundary,
+                location: null,
+              }),
+            ),
+            16,
+          );
+        else if (initial.current.points.length)
           fitMapPositions(sdk, map, initial.current.points, 16);
         else if (initial.current.location) {
           try {
@@ -157,13 +186,66 @@ export default function FarmBoundaryMap({
   }, [key, attempt]);
   useEffect(() => {
     const current = resources.current;
+    if (!current || !referenceLayers.length) return;
+    const layers = new current.sdk.Data({ map: current.map });
+    layers.addGeoJson({
+      type: "FeatureCollection",
+      features: referenceLayers.map((layer) => ({
+        type: "Feature",
+        id: layer.id,
+        properties: {
+          name: layer.name,
+          color: layer.color,
+          opacity: layer.fillOpacity ?? 0.15,
+        },
+        geometry: layer.boundary,
+      })),
+    });
+    layers.setStyle((feature) => ({
+      clickable: false,
+      editable: false,
+      draggable: false,
+      fillColor: String(feature.getProperty("color")),
+      fillOpacity: Number(feature.getProperty("opacity")),
+      strokeColor: String(feature.getProperty("color")),
+      strokeWeight: 3,
+      zIndex: 1,
+      title: String(feature.getProperty("name")),
+    }));
+    return () => {
+      layers.setMap(null);
+      current.sdk.event.clearInstanceListeners(layers);
+    };
+  }, [referenceLayers, generation]);
+  useEffect(() => {
+    const current = resources.current;
+    if (!current || !displayGeometry) return;
+    const layer = new current.sdk.Data({ map: current.map });
+    layer.addGeoJson({
+      type: "Feature",
+      geometry: displayGeometry,
+      properties: {},
+    });
+    layer.setStyle({
+      clickable: false,
+      editable: false,
+      fillColor: "#12b76a",
+      fillOpacity: 0.32,
+      strokeColor: "#039855",
+      strokeWeight: 3,
+      zIndex: 3,
+    });
+    return () => layer.setMap(null);
+  }, [displayGeometry, generation]);
+  useEffect(() => {
+    const current = resources.current;
     if (!current || !showPolygon) return;
     const { sdk, map } = current;
     const polygon = new sdk.Polygon({
       map,
       paths: [points],
       fillColor: "#12b76a",
-      fillOpacity: 0.32,
+      fillOpacity: displayGeometry ? 0 : 0.32,
       strokeColor: "#039855",
       strokeWeight: 3,
       editable,
@@ -180,7 +262,7 @@ export default function FarmBoundaryMap({
     };
     // Points update independently so a vertex drag never replaces the active polygon.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showPolygon, editable, generation, observePath]);
+  }, [showPolygon, editable, generation, observePath, hasDisplayGeometry]);
   useEffect(() => {
     const current = resources.current;
     if (!current) return;

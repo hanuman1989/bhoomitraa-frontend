@@ -109,6 +109,7 @@ const crop = {
   image_url: null,
   name: "Wheat",
   is_active: false,
+  is_recommendate: false,
   ai_diagnosis_enabled: false,
   translations: {
     en: { locale: "en", name: "Wheat", description: null },
@@ -124,6 +125,7 @@ const payload = {
   scientific_name: null,
   crop_code: null,
   is_active: false,
+  is_recommendate: false,
   translations: {
     en: { name: "Wheat", description: null },
     hi: { name: "Hindi name", description: null },
@@ -361,6 +363,7 @@ test("crop creation sends image, metadata and nested translations in one multipa
   assert.equal(requests[0].options.data.get("slug"), "wheat");
   assert.equal(requests[0].options.data.get("category_id"), "3");
   assert.equal(requests[0].options.data.get("is_active"), "0");
+  assert.equal(requests[0].options.data.get("is_recommendate"), "0");
   assert.equal(requests[0].options.data.get("scientific_name"), "");
   assert.equal(requests[0].options.data.get("translations[en][name]"), "Wheat");
   assert.equal(
@@ -404,6 +407,7 @@ test("multipart edits use POST with a PATCH override and configured translations
   const sent = requests[0].options.data;
   assert.equal(sent.get("_method"), "PATCH");
   assert.equal(sent.get("ai_diagnosis_enabled"), "0");
+  assert.equal(sent.get("is_recommendate"), "0");
   assert.equal(sent.get("translations[ar][name]"), "Arabic crop");
   assert.equal(await sent.get("image").text(), "image bytes");
 });

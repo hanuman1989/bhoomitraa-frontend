@@ -27,7 +27,7 @@ export type DashboardAction =
   | { type: "navigate" }
   | { type: "resize"; height: number }
   | { type: "fab"; open: boolean }
-  | { type: "select-farm"; id: number }
+  | { type: "select-farm"; id: number | null }
   | { type: "map-type"; mapType: MapType };
 export function dashboardReducer(
   state: DashboardState,

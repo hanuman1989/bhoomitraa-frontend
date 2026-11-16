@@ -41,6 +41,7 @@ export interface FarmInfoWindowProps {
   areaLabel?: string | null;
   onClose: () => void;
   ref?: Ref<HTMLElement>;
+  onAction?: (action: FarmInfoAction, id: number) => void;
 }
 
 export default function FarmInfoWindow({
@@ -48,6 +49,7 @@ export default function FarmInfoWindow({
   areaLabel,
   onClose,
   ref,
+  onAction,
 }: FarmInfoWindowProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -113,10 +115,24 @@ export default function FarmInfoWindow({
             <li key={key}>
               <button
                 type="button"
-                aria-disabled="true"
-                aria-describedby={`${id}-unavailable`}
-                title={t("farmerDashboard.comingSoonTitle")}
-                onClick={(event) => event.preventDefault()}
+                aria-disabled={
+                  !onAction || key === "delete-farm" ? "true" : undefined
+                }
+                aria-describedby={
+                  !onAction || key === "delete-farm"
+                    ? `${id}-unavailable`
+                    : undefined
+                }
+                title={
+                  !onAction || key === "delete-farm"
+                    ? t("farmerDashboard.comingSoonTitle")
+                    : undefined
+                }
+                onClick={(event) => {
+                  if (!onAction || key === "delete-farm")
+                    event.preventDefault();
+                  else onAction(key, farm.id);
+                }}
                 className={`focus-visible:outline-success-600 flex h-12 w-full items-center gap-6 rounded-sm px-3 text-start text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-2 ${key === "delete-farm" ? "text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950" : "hover:bg-success-50 dark:hover:bg-success-950"}`}
               >
                 <Icon

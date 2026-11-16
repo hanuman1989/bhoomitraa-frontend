@@ -15,6 +15,9 @@ const languages = [
 ];
 const payload = {
   slug: "rabi",
+  start_month: 10,
+  end_month: 3,
+  icon: "sprout",
   translations: {
     en: { name: "Rabi", description: null },
     hi: { name: "रबी", description: "" },
@@ -86,6 +89,13 @@ function harness(responses = [], admin = true) {
     },
     "@/lib/apis/admin/seasons": { seasonsAPI: api },
     "@/types/admin/season": { requiredSeasonLocales: ["en", "hi"] },
+    "@/types/season": {
+      isSeasonIcon: (value) => ["sprout", "sun", "leaf"].includes(value),
+    },
+    "@/lib/seasons/presentation": {
+      isValidMonth: (value) =>
+        Number.isInteger(value) && value >= 1 && value <= 12,
+    },
     "@/lib/api/handleActionError": {
       handleActionError: async (error) => {
         if (error.controlFlow) throw error;
@@ -121,7 +131,7 @@ test("season service uses the verified endpoints, verbs and server pagination pa
   assert.equal("data" in h.requests[5].options, false);
 });
 
-test("create defaults inactive; allowlisting saves selected configured languages and omits unsupported fields", async () => {
+test("create defaults inactive; allowlisting saves presentation and configured languages while omitting unsupported fields", async () => {
   const h = harness([{ status: true, data: season }]);
   const result = await h.actions.saveSeason(
     null,
@@ -141,8 +151,14 @@ test("create defaults inactive; allowlisting saves selected configured languages
   assert.equal(result.data.is_active, false);
   assert.deepEqual(Object.keys(h.requests[0].options.data), [
     "slug",
+    "start_month",
+    "end_month",
+    "icon",
     "translations",
   ]);
+  assert.equal(h.requests[0].options.data.start_month, 10);
+  assert.equal(h.requests[0].options.data.end_month, 3);
+  assert.equal(h.requests[0].options.data.icon, "sprout");
   assert.deepEqual(h.requests[0].options.data.translations.ar, {
     name: "ربيع",
     description: "",
@@ -170,6 +186,33 @@ test("absent optional translations stay omitted; status only changes after metad
     url: "/admin/seasons/42/status",
     options: { method: "PATCH", data: { is_active: true } },
   });
+});
+
+test("presentation accepts cross-year and identical periods and preserves explicit null clears", async () => {
+  const cleared = {
+    ...payload,
+    start_month: null,
+    end_month: null,
+    icon: null,
+  };
+  const h = harness([
+    { status: true, data: { ...season, ...cleared } },
+    { status: true, data: { ...season, start_month: 10, end_month: 10 } },
+  ]);
+  assert.equal((await h.actions.saveSeason(42, cleared, false)).success, true);
+  assert.deepEqual(h.requests[0].options.data, cleared);
+  assert.equal(
+    (
+      await h.actions.saveSeason(
+        42,
+        { ...payload, start_month: 10, end_month: 10, icon: "leaf" },
+        false,
+      )
+    ).success,
+    true,
+  );
+  assert.equal(h.requests[1].options.data.end_month, 10);
+  assert.equal(h.requests[1].options.data.icon, "leaf");
 });
 
 test("failed activation returns the committed inactive record and nested errors; retry patches that ID", async () => {
@@ -239,6 +282,11 @@ test("every season mutation authenticates and validates IDs and runtime payloads
         ar: { name: 3, description: null },
       },
     },
+    { ...payload, start_month: 0 },
+    { ...payload, end_month: 13 },
+    { ...payload, start_month: 10, end_month: null },
+    { ...payload, start_month: null, end_month: 3 },
+    { ...payload, icon: "cloud" },
   ])
     assert.equal(
       (await h.actions.saveSeason(null, value, false)).success,
@@ -309,6 +357,40 @@ test("English and Hindi season messages have matching keys and interpolation par
   compare(en, hi);
 });
 
+test("season presentation centralizes localized months, period formatting and icon allowlisting", () => {
+  const presentation = load("src/lib/seasons/presentation.ts", {
+    "@/types/season": {
+      seasonIconValues: ["sprout", "sun", "leaf"],
+    },
+  });
+  assert.equal(presentation.getMonthOptions("en").length, 12);
+  assert.equal(presentation.getMonthOptions("en")[9].label, "October");
+  assert.equal(presentation.formatSeasonPeriod(10, 3, "en"), "Oct – Mar");
+  assert.equal(presentation.formatSeasonPeriod(10, 10, "en"), "Oct – Oct");
+  assert.equal(presentation.formatSeasonPeriod(10, null, "en"), null);
+  assert.equal(presentation.formatSeasonPeriod(0, 3, "en"), null);
+  assert.deepEqual(
+    presentation.seasonIconOptions.map((option) => option.value),
+    ["sprout", "sun", "leaf"],
+  );
+});
+
+test("season icon renderer uses only the three predefined SVG components and ignores unsupported values", () => {
+  const Icon = load("src/components/common/SeasonIcon.tsx", {
+    "@/icons": {
+      SeasonLeafIcon: "leaf-svg",
+      SeasonSproutIcon: "sprout-svg",
+      SeasonSunIcon: "sun-svg",
+    },
+    "@/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+  }).default;
+  assert.equal(Icon({ icon: "sprout" }).type, "sprout-svg");
+  assert.equal(Icon({ icon: "sun" }).type, "sun-svg");
+  assert.equal(Icon({ icon: "leaf" }).type, "leaf-svg");
+  assert.equal(Icon({ icon: "cloud" }), null);
+  assert.equal(Icon({ icon: null }), null);
+});
+
 function findAll(element, predicate) {
   if (!element || typeof element !== "object") return [];
   return [
@@ -320,7 +402,10 @@ function findAll(element, predicate) {
 }
 function uiDependencies(extra = {}) {
   return {
-    "next-intl": { useTranslations: () => (key) => key },
+    "next-intl": {
+      useTranslations: () => (key) => key,
+      useLocale: () => "en",
+    },
     "@/i18n/navigation": { Link: "a" },
     "@/i18n/languages": {
       languages,
@@ -605,7 +690,7 @@ test("Crop Variety preserves its translation fields and direction without langua
   );
 });
 
-test("season table renders exactly five columns with backend dates, names and descriptions", () => {
+test("season table renders presentation columns with backend dates, names and descriptions", () => {
   const List = load(
     `${root}_components/SeasonList.tsx`,
     uiDependencies({
@@ -624,6 +709,13 @@ test("season table renders exactly five columns with backend dates, names and de
       "@/components/admin/common/UrlPagination": {
         __esModule: true,
         default: "pagination",
+      },
+      "@/components/admin/common/SeasonIcon": {
+        __esModule: true,
+        default: "season-icon",
+      },
+      "@/lib/seasons/presentation": {
+        formatSeasonPeriod: (start, end) => (start && end ? "Oct – Mar" : null),
       },
       "./SeasonRowActions": { __esModule: true, default: "actions" },
     }),
@@ -645,6 +737,8 @@ test("season table renders exactly five columns with backend dates, names and de
     headers.map((element) => element.props.children),
     [
       "fields.name",
+      "fields.icon",
+      "fields.period",
       "fields.slug",
       "fields.status",
       "fields.addedAt",
@@ -654,6 +748,14 @@ test("season table renders exactly five columns with backend dates, names and de
   assert.equal(
     findAll(tree, (element) => element.props.children === "5 Nov 2026 10:30 AM")
       .length,
+    1,
+  );
+  assert.equal(
+    findAll(tree, (element) => element.type === "season-icon")[0].props.icon,
+    "sprout",
+  );
+  assert.equal(
+    findAll(tree, (element) => element.props.children === "Oct – Mar").length,
     1,
   );
   assert.equal(

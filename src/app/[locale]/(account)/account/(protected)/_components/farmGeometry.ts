@@ -227,3 +227,93 @@ export function pointsToBoundary(
   ring.push([...ring[0]]);
   return { type: "MultiPolygon", coordinates: [[ring]] };
 }
+
+/** Crop allocation preview. Topology and shared edges are rechecked by Laravel. */
+export function cropAllocationError(
+  boundary: FarmGeometry,
+  farm: FarmGeometry,
+  occupied: readonly FarmGeometry[],
+): "outsideFarm" | "overlap" | null {
+  const polygons = (geometry: FarmGeometry) =>
+    geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  const cross = (a: number[], b: number[], c: number[]) =>
+    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  const onEdge = (point: number[], a: number[], b: number[]) =>
+    Math.abs(cross(a, b, point)) < 1e-12 &&
+    point[0] >= Math.min(a[0], b[0]) - 1e-10 &&
+    point[0] <= Math.max(a[0], b[0]) + 1e-10 &&
+    point[1] >= Math.min(a[1], b[1]) - 1e-10 &&
+    point[1] <= Math.max(a[1], b[1]) + 1e-10;
+  function ringContains(point: number[], ring: Ring, edges: boolean): boolean {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const a = ring[i],
+        b = ring[j];
+      if (onEdge(point, a, b)) return edges;
+      if (
+        a[1] > point[1] !== b[1] > point[1] &&
+        point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
+      )
+        inside = !inside;
+    }
+    return inside;
+  }
+  const contains = (geometry: FarmGeometry, point: number[], edges: boolean) =>
+    polygons(geometry).some(
+      ([outer, ...holes]) =>
+        ringContains(point, outer, edges) &&
+        !holes.some((hole) => ringContains(point, hole, !edges)),
+    );
+  const segments = (geometry: FarmGeometry) =>
+    polygons(geometry).flatMap((p) =>
+      p.flatMap((r) => r.slice(1).map((b, i) => [r[i], b] as const)),
+    );
+  const cropEdges = segments(boundary);
+  const crossing = (a: FarmGeometry, b: FarmGeometry) =>
+    segments(a).some(([p, q]) =>
+      segments(b).some(
+        ([r, s]) =>
+          cross(p, q, r) * cross(p, q, s) < -1e-24 &&
+          cross(r, s, p) * cross(r, s, q) < -1e-24,
+      ),
+    );
+  if (
+    cropEdges.some(
+      ([a, b]) =>
+        !contains(farm, a, true) ||
+        !contains(farm, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], true),
+    ) ||
+    crossing(boundary, farm)
+  )
+    return "outsideFarm";
+  if (
+    polygons(farm).some(([, ...holes]) =>
+      holes.some((hole) => contains(boundary, hole[0], false)),
+    )
+  )
+    return "outsideFarm";
+  function interiorSamples(geometry: FarmGeometry) {
+    return segments(geometry).flatMap(([a, b]) => {
+      const dx = b[0] - a[0],
+        dy = b[1] - a[1],
+        length = Math.hypot(dx, dy);
+      if (!length) return [];
+      const epsilon = Math.min(length / 100, 1e-7),
+        x = (a[0] + b[0]) / 2,
+        y = (a[1] + b[1]) / 2;
+      return [
+        [x - (dy / length) * epsilon, y + (dx / length) * epsilon],
+        [x + (dy / length) * epsilon, y - (dx / length) * epsilon],
+      ].filter((point) => contains(geometry, point, false));
+    });
+  }
+  for (const other of occupied) {
+    if (
+      crossing(boundary, other) ||
+      interiorSamples(boundary).some((p) => contains(other, p, false)) ||
+      interiorSamples(other).some((p) => contains(boundary, p, false))
+    )
+      return "overlap";
+  }
+  return null;
+}

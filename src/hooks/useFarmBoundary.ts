@@ -49,7 +49,14 @@ export default function useFarmBoundary(
   const watchGeneration = useRef(0);
   const last = useRef<{ point: MapPosition; time: number } | null>(null);
   const alive = useRef(true);
+  const [duration, setDuration] = useState(0);
+  const clock = useRef({ elapsed: 0, started: null as number | null });
   const stop = useCallback(() => {
+    if (clock.current.started !== null) {
+      clock.current.elapsed += Date.now() - clock.current.started;
+      clock.current.started = null;
+      if (alive.current) setDuration(Math.floor(clock.current.elapsed / 1000));
+    }
     watchGeneration.current++;
     if (watcher.current !== null)
       navigator.geolocation.clearWatch(watcher.current);
@@ -89,6 +96,7 @@ export default function useFarmBoundary(
       return;
     }
     setNotice("");
+    clock.current.started = Date.now();
     setSource("gps");
     setPhase("drawing");
     setGpsState("requesting_permission");
@@ -162,6 +170,8 @@ export default function useFarmBoundary(
   }
   function clear() {
     stop();
+    clock.current = { elapsed: 0, started: null };
+    setDuration(0);
     pointsRef.current = [];
     setPoints([]);
     setPhase("idle");
@@ -214,6 +224,25 @@ export default function useFarmBoundary(
     (sum, p, i) => sum + (i ? pointDistance(points[i - 1], p) : 0),
     0,
   );
+  const active =
+    gpsState === "tracking" || gpsState === "requesting_permission";
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(
+      () =>
+        setDuration(
+          Math.floor(
+            (clock.current.elapsed +
+              (clock.current.started === null
+                ? 0
+                : Date.now() - clock.current.started)) /
+              1000,
+          ),
+        ),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, [active]);
   return {
     points,
     mode,
@@ -224,6 +253,7 @@ export default function useFarmBoundary(
     notice,
     valid,
     distance,
+    duration,
     area,
     boundary,
     draft: {
@@ -231,8 +261,19 @@ export default function useFarmBoundary(
       boundary_source: boundary ? source : null,
       gps_accuracy_m: boundary && source === "gps" ? accuracy : null,
     } satisfies BoundaryDraft,
-    active: gpsState === "tracking" || gpsState === "requesting_permission",
+    active,
     setNotice,
+    loadBoundary: (draft: BoundaryDraft) => {
+      stop();
+      const next = boundaryPoints(draft.boundary);
+      pointsRef.current = next;
+      setPoints(next);
+      setSource(draft.boundary_source ?? "manual");
+      setPhase(draft.boundary ? "confirmed" : "idle");
+      setGpsState("idle");
+      setAccuracy(draft.gps_accuracy_m);
+      setNotice("");
+    },
     changeMode,
     clear,
     start,
