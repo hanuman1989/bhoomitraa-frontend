@@ -36,18 +36,20 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
           workspace.select(crop);
         }
       }}
-      className={`shadow-theme-xs focus-visible:outline-success-600 cursor-pointer rounded-2xl border p-3 transition focus-visible:outline-2 ${selected ? "border-success-500 bg-success-50/70 dark:bg-success-950" : "hover:border-success-300 border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"}`}
+      className={`shadow-theme-xs focus-visible:outline-success-600 cursor-pointer rounded-xl border p-2.5 transition focus-visible:outline-2 ${selected ? "border-success-500 bg-success-50/70 dark:bg-success-950" : "hover:border-success-300 border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"}`}
     >
-      <div className="grid items-center gap-4 sm:grid-cols-2 xl:grid-cols-12">
-        <div className="flex min-w-0 items-center gap-3 xl:col-span-2">
+      <div className="grid items-center gap-3 sm:grid-cols-2 xl:grid-cols-12">
+        <div className="flex min-w-0 items-center gap-2.5 xl:col-span-2">
           <CropImage
             src={crop.crop.image}
             name={crop.crop.name}
-            className="size-16 rounded-xl"
+            className="size-14 rounded-lg"
           />
           <div className="min-w-0">
-            <h3 className="text-lg font-bold">{crop.crop.name ?? t("crop")}</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <h3 className="text-base font-bold">
+              {crop.crop.name ?? t("crop")}
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-500">
               {[crop.crop_variety?.name, crop.season.name]
                 .filter(Boolean)
                 .join(" · ")}
@@ -55,10 +57,10 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
           </div>
         </div>
         <div className="flex items-center gap-2 xl:col-span-2">
-          <LocationPinIcon className="size-5 shrink-0" />
-          <strong className="text-sm">{crop.farm.name}</strong>
+          <LocationPinIcon className="size-4 shrink-0" />
+          <strong className="text-xs sm:text-sm">{crop.farm.name}</strong>
         </div>
-        <div className="text-sm xl:col-span-2">
+        <div className="text-xs xl:col-span-2">
           <p className="text-gray-500">{t("sown")}</p>
           <strong>{crop.sowing_date ?? t("unavailable")}</strong>
           <p className="mt-1 text-gray-500">
@@ -66,7 +68,7 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
             {units.label(crop.area_unit)}
           </p>
         </div>
-        <div className="text-sm xl:col-span-2">
+        <div className="text-xs xl:col-span-2">
           <p className="text-gray-500">
             {draft ? t("setupProgress") : t("expectedHarvest")}
           </p>
@@ -83,7 +85,7 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
                   t("unavailable")))}
           </strong>
         </div>
-        <span className="bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200 w-fit rounded-full px-3 py-1 text-xs font-semibold xl:col-span-1">
+        <span className="bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200 w-fit rounded-full px-2.5 py-1 text-xs font-semibold xl:col-span-1">
           {t(`statuses.${crop.status}`)}
         </span>
         <div
@@ -93,30 +95,30 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
         >
           <button
             type="button"
-            className="shadow-theme-xs rounded-full border border-gray-200 p-3 dark:border-gray-700"
+            className="shadow-theme-xs rounded-full border border-gray-200 p-2 dark:border-gray-700"
             aria-label={t("locate")}
             onClick={() => workspace.select(crop)}
           >
-            <LocationPinIcon className="size-5" />
+            <LocationPinIcon className="size-4" />
           </button>
           <button
             type="button"
-            className={`${cropButton} px-3`}
+            className={`${cropButton} !min-h-9 !rounded-lg px-3 py-2 text-xs`}
             onClick={() =>
               draft
                 ? workspace.open({ id: crop.id })
                 : workspace.details(crop.id)
             }
           >
-            {!draft && <EyeIcon className="size-5" />}
+            {!draft && <EyeIcon className="size-4" />}
             {t(draft ? "continueSetup" : "viewDetails")}
           </button>
           <Menu>
             <MenuButton
               aria-label={t("cropActions")}
-              className="rounded-full border border-gray-200 p-3 dark:border-gray-700"
+              className="rounded-full border border-gray-200 p-2 dark:border-gray-700"
             >
-              <MoreDotIcon className="size-5" />
+              <MoreDotIcon className="size-4" />
             </MenuButton>
             <MenuItems
               anchor="bottom end"

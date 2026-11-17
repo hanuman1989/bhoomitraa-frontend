@@ -34,26 +34,28 @@ export default function CropSummaryCards({
     },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {stats.map(({ key, value, Icon }, index) => (
         <div
           key={key}
-          className={`flex items-center gap-3 rounded-2xl border p-4 ${index === 3 ? "border-warning-200 bg-warning-50/50 dark:border-warning-900 dark:bg-warning-950" : "border-success-200 bg-success-50/60 dark:border-success-900 dark:bg-success-950"}`}
+          className={`flex min-h-16 items-center gap-2 rounded-lg border px-3 py-2 ${index === 3 ? "border-warning-200 bg-warning-50/50 dark:border-warning-900 dark:bg-warning-950" : "border-success-200 bg-success-50/60 dark:border-success-900 dark:bg-success-950"}`}
         >
           <span
-            className={`flex size-12 shrink-0 items-center justify-center rounded-full ${index === 3 ? "bg-warning-100 text-warning-600" : "bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300"}`}
+            className={`flex size-8 shrink-0 items-center justify-center rounded-full ${index === 3 ? "bg-warning-100 text-warning-600" : "bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300"}`}
           >
-            <Icon className="size-6" />
+            <Icon className="size-4" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+            <h3 className="text-xs leading-4 font-semibold text-gray-500 dark:text-gray-400">
               {t(key)}
             </h3>
-            <strong className="mt-1 block text-xl font-bold sm:text-2xl">
+            <strong className="block text-base leading-5 font-bold sm:text-lg">
               {value ?? "—"}
             </strong>
             {key === "cultivatedArea" && (
-              <span className="text-xs text-gray-500">{t("activeCrops")}</span>
+              <span className="block text-xs leading-4 text-gray-500">
+                {t("activeCrops")}
+              </span>
             )}
           </div>
         </div>

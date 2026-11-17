@@ -137,23 +137,23 @@ export default function CropManager({
     t,
   ]);
   return (
-    <div className="space-y-5">
-      <header className="flex flex-wrap items-center gap-4">
-        <span className="bg-success-50 text-success-700 dark:bg-success-950 dark:text-success-300 hidden rounded-full p-3 sm:block">
-          <SproutIcon className="size-9" />
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-center gap-3">
+        <span className="bg-success-50 text-success-700 dark:bg-success-950 dark:text-success-300 hidden rounded-full p-2.5 sm:block">
+          <SproutIcon className="size-8" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold sm:text-3xl">{t("title")}</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-2xl font-bold">{t("title")}</h2>
+          <p className="mt-0.5 text-xs text-gray-500 sm:text-sm dark:text-gray-400">
             {t("description")}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-2">
           <select
             aria-label={t("seasonFilter")}
             value={filters.season_id ?? ""}
             onChange={(e) => update({ season_id: e.target.value, page: "1" })}
-            className={`${cropControl} w-auto`}
+            className={`${cropControl} !h-10 w-40 !rounded-lg text-xs sm:w-44`}
           >
             <option value="">{t("allSeasons")}</option>
             {seasons.map((s) => (
@@ -164,10 +164,10 @@ export default function CropManager({
           </select>
           <button
             type="button"
-            className={cropPrimary}
+            className={`${cropPrimary} !min-h-10 !rounded-lg px-4 py-2`}
             onClick={() => workspace.crops.open({ farmId: filters.farm_id })}
           >
-            <PlusIcon className="size-5" />
+            <PlusIcon className="size-4" />
             {t("plantCrop")}
           </button>
         </div>
@@ -176,7 +176,7 @@ export default function CropManager({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <nav
           aria-label={t("cropTabs")}
-          className="flex gap-4 border-b border-gray-200 dark:border-gray-700"
+          className="flex gap-2 border-b border-gray-200 dark:border-gray-700"
         >
           {(["active", "drafts", "history"] as const).map((key) => (
             <button
@@ -184,7 +184,7 @@ export default function CropManager({
               key={key}
               aria-current={tab === key ? "page" : undefined}
               onClick={() => update({ tab: key, page: "1" })}
-              className={`border-b-3 px-2 py-3 text-sm font-semibold ${tab === key ? "border-success-600 text-success-700 dark:text-success-300" : "border-transparent text-gray-500"}`}
+              className={`border-b-3 px-2 py-2 text-xs font-semibold sm:text-sm ${tab === key ? "border-success-600 text-success-700 dark:text-success-300" : "border-transparent text-gray-500"}`}
             >
               {t(`tabs.${key}`, {
                 count:
@@ -198,10 +198,10 @@ export default function CropManager({
             </button>
           ))}
         </nav>
-        <div className="relative min-w-56 flex-1 sm:max-w-sm">
+        <div className="relative min-w-52 flex-1 sm:max-w-xs">
           <SearchIcon
             aria-hidden
-            className="text-success-600 absolute start-3 top-3 size-5"
+            className="text-success-600 absolute start-3 top-3 size-4"
           />
           <input
             aria-label={t("search")}
@@ -209,7 +209,7 @@ export default function CropManager({
             maxLength={150}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("search")}
-            className={`${cropControl} ps-10`}
+            className={`${cropControl} !h-10 !rounded-lg ps-9 text-xs`}
           />
         </div>
       </div>
@@ -221,7 +221,7 @@ export default function CropManager({
             onChange={(e) =>
               update({ history_status: e.target.value, page: "1" })
             }
-            className={`${cropControl} w-auto`}
+            className={`${cropControl} !h-10 w-auto !rounded-lg text-xs`}
           >
             <option value="completed">{t("statuses.completed")}</option>
             <option value="cancelled">{t("statuses.cancelled")}</option>
@@ -268,17 +268,17 @@ export default function CropManager({
         </CropNotice>
       )}
       {loading ? (
-        <div role="status" className="animate-pulse space-y-3 py-3">
+        <div role="status" className="animate-pulse space-y-2 py-2">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className="h-24 rounded-2xl bg-gray-100 dark:bg-gray-800"
+              className="h-20 rounded-xl bg-gray-100 dark:bg-gray-800"
             />
           ))}
           <span className="sr-only">{t("loading")}</span>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {data?.data.map((crop) => (
             <CropListItem key={crop.id} crop={crop} />
           ))}
