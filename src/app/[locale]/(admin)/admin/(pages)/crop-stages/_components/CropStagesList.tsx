@@ -16,11 +16,14 @@ import CropStageRowActions from "./CropStageRowActions";
 export default function CropStagesList({
   result,
   filtered,
+  returnQuery = "",
 }: {
   result: CropStagesListResponse;
   filtered: boolean;
+  returnQuery?: string;
 }) {
   const t = useTranslations("cropStages");
+  const query = returnQuery ? `?${returnQuery}` : "";
   const cell = "px-5 py-4 text-start text-sm text-gray-700 dark:text-gray-300";
   return (
     <section
@@ -40,7 +43,7 @@ export default function CropStagesList({
           </Badge>
         </div>
         <Link
-          href="/admin/crop-stages/create"
+          href={`/admin/crop-stages/create${query}`}
           className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white focus-visible:outline-2"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
@@ -81,7 +84,7 @@ export default function CropStagesList({
                 >
                   <TableCell className={`${cell} min-w-48`}>
                     <Link
-                      href={`/admin/crop-stages/${stage.id}/edit`}
+                      href={`/admin/crop-stages/${stage.id}/edit${query}`}
                       className="hover:text-brand-600 dark:hover:text-brand-400 font-semibold text-gray-900 dark:text-gray-100"
                     >
                       {name}
@@ -102,7 +105,11 @@ export default function CropStagesList({
                     {stage.added_at ?? t("notAvailable")}
                   </TableCell>
                   <TableCell className={cell}>
-                    <CropStageRowActions stage={stage} name={name} />
+                    <CropStageRowActions
+                      stage={stage}
+                      name={name}
+                      returnQuery={returnQuery}
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -120,7 +127,11 @@ export default function CropStagesList({
             {t(filtered ? "emptyFiltered" : "empty")}
           </p>
           <Link
-            href={filtered ? "/admin/crop-stages" : "/admin/crop-stages/create"}
+            href={
+              filtered
+                ? "/admin/crop-stages"
+                : `/admin/crop-stages/create${query}`
+            }
             className="text-brand-600 dark:text-brand-400 inline-block text-sm font-medium hover:underline"
           >
             {t(filtered ? "filters.reset" : "add")}

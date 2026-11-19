@@ -8,16 +8,25 @@ import {
   getTimelineChoices,
   getTimelineSelections,
   getTimelineRegions,
+  getTimelineOption,
 } from "@/lib/apis/admin/cropStageTimelines";
+import type { PageSearchParams } from "@/types/api";
 import type {
   StageTimeline,
   TimelineChoices,
   TimelineSelections,
   TimelineState,
+  TimelineRelationKind,
 } from "@/types/admin/cropStageTimeline";
 import StageTimelineForm from "./StageTimelineForm";
 
-export default async function StageTimelineEditor({ id }: { id?: string }) {
+export default async function StageTimelineEditor({
+  id,
+  searchParams,
+}: {
+  id?: string;
+  searchParams?: Promise<PageSearchParams>;
+}) {
   const t = await getTranslations("stageTimelines");
   let timeline: StageTimeline | null = null;
   let choices: TimelineChoices;
@@ -38,8 +47,46 @@ export default async function StageTimelineEditor({ id }: { id?: string }) {
         throw new ApiError(t("feedback.loadFailed"), 502);
       timeline = r.data;
     }
+    let querySelections: TimelineSelections = {};
+    if (!timeline && searchParams) {
+      const params = await searchParams;
+      const queryId = (field: string) => {
+        const entry = params[field];
+        return Number(Array.isArray(entry) ? entry[0] : entry);
+      };
+      async function selection(kind: TimelineRelationKind, numericId: number) {
+        if (!Number.isSafeInteger(numericId) || numericId < 1) return;
+        try {
+          const option = await getTimelineOption(kind, numericId);
+          if (kind === "source" || option.is_active) return option;
+        } catch (error: unknown) {
+          if (error instanceof ApiError && error.status === 404) return;
+          throw error;
+        }
+      }
+      const [crop, stage, variety, season, source] = await Promise.all([
+        selection("crop", queryId("crop_id")),
+        selection("stage", queryId("crop_stage_id")),
+        selection("variety", queryId("crop_variety_id")),
+        selection("season", queryId("season_id")),
+        selection("source", queryId("source_id")),
+      ]);
+      querySelections = { crop, stage, variety, season, source };
+      if (!params.crop_id) {
+        const cropId = stage?.crop_id ?? variety?.crop_id;
+        if (cropId) querySelections.crop = await selection("crop", cropId);
+      }
+      if (!querySelections.crop || stage?.crop_id !== querySelections.crop.id)
+        querySelections.stage = undefined;
+      if (!querySelections.crop || variety?.crop_id !== querySelections.crop.id)
+        querySelections.variety = undefined;
+    }
     [choices, states] = await Promise.all([
-      getTimelineChoices(timeline?.crop_id ?? null, true, true),
+      getTimelineChoices(
+        timeline?.crop_id ?? querySelections.crop?.id ?? null,
+        true,
+        true,
+      ),
       getTimelineRegions(timeline?.regions),
     ]);
     selections = timeline
@@ -50,7 +97,7 @@ export default async function StageTimelineEditor({ id }: { id?: string }) {
           season: timeline.season_id,
           source: timeline.source_id,
         })
-      : {};
+      : querySelections;
   } catch (error: unknown) {
     const failure = await handleActionError(error, t("feedback.loadFailed"));
     return (

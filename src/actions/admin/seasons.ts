@@ -12,6 +12,8 @@ import {
   type Season,
   type SeasonPayload,
 } from "@/types/admin/season";
+import { isSeasonIcon } from "@/types/season";
+import { isValidMonth } from "@/lib/seasons/presentation";
 
 function validId(id: number) {
   return Number.isSafeInteger(id) && id > 0;
@@ -39,6 +41,10 @@ export async function saveSeason(
       !values.translations ||
       typeof values.translations !== "object" ||
       Array.isArray(values.translations) ||
+      (values.start_month !== null && !isValidMonth(values.start_month)) ||
+      (values.end_month !== null && !isValidMonth(values.end_month)) ||
+      (values.start_month === null) !== (values.end_month === null) ||
+      (values.icon !== null && !isSeasonIcon(values.icon)) ||
       requiredSeasonLocales.some(
         (locale) => typeof values.translations[locale]?.name !== "string",
       )
@@ -62,7 +68,13 @@ export async function saveSeason(
       };
     }
     // Metadata endpoints reject is_active. Laravel preserves omitted translations.
-    const payload: SeasonPayload = { slug: values.slug, translations };
+    const payload: SeasonPayload = {
+      slug: values.slug,
+      start_month: values.start_month,
+      end_month: values.end_month,
+      icon: values.icon,
+      translations,
+    };
     const response =
       id === null
         ? await seasonsAPI.create(payload)

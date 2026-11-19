@@ -293,6 +293,7 @@ const cropValues = {
   crop_code: "WHEAT001",
   crop_color: "#FFC107",
   is_active: false,
+  is_recommendate: false,
   ai_diagnosis_enabled: false,
   translations: {
     en: { name: "Wheat", description: "Grain crop" },
@@ -679,6 +680,7 @@ test("Crop Manager resets completed creates, flags, selected image and ID before
   await form.submit();
   assert.equal(form.values().slug, "");
   assert.equal(form.values().is_active, false);
+  assert.equal(form.values().is_recommendate, false);
   assert.equal(form.values().ai_diagnosis_enabled, false);
   assert.equal(form.values().crop_color, null);
   assert.equal(cropImage(form).props.existingImageUrl, undefined);
@@ -980,6 +982,7 @@ test("ordinary-admin crop edits omit AI settings and preserve existing images wi
   form.render();
   await form.submit();
   assert.equal(payloads[0].id, 42);
+  assert.equal(payloads[0].payload.is_recommendate, false);
   assert.equal("ai_diagnosis_enabled" in payloads[0].payload, false);
   assert.equal(payloads[0].data.has("image"), false);
   assert.equal(cropImage(form).props.existingImageUrl, current.image_url);

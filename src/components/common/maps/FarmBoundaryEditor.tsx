@@ -1,5 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 import { useLocale, useTranslations } from "next-intl";
 import FarmBoundaryMap from "./FarmBoundaryMap";
 import BoundaryConfirmDialog from "./BoundaryConfirmDialog";
@@ -23,10 +29,20 @@ export default function FarmBoundaryEditor({
   session: s,
   areaUnit,
   location,
+  referenceLayers,
+  displayGeometry,
+  toolbar,
+  boundaryStatus,
+  collapsibleTools = false,
 }: {
   session: FarmBoundarySession;
   areaUnit: AreaUnit;
   location: string;
+  referenceLayers?: ComponentProps<typeof FarmBoundaryMap>["referenceLayers"];
+  displayGeometry?: ComponentProps<typeof FarmBoundaryMap>["displayGeometry"];
+  toolbar?: ReactNode;
+  boundaryStatus?: string;
+  collapsibleTools?: boolean;
 }) {
   const t = useTranslations("farmerFarms");
   const locale = useLocale();
@@ -35,6 +51,7 @@ export default function FarmBoundaryEditor({
   const [fullscreen, setFullscreen] = useState(false);
   const [confirm, setConfirm] = useState<null | (() => void)>(null);
   const [help, setHelp] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const expandButton = useRef<HTMLButtonElement>(null);
   const exitButton = useRef<HTMLButtonElement>(null);
   const wasFullscreen = useRef(false);
@@ -197,6 +214,9 @@ export default function FarmBoundaryEditor({
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
+                <p className="w-full text-sm">
+                  {t("gpsDuration", { seconds: s.duration ?? 0 })}
+                </p>
                 {!s.active ? (
                   <button
                     type="button"
@@ -243,6 +263,8 @@ export default function FarmBoundaryEditor({
             editable={s.phase === "editing"}
             gps={s.mode === "gps" && s.phase === "drawing"}
             accuracy={s.accuracy}
+            referenceLayers={referenceLayers}
+            displayGeometry={displayGeometry}
             location={location}
             onAdd={s.add}
             onEdit={s.update}
@@ -263,70 +285,85 @@ export default function FarmBoundaryEditor({
               </button>
             )}
             {s.mode === "manual" && (
-              <div className="shadow-theme-lg custom-scrollbar absolute start-3 top-16 bottom-3 flex w-44 flex-col overflow-y-auto overscroll-contain rounded-xl bg-white/95 p-2 text-gray-700 sm:w-48">
-                <h4 className="shrink-0 px-3 py-2 text-base font-bold text-gray-950">
-                  {t("drawingTools")}
-                </h4>
-                <button
-                  type="button"
-                  onClick={() =>
-                    discard(() => {
-                      s.clear();
-                      s.draw();
-                    })
-                  }
-                  className={`${button} ${s.phase === "drawing" ? "bg-success-100 text-success-800" : ""}`}
-                >
-                  <FarmFieldIcon className="size-5" />
-                  {t("drawPolygon")}
-                </button>
-                <button
-                  type="button"
-                  disabled={!s.points.length || s.phase === "drawing"}
-                  onClick={s.edit}
-                  className={button}
-                >
-                  <PencilIcon className="size-4" />
-                  {t("editBoundary")}
-                </button>
-                <button
-                  type="button"
-                  disabled={s.phase !== "drawing" || !s.points.length}
-                  onClick={s.undo}
-                  className={button}
-                >
-                  <ChevronLeftIcon className="size-4 rtl:rotate-180" />
-                  {t("wizard.undoPoint")}
-                </button>
-                <button
-                  type="button"
-                  disabled={!s.points.length}
-                  onClick={() => discard(s.clear)}
-                  className={button}
-                >
-                  <TrashBinIcon className="size-4" />
-                  {t("wizard.clearBoundary")}
-                </button>
-                {s.phase !== "confirmed" && (
+              <>
+                {collapsibleTools && (
                   <button
                     type="button"
-                    disabled={s.points.length < 3}
-                    onClick={s.confirm}
-                    className={`${button} text-success-700`}
+                    aria-expanded={toolsOpen}
+                    onClick={() => setToolsOpen((open) => !open)}
+                    className="shadow-theme-sm absolute start-3 top-16 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-800 sm:hidden"
                   >
-                    <CheckLineIcon className="size-4" />
-                    {t("confirmBoundary")}
+                    {t("drawingTools")}
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setHelp((value) => !value)}
-                  className={`${button} text-xs`}
+                <div
+                  className={`shadow-theme-lg custom-scrollbar absolute start-3 bottom-3 w-44 flex-col overflow-y-auto overscroll-contain rounded-xl bg-white/95 p-2 text-gray-700 sm:top-16 sm:flex sm:w-48 ${collapsibleTools ? (toolsOpen ? "top-28 flex" : "top-28 hidden") : "top-16 flex"}`}
                 >
-                  <InfoIcon className="size-4" />
-                  {t("howToDraw")}
-                </button>
-              </div>
+                  <h4 className="shrink-0 px-3 py-2 text-base font-bold text-gray-950">
+                    {t("drawingTools")}
+                  </h4>
+                  {toolbar}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      discard(() => {
+                        s.clear();
+                        s.draw();
+                      })
+                    }
+                    className={`${button} ${s.phase === "drawing" ? "bg-success-100 text-success-800" : ""}`}
+                  >
+                    <FarmFieldIcon className="size-5" />
+                    {t("drawPolygon")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!s.points.length || s.phase === "drawing"}
+                    onClick={s.edit}
+                    className={button}
+                  >
+                    <PencilIcon className="size-4" />
+                    {t("editBoundary")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={s.phase !== "drawing" || !s.points.length}
+                    onClick={s.undo}
+                    className={button}
+                  >
+                    <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+                    {t("wizard.undoPoint")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!s.points.length}
+                    onClick={() => discard(s.clear)}
+                    className={button}
+                  >
+                    <TrashBinIcon className="size-4" />
+                    {t("wizard.clearBoundary")}
+                  </button>
+                  {s.phase !== "confirmed" && (
+                    <button
+                      type="button"
+                      disabled={s.points.length < 3}
+                      onClick={s.confirm}
+                      className={`${button} text-success-700`}
+                    >
+                      <CheckLineIcon className="size-4" />
+                      {t("confirmBoundary")}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setHelp((value) => !value)}
+                    className={`${button} text-xs`}
+                  >
+                    <InfoIcon className="size-4" />
+                    {t("howToDraw")}
+                  </button>
+                </div>
+              </>
             )}
             {s.mode === "gps" && (
               <div className="shadow-theme-sm absolute end-16 top-16 max-w-64 rounded-xl bg-white/95 p-3 text-xs break-words text-gray-800">
@@ -413,7 +450,10 @@ export default function FarmBoundaryEditor({
                 {areaLabel}
               </strong>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t(s.phase === "confirmed" ? "boundaryReady" : "boundaryDraft")}
+                {boundaryStatus ??
+                  t(
+                    s.phase === "confirmed" ? "boundaryReady" : "boundaryDraft",
+                  )}
               </p>
             </div>
           </div>

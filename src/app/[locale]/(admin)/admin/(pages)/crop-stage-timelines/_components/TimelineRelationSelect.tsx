@@ -84,7 +84,10 @@ export default function TimelineRelationSelect({
       : (current?.page?.options ?? []);
   const selection =
     options.find((option) => String(option.id) === value) ??
-    (selected && String(selected.id) === value ? selected : null);
+    (selected && String(selected.id) === value ? selected : null) ??
+    (initialSelection && String(initialSelection.id) === value
+      ? initialSelection
+      : null);
   useEffect(() => {
     if (disabled || result.key === key) return;
     let active = true;

@@ -9,6 +9,7 @@ import FilterSelect from "@/components/admin/common/FilterSelect";
 import TimelineRelationSelect from "@/app/[locale]/(admin)/admin/(pages)/crop-stage-timelines/_components/TimelineRelationSelect";
 import {
   maxTemplateOffset,
+  templateScheduleTypes,
   type CropActivityTemplateFormValues,
 } from "@/types/admin/cropActivityTemplate";
 import type {
@@ -45,6 +46,7 @@ export default function CropActivityTemplateFields({
     formState: { errors },
   } = form;
   const crop = useWatch({ control, name: "crop_id" });
+  const scheduleType = useWatch({ control, name: "schedule_type" });
   const cropId = crop ? Number(crop) : null;
   const sameCrop = crop === initialCrop;
   const validId = (value: string) =>
@@ -212,7 +214,8 @@ export default function CropActivityTemplateFields({
               {...register("schedule_type", {
                 required: t("validation.schedule"),
                 validate: (value) =>
-                  value === "after_sowing" || t("validation.schedule"),
+                  templateScheduleTypes.includes(value) ||
+                  t("validation.schedule"),
               })}
               id="template-schedule"
               label={t("fields.schedule")}
@@ -221,7 +224,11 @@ export default function CropActivityTemplateFields({
               aria-invalid={!!errors.schedule_type}
               aria-describedby="template-schedule-error"
             >
-              <option value="after_sowing">{t("schedule.after_sowing")}</option>
+              {templateScheduleTypes.map((schedule) => (
+                <option key={schedule} value={schedule}>
+                  {t(`schedule.${schedule}`)}
+                </option>
+              ))}
             </FilterSelect>
             <p id="template-schedule-error" role="alert" className={errorClass}>
               {errors.schedule_type?.message}
@@ -229,7 +236,9 @@ export default function CropActivityTemplateFields({
           </div>
           <div>
             <Label htmlFor="template-start">
-              {t("fields.start")}{" "}
+              {t("fields.start", {
+                schedule: t(`schedule.${scheduleType}`),
+              })}{" "}
               <span aria-hidden="true" className="text-error-600">
                 *
               </span>
@@ -257,7 +266,9 @@ export default function CropActivityTemplateFields({
           </div>
           <div>
             <Label htmlFor="template-end">
-              {t("fields.end")}{" "}
+              {t("fields.end", {
+                schedule: t(`schedule.${scheduleType}`),
+              })}{" "}
               <span aria-hidden="true" className="text-error-600">
                 *
               </span>

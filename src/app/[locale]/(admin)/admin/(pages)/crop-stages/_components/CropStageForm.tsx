@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { useRouter } from "@/i18n/navigation";
@@ -27,6 +28,13 @@ export default function CropStageForm({
 }) {
   const t = useTranslations("cropStages");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listUrl = `/admin/crop-stages${searchParams.size ? `?${searchParams.toString()}` : ""}`;
+  const queryCropId = Number(searchParams.get("crop_id"));
+  const defaultCropId = initialStage
+    ? String(initialStage.crop_id)
+    : (crops.find((crop) => crop.id === queryCropId)?.id.toString() ?? "");
+  const appliedCropDefault = useRef(defaultCropId);
   const saving = useRef(false);
   const persistedId = useRef(initialStage?.id ?? null);
   const [stage, setStage] = useState(initialStage);
@@ -40,7 +48,7 @@ export default function CropStageForm({
   ];
   const form = useForm<CropStageFormValues>({
     defaultValues: {
-      crop_id: initialStage ? String(initialStage.crop_id) : "",
+      crop_id: defaultCropId,
       code: initialStage?.code ?? "",
       sequence: initialStage ? String(initialStage.sequence) : "",
       is_active: initialStage?.is_active ?? false,
@@ -61,9 +69,22 @@ export default function CropStageForm({
     setError,
     clearErrors,
     reset,
+    resetField,
     formState: { isSubmitting },
   } = form;
   const busy = pending || isSubmitting;
+  useEffect(() => {
+    if (
+      initialStage ||
+      persistedId.current !== null ||
+      busy ||
+      saving.current ||
+      appliedCropDefault.current === defaultCropId
+    )
+      return;
+    appliedCropDefault.current = defaultCropId;
+    resetField("crop_id", { defaultValue: defaultCropId });
+  }, [initialStage, busy, defaultCropId, resetField]);
   function submit(values: CropStageFormValues) {
     if (saving.current) return;
     saving.current = true;
@@ -133,7 +154,7 @@ export default function CropStageForm({
         }
         if (!initialStage) {
           reset({
-            crop_id: "",
+            crop_id: defaultCropId,
             code: "",
             sequence: "",
             is_active: false,
@@ -145,7 +166,7 @@ export default function CropStageForm({
           setStage(null);
         } else reset({ ...values, is_active: result.data.is_active });
         toast.success(result.message || t("feedback.saved"));
-        router.push("/admin/crop-stages");
+        router.push(listUrl);
       } catch {
         setFailure(t("feedback.saveFailed"));
         toast.error(t("feedback.saveFailed"));
@@ -196,7 +217,7 @@ export default function CropStageForm({
           type="button"
           disabled={busy}
           onClick={() => {
-            if (!saving.current) router.push("/admin/crop-stages");
+            if (!saving.current) router.push(listUrl);
           }}
           className="focus-visible:outline-brand-500 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >

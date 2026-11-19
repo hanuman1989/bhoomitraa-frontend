@@ -24,6 +24,18 @@ import {
   getFarmWorkspace,
 } from "@/actions/account/farms";
 import type { Farm, FarmSummary, BoundaryDraft } from "@/types/account/farm";
+import type {
+  CropCycle,
+  CropDetail,
+  CropMapRecord,
+  CropStatus,
+} from "@/types/account/farmCrop";
+import { getCropMap } from "@/actions/account/farm-crops";
+import type { CropInfoAction } from "@/components/common/maps/CropInfoWindow";
+import type { FarmInfoAction } from "@/components/common/maps/FarmInfoWindow";
+import CropWizardDialog from "../crops/_components/CropWizardDialog";
+import CropDetailsDialog from "../crops/_components/CropDetailsDialog";
+import CropDeleteConfirm from "../crops/_components/CropDeleteConfirm";
 import { AccountFarmContext } from "./AccountFarmContext";
 import AddFarmDialog from "../farms/_components/AddFarmDialog";
 import FarmBoundaryDialog from "@/components/common/maps/FarmBoundaryDialog";
@@ -145,6 +157,67 @@ export default function AccountDashboardShell({
   const [drawing, setDrawing] = useState(false);
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
   const openFarm = useCallback((farm?: Farm) => setFarmDialog({ farm }), []);
+  const [cropRevision, setCropRevision] = useState(0);
+  const refreshCrops = useCallback(
+    () => setCropRevision((value) => value + 1),
+    [],
+  );
+  const [cropMap, setCropMap] = useState<{
+    ownerId: number | null;
+    records: CropMapRecord[];
+    status: "loading" | "ready" | "error";
+  }>({ ownerId: null, records: [], status: "loading" });
+  const [selectedCrop, setSelectedCrop] = useState<CropMapRecord | null>(null);
+  const [cropDialog, setCropDialog] = useState<{
+    id?: number;
+    farmId?: number;
+    startStep?: number;
+  } | null>(null);
+  const [cropDetails, setCropDetails] = useState<{
+    id: number;
+    section?: "soil" | "fertilizer";
+  } | null>(null);
+  const [cropDelete, setCropDelete] = useState<{
+    id: number;
+    name: string;
+    status: CropStatus;
+  } | null>(null);
+  const openCrop = useCallback(
+    (options: { id?: number; farmId?: number; startStep?: number } = {}) =>
+      setCropDialog(options),
+    [],
+  );
+  const showCropDetails = useCallback(
+    (id: number, section?: "soil" | "fertilizer") =>
+      setCropDetails({ id, section }),
+    [],
+  );
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    startTransition(async () => {
+      const result = await getCropMap();
+      if (!active) return;
+      setCropMap((current) =>
+        result.success && result.data
+          ? { ownerId: user.id, records: result.data, status: "ready" }
+          : {
+              ownerId: user.id,
+              records: current.ownerId === user.id ? current.records : [],
+              status: "error",
+            },
+      );
+      if (result.success && result.data)
+        setSelectedCrop((current) =>
+          current && current.status === "active"
+            ? (result.data!.find((crop) => crop.id === current.id) ?? null)
+            : current,
+        );
+    });
+    return () => {
+      active = false;
+    };
+  }, [user?.id, cropRevision, revision, locale]);
   useEffect(() => {
     if (!user?.id || farmState) return;
     let active = true;
@@ -330,6 +403,7 @@ export default function AccountDashboardShell({
   }, []);
   const selectFarm = useCallback(
     (id: number) => {
+      setSelectedCrop(null);
       dispatch({ type: "select-farm", id });
       const selected = farms.find((farm) => farm.id === id);
       if (selected) {
@@ -340,6 +414,77 @@ export default function AccountDashboardShell({
       navigate("farm-manager");
     },
     [farms, navigate],
+  );
+  const selectCrop = useCallback(
+    (record: CropCycle | CropMapRecord) => {
+      const known = cropMap.records.find((crop) => crop.id === record.id);
+      const selected: CropMapRecord =
+        "crop_name" in record
+          ? record
+          : (known ?? {
+              id: record.id,
+              farm_id: record.farm.id,
+              crop_id: record.crop.id,
+              crop_name: record.crop.name,
+              crop_variety_name: record.crop_variety?.name ?? null,
+              crop_color: record.crop.crop_color,
+              status: record.status,
+              boundary: null,
+              latitude: record.latitude,
+              longitude: record.longitude,
+              cultivated_area: record.cultivated_area,
+              area_unit: record.area_unit,
+            });
+      setSelectedCrop(selected);
+      dispatch({ type: "select-farm", id: null });
+      navigate("crop-manager");
+      requestAnimationFrame(() =>
+        map.current?.focus({
+          id: selected.id,
+          name: selected.crop_name ?? "",
+          boundary: selected.boundary,
+          location: farmLocation(selected.latitude, selected.longitude),
+        }),
+      );
+    },
+    [cropMap.records, navigate],
+  );
+  const selectMapCrop = useCallback(
+    (id: number) => {
+      const crop = cropMap.records.find((item) => item.id === id);
+      if (crop) selectCrop(crop);
+    },
+    [cropMap.records, selectCrop],
+  );
+  const farmAction = useCallback(
+    (action: FarmInfoAction, id: number) => {
+      if (action === "planting-crops") openCrop({ farmId: id });
+      else if (action === "historical-crops") {
+        setPanelHidden(false);
+        router.push(`/account/crops?tab=history&farm_id=${id}`);
+      } else if (action === "edit-farm") {
+        const farm = workspace.farms.find((f) => f.id === id);
+        if (farm) openFarm(farm);
+      } else if (action === "farm-details") selectFarm(id);
+    },
+    [openCrop, router, workspace.farms, openFarm, selectFarm],
+  );
+  const cropAction = useCallback(
+    (action: CropInfoAction, id: number) => {
+      const crop =
+        cropMap.records.find((item) => item.id === id) ?? selectedCrop;
+      if (!crop) return;
+      if (action === "edit") openCrop({ id });
+      else if (action === "farm") selectFarm(crop.farm_id);
+      else if (action === "delete")
+        setCropDelete({ id, name: crop.crop_name ?? "", status: crop.status });
+      else
+        showCropDetails(
+          id,
+          action === "soil" || action === "fertilizer" ? action : undefined,
+        );
+    },
+    [cropMap.records, selectedCrop, openCrop, selectFarm, showCropDetails],
   );
   function saveForLanguageChange() {
     saveDashboardSnapshot(
@@ -369,6 +514,17 @@ export default function AccountDashboardShell({
         openFarm,
         refresh,
         revision,
+        crops: {
+          records: cropMap.ownerId === user?.id ? cropMap.records : [],
+          status: cropMap.ownerId === user?.id ? cropMap.status : "loading",
+          selectedId: selectedCrop?.id ?? null,
+          revision: cropRevision,
+          refresh: refreshCrops,
+          select: selectCrop,
+          open: openCrop,
+          details: showCropDetails,
+          remove: setCropDelete,
+        },
       }}
     >
       <div
@@ -393,10 +549,18 @@ export default function AccountDashboardShell({
               automaticViewportBlocked={
                 drawing ||
                 Boolean(farmDialog) ||
+                Boolean(cropDialog) ||
+                Boolean(cropDetails) ||
+                Boolean(cropDelete) ||
                 !mapVisible ||
                 (state.sidebarOpen && sidebarWidth === 0)
               }
               selectedFarmId={state.selectedFarmId}
+              crops={cropMap.ownerId === user?.id ? cropMap.records : undefined}
+              selectedCrop={cropMap.ownerId === user?.id ? selectedCrop : null}
+              onSelectCrop={selectMapCrop}
+              onCropAction={cropAction}
+              onFarmAction={farmAction}
               mapType={state.mapType}
               initialView={
                 browserState.ownerId === user?.id
@@ -573,6 +737,62 @@ export default function AccountDashboardShell({
               setDrawing(false);
               setFarmDialog({ boundary });
               navigate("farm-manager");
+            }}
+          />
+        )}
+        {cropDialog && (
+          <CropWizardDialog
+            {...cropDialog}
+            onClose={() => setCropDialog(null)}
+            onChanged={refreshCrops}
+            onSaved={(crop: CropDetail) => {
+              setCropDialog(null);
+              refresh();
+              const record: CropMapRecord = {
+                id: crop.id,
+                farm_id: crop.farm.id,
+                crop_id: crop.crop.id,
+                crop_name: crop.crop.name,
+                crop_variety_name: crop.crop_variety?.name ?? null,
+                crop_color: crop.crop.crop_color,
+                status: crop.status,
+                boundary: crop.boundary_details.boundary,
+                latitude: crop.latitude,
+                longitude: crop.longitude,
+                cultivated_area: crop.cultivated_area,
+                area_unit: crop.area_unit,
+              };
+              setCropMap((current) => ({
+                ...current,
+                records: [
+                  ...current.records.filter((item) => item.id !== record.id),
+                  record,
+                ],
+              }));
+              selectCrop(record);
+            }}
+          />
+        )}
+        {cropDetails && (
+          <CropDetailsDialog
+            {...cropDetails}
+            onClose={() => setCropDetails(null)}
+            onEdit={(startStep) => {
+              const id = cropDetails.id;
+              setCropDetails(null);
+              openCrop({ id, startStep });
+            }}
+          />
+        )}
+        {cropDelete && (
+          <CropDeleteConfirm
+            crop={cropDelete}
+            onClose={() => setCropDelete(null)}
+            onRemoved={() => {
+              if (selectedCrop?.id === cropDelete.id) setSelectedCrop(null);
+              setCropDelete(null);
+              refreshCrops();
+              refresh();
             }}
           />
         )}

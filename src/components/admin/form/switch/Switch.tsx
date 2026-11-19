@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 
 interface SwitchProps {
-  label?: string;
+  label?: ReactNode;
   defaultChecked?: boolean;
   checked?: boolean;
   disabled?: boolean;

@@ -14,6 +14,7 @@ export interface CropPayload {
   crop_code: string | null;
   crop_color?: string | null;
   is_active: boolean;
+  is_recommendate: boolean;
   ai_diagnosis_enabled?: boolean;
   translations: Record<string, { name: string; description: string | null }>;
 }
@@ -29,6 +30,7 @@ export interface Crop {
   image_url: string | null;
   name: string | null;
   is_active: boolean;
+  is_recommendate: boolean;
   ai_diagnosis_enabled: boolean;
   translations?: Record<string, CropTranslation>;
   created_at: string | null;
@@ -44,6 +46,7 @@ export interface CropFormValues {
   crop_code: string;
   crop_color: string | null;
   is_active: boolean;
+  is_recommendate: boolean;
   ai_diagnosis_enabled: boolean;
   translations: Record<string, { name: string; description: string }>;
 }

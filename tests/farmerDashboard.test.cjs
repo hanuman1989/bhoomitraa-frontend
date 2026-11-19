@@ -27,6 +27,15 @@ function load(file, dependencies = {}, globals = {}) {
     require(name) {
       if (name === "react/jsx-runtime") return jsx;
       if (Object.hasOwn(dependencies, name)) return dependencies[name];
+      if (name === "@/actions/account/farm-crops")
+        return { getCropMap: async () => ({ success: true, data: [] }) };
+      if (name === "@/components/common/maps/CropInfoWindow")
+        return "CropPopup";
+      if (name === "../crops/_components/CropWizardDialog") return "CropDialog";
+      if (name === "../crops/_components/CropDetailsDialog")
+        return "CropDetails";
+      if (name === "../crops/_components/CropDeleteConfirm")
+        return "CropDelete";
       if (Object.hasOwn(areaFixture.dependencies, name))
         return areaFixture.dependencies[name];
       throw new Error(`Unexpected dependency ${name} in ${file}`);
@@ -1257,7 +1266,7 @@ test("map loads once and stays mounted through panel resizing, module changes an
   assert.equal(h.calls.types.at(-1), "satellite");
   assert.equal(h.calls.fits.length, 1);
   h.runtime.cleanup();
-  assert.equal(h.calls.eventsCleared, 3);
+  assert.equal(h.calls.eventsCleared, 4); // Farm, location, crop layers and map.
   assert.equal(h.calls.data[0].map, null);
 });
 test("saved farm features select their exact record, highlight it and display its name as text", async () => {
@@ -1278,6 +1287,74 @@ test("saved farm features select their exact record, highlight it and display it
   const popup = nodes(h.render()).find((node) => node.type === "FarmPopup");
   assert.equal(popup.props.farm.name, farms[0].name);
   assert.equal(popup.props.open, true);
+});
+
+test("crop layers preserve farm geometry, cycle identity, independent highlighting and exactly one visible popup", async () => {
+  const h = mapHarness();
+  const boundary = {
+    type: "MultiPolygon",
+    coordinates: [[ring, hole], [ring.map(([lng, lat]) => [lng + 2, lat])]],
+  };
+  const crops = [91, 92].map((id) => ({
+    id,
+    farm_id: 1,
+    crop_id: 7,
+    crop_name: "Wheat",
+    crop_variety_name: null,
+    crop_color: null,
+    status: "active",
+    boundary,
+    latitude: null,
+    longitude: null,
+    cultivated_area: "1.0",
+    area_unit: "acre",
+  }));
+  h.props.crops = [
+    ...crops,
+    { ...crops[0], id: 93, status: "draft" },
+    { ...crops[0], id: 94, status: "completed" },
+  ];
+  const selected = [];
+  h.props.onSelectCrop = (id) => selected.push(id);
+  h.props.onCropAction = () => {};
+  await h.mount();
+  const farmLayer = h.calls.data[0],
+    cropLayer = h.calls.data[2];
+  assert.equal(cropLayer.features.length, 2);
+  assert.deepEqual(clone(cropLayer.features[0].source.geometry), boundary);
+  assert.equal(cropLayer.features[0].getId(), 91);
+  assert.equal(cropLayer.features[1].getId(), 92);
+  cropLayer.click({ feature: cropLayer.features[1] });
+  assert.deepEqual(selected, [92]);
+  assert.equal(h.calls.selected, undefined);
+  h.props.selectedCrop = crops[1];
+  let tree = h.render();
+  assert.ok(
+    cropLayer.style(cropLayer.features[0]).zIndex >
+      farmLayer.style(farmLayer.features[0]).zIndex,
+  );
+  assert.ok(
+    cropLayer.style(cropLayer.features[1]).zIndex >
+      cropLayer.style(cropLayer.features[0]).zIndex,
+  );
+  const popups = nodes(tree).filter((n) => n.type === "FarmPopup");
+  assert.equal(popups.filter((n) => n.props.open).length, 1);
+  assert.ok(popups.find((n) => n.props.children?.type === "CropPopup"));
+  h.props.selectedCrop = null;
+  h.props.selectedFarmId = 1;
+  tree = h.render();
+  assert.equal(
+    nodes(tree).filter((n) => n.type === "FarmPopup" && n.props.open).length,
+    1,
+  );
+  const farmBefore = JSON.stringify(farmLayer.features[0].source);
+  h.props.crops = [crops[0]];
+  h.render();
+  assert.equal(cropLayer.features.length, 1);
+  assert.equal(JSON.stringify(farmLayer.features[0].source), farmBefore);
+  h.runtime.cleanup();
+  assert.equal(cropLayer.map, null);
+  assert.ok(cropLayer.removed > 0);
 });
 
 test("closing preserves farm selection and the same polygon or list focus reopens the single shared popup", async () => {
@@ -2267,7 +2344,6 @@ test("sidebar uses the central module metadata, highlights the current route and
 test("the remaining module pages return their own content without another panel, map, resize handle or auth provider", async () => {
   const locales = [];
   for (const [path, expected, moduleId] of [
-    ["crops", "Unavailable", "crop-manager"],
     ["irrigation", "Unavailable", "irrigation"],
     ["machinery", "Unavailable", "machinery"],
     ["employees", "Unavailable", "employees"],

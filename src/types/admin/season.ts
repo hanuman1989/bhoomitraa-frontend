@@ -1,4 +1,5 @@
 import type { PaginatedResponse } from "@/types/api";
+import type { SeasonIcon, SeasonPresentation } from "@/types/season";
 
 // Required by Laravel; additional languages come from the shared language catalog.
 export const requiredSeasonLocales = ["en", "hi"] as const;
@@ -10,7 +11,7 @@ export interface SeasonTranslation {
 }
 
 // The index resource deliberately excludes translations.
-export interface SeasonListItem {
+export interface SeasonListItem extends SeasonPresentation {
   id: number;
   slug: string;
   name: string | null;
@@ -27,12 +28,18 @@ export interface Season extends SeasonListItem {
 
 export interface SeasonPayload {
   slug: string;
+  start_month: number | null;
+  end_month: number | null;
+  icon: SeasonIcon | null;
   translations: Record<string, { name: string; description: string | null }>;
 }
 
 export interface SeasonFormValues {
   slug: string;
   is_active: boolean;
+  start_month: number | null;
+  end_month: number | null;
+  icon: SeasonIcon | null;
   translations: Record<string, { name: string; description: string }>;
 }
 

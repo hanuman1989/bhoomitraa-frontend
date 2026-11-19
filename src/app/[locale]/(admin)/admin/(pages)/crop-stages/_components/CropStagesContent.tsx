@@ -19,6 +19,14 @@ import CropStagesList from "./CropStagesList";
 export default async function CropStagesContent({ searchParams }: PageProps) {
   const t = await getTranslations("cropStages");
   const params = await searchParams;
+  const query = new URLSearchParams();
+  for (const [key, entry] of Object.entries(params)) {
+    if (Array.isArray(entry)) {
+      for (const value of entry) query.append(key, value);
+    } else if (entry !== undefined) {
+      query.append(key, entry);
+    }
+  }
   const value = (key: string) => {
     const entry = params[key];
     return Array.isArray(entry) ? (entry[0] ?? "") : (entry ?? "");
@@ -84,6 +92,7 @@ export default async function CropStagesContent({ searchParams }: PageProps) {
         <CropStagesList
           result={result}
           filtered={Object.values(filters).some((value) => value !== "")}
+          returnQuery={query.toString()}
         />
       ) : null}
     </div>

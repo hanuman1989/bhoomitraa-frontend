@@ -20,7 +20,7 @@ export default function ActivityIconPreview({
       className="text-brand-500 dark:text-brand-400 inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
     >
       {Icon ? (
-        <Icon className="size-5" />
+        <Icon className="size-6" />
       ) : (
         <span className="text-gray-400">{t("notAvailable")}</span>
       )}
