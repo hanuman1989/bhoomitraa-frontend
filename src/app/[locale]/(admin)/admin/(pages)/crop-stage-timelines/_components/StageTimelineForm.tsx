@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { useRouter } from "@/i18n/navigation";
@@ -46,6 +47,26 @@ export default function StageTimelineForm({
 }) {
   const t = useTranslations("stageTimelines");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const listUrl = `/admin/crop-stage-timelines${searchParams.size ? `?${searchParams.toString()}` : ""}`;
+  const createDefaults = useMemo<StageTimelineFormValues>(
+    () => ({
+      ...emptyValues,
+      crop_id: selections.crop ? String(selections.crop.id) : "",
+      crop_stage_id: selections.stage ? String(selections.stage.id) : "",
+      crop_variety_id: selections.variety ? String(selections.variety.id) : "",
+      season_id: selections.season ? String(selections.season.id) : "",
+      source_id: selections.source ? String(selections.source.id) : "",
+    }),
+    [
+      selections.crop,
+      selections.stage,
+      selections.variety,
+      selections.season,
+      selections.source,
+    ],
+  );
+  const appliedDefaults = useRef(createDefaults);
   const saving = useRef(false);
   const [pending, startTransition] = useTransition();
   const [failure, setFailure] = useState("");
@@ -72,7 +93,7 @@ export default function StageTimelineForm({
           region_scope: timeline.region_scope,
           region_ids: [...timeline.region_ids],
         }
-      : emptyValues,
+      : createDefaults,
     mode: "onTouched",
   });
   const {
@@ -80,9 +101,39 @@ export default function StageTimelineForm({
     setError,
     clearErrors,
     reset,
+    resetField,
+    getValues,
     formState: { isSubmitting },
   } = form;
   const busy = pending || isSubmitting || statusOpen;
+  useEffect(() => {
+    const previous = appliedDefaults.current;
+    if (timeline || busy || saving.current || previous === createDefaults)
+      return;
+    const cropChanged = previous.crop_id !== createDefaults.crop_id;
+    const stageChanged =
+      previous.crop_stage_id !== createDefaults.crop_stage_id;
+    const varietyChanged =
+      previous.crop_variety_id !== createDefaults.crop_variety_id;
+    const resetCrop =
+      (cropChanged || stageChanged || varietyChanged) &&
+      getValues("crop_id") !== createDefaults.crop_id;
+    if (cropChanged || resetCrop)
+      resetField("crop_id", { defaultValue: createDefaults.crop_id });
+    if (cropChanged || resetCrop || stageChanged)
+      resetField("crop_stage_id", {
+        defaultValue: createDefaults.crop_stage_id,
+      });
+    if (cropChanged || resetCrop || varietyChanged)
+      resetField("crop_variety_id", {
+        defaultValue: createDefaults.crop_variety_id,
+      });
+    if (previous.season_id !== createDefaults.season_id)
+      resetField("season_id", { defaultValue: createDefaults.season_id });
+    if (previous.source_id !== createDefaults.source_id)
+      resetField("source_id", { defaultValue: createDefaults.source_id });
+    appliedDefaults.current = createDefaults;
+  }, [timeline, busy, createDefaults, getValues, resetField]);
   function submit(values: StageTimelineFormValues) {
     if (saving.current) return;
     saving.current = true;
@@ -132,11 +183,11 @@ export default function StageTimelineForm({
           return;
         }
         if (!timeline) {
-          reset(emptyValues);
+          reset(createDefaults);
           setVersion((value) => value + 1);
         } else reset(values);
         toast.success(r.message || t("feedback.saved"));
-        router.push("/admin/crop-stage-timelines");
+        router.push(listUrl);
       } catch {
         setFailure(t("feedback.saveFailed"));
         toast.error(t("feedback.saveFailed"));
@@ -173,7 +224,11 @@ export default function StageTimelineForm({
             form={form}
             choices={choices}
             selections={selections}
-            initialCrop={timeline?.crop_id ? String(timeline.crop_id) : ""}
+            initialCrop={
+              timeline?.crop_id
+                ? String(timeline.crop_id)
+                : createDefaults.crop_id
+            }
             busy={busy}
           />
           <div className="min-w-0 space-y-5">
@@ -225,7 +280,7 @@ export default function StageTimelineForm({
             type="button"
             disabled={busy}
             onClick={() => {
-              if (!saving.current) router.push("/admin/crop-stage-timelines");
+              if (!saving.current) router.push(listUrl);
             }}
             className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >

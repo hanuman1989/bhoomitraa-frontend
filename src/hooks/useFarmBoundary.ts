@@ -243,6 +243,20 @@ export default function useFarmBoundary(
     );
     return () => clearInterval(timer);
   }, [active]);
+  const loadBoundary = useCallback(
+    (draft: BoundaryDraft) => {
+      stop();
+      const next = boundaryPoints(draft.boundary);
+      pointsRef.current = next;
+      setPoints(next);
+      setSource(draft.boundary_source ?? "manual");
+      setPhase(draft.boundary ? "confirmed" : "idle");
+      setGpsState("idle");
+      setAccuracy(draft.gps_accuracy_m);
+      setNotice("");
+    },
+    [stop],
+  );
   return {
     points,
     mode,
@@ -263,17 +277,7 @@ export default function useFarmBoundary(
     } satisfies BoundaryDraft,
     active,
     setNotice,
-    loadBoundary: (draft: BoundaryDraft) => {
-      stop();
-      const next = boundaryPoints(draft.boundary);
-      pointsRef.current = next;
-      setPoints(next);
-      setSource(draft.boundary_source ?? "manual");
-      setPhase(draft.boundary ? "confirmed" : "idle");
-      setGpsState("idle");
-      setAccuracy(draft.gps_accuracy_m);
-      setNotice("");
-    },
+    loadBoundary,
     changeMode,
     clear,
     start,

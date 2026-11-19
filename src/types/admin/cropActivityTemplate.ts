@@ -4,9 +4,15 @@ import type { KnowledgeSource } from "@/types/admin/knowledgeSource";
 import type { RegionScope } from "@/types/admin/cropStageTimeline";
 
 export const templatePriorities = ["low", "medium", "high"] as const;
+export const templateScheduleTypes = [
+  "before_sowing",
+  "after_sowing",
+  "after_harvesting",
+] as const;
 export const requiredTemplateLocales = ["en", "hi"] as const;
 export const maxTemplateOffset = 2147483647;
 export type TemplatePriority = (typeof templatePriorities)[number];
+export type TemplateScheduleType = (typeof templateScheduleTypes)[number];
 export interface TemplateTranslation {
   locale: string;
   title: string;
@@ -26,7 +32,7 @@ export interface CropActivityTemplateListItem {
   crop_stage_name: string | null;
   season_id: number;
   season_name: string | null;
-  schedule_type: "after_sowing";
+  schedule_type: TemplateScheduleType;
   start_offset_days: number;
   end_offset_days: number;
   region_scope: RegionScope;
@@ -70,7 +76,7 @@ export interface CropActivityTemplatePayload {
   crop_stage_id: number | null;
   season_id: number;
   source_id: number;
-  schedule_type: "after_sowing";
+  schedule_type: TemplateScheduleType;
   start_offset_days: number;
   end_offset_days: number;
   region_scope: RegionScope;
@@ -88,7 +94,7 @@ export interface CropActivityTemplateFormValues {
   crop_stage_id: string;
   season_id: string;
   source_id: string;
-  schedule_type: "after_sowing";
+  schedule_type: TemplateScheduleType;
   start_offset_days: string;
   end_offset_days: string;
   region_scope: RegionScope;
@@ -106,6 +112,7 @@ export interface CropActivityTemplateFilters {
   crop_variety_id: string;
   crop_stage_id: string;
   season_id: string;
+  schedule_type: TemplateScheduleType | "";
   priority: TemplatePriority | "";
   status: "" | "0" | "1";
 }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <title>Storage Management</title>
+  <path d="M3 12 16 3 29 12v16H3Z" fill="#475569" fill-opacity=".08"/>
+  <path d="M9 28V14h14v14M9 18h14"/>
+  <rect x="10.5" y="22" width="5.5" height="6" rx=".7" fill="#475569" fill-opacity=".15"/>
+  <rect x="16" y="22" width="5.5" height="6" rx=".7" fill="#475569" fill-opacity=".15"/>
+  <path d="M13.5 9h5"/>
+</svg>

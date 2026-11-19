@@ -5,6 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const ts = require("typescript");
 const jsxRuntime = require("react/jsx-runtime");
+const { createFormControl } = require("react-hook-form");
 const root = "src/app/[locale]/(admin)/admin/(pages)/crop-stage-timelines/";
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -94,7 +95,9 @@ function harness(responses = [], admin = true) {
       knowledgeSourcesAPI: client("knowledge-sources"),
     },
     "@/lib/apis/admin/regions": { regionsAPI: client("regions") },
-    "@/lib/apis/admin/activityCategories": { activityCategoriesAPI: client("activity-categories") },
+    "@/lib/apis/admin/activityCategories": {
+      activityCategoriesAPI: client("activity-categories"),
+    },
   });
   const actions = load("src/actions/admin/cropStageTimelines.ts", {
     "next/cache": { revalidatePath: (route) => invalidations.push(route) },
@@ -241,23 +244,69 @@ function findAll(element, predicate) {
 }
 function hooks() {
   const values = [];
+  const effects = [];
   let cursor = 0;
+  const react = {
+    useState(initial) {
+      const index = cursor++;
+      values[index] ??= { value: initial };
+      return [
+        values[index].value,
+        (next) => {
+          values[index].value =
+            typeof next === "function" ? next(values[index].value) : next;
+        },
+      ];
+    },
+    useRef(initial) {
+      return (values[cursor++] ??= { current: initial });
+    },
+    useMemo(callback, dependencies) {
+      const index = cursor++;
+      if (
+        !values[index] ||
+        dependencies.some(
+          (value, i) => !Object.is(value, values[index].dependencies[i]),
+        )
+      )
+        values[index] = { value: callback(), dependencies };
+      return values[index].value;
+    },
+    useEffect(callback, dependencies) {
+      const index = cursor++;
+      if (
+        !values[index] ||
+        dependencies.some(
+          (value, i) => !Object.is(value, values[index].dependencies[i]),
+        )
+      ) {
+        effects.push(() => {
+          values[index]?.cleanup?.();
+          values[index] = { dependencies, cleanup: callback() };
+        });
+      }
+    },
+    useTransition() {
+      const [pending, setPending] = react.useState(false);
+      return [
+        pending,
+        (callback) => {
+          setPending(true);
+          return Promise.resolve(callback()).finally(() => setPending(false));
+        },
+      ];
+    },
+  };
   return {
+    react,
     reset() {
       cursor = 0;
     },
-    react: {
-      useState(initial) {
-        const index = cursor++;
-        values[index] ??= { value: initial };
-        return [
-          values[index].value,
-          (next) => {
-            values[index].value =
-              typeof next === "function" ? next(values[index].value) : next;
-          },
-        ];
-      },
+    flush() {
+      effects.splice(0).forEach((callback) => callback());
+    },
+    cleanup() {
+      values.forEach((value) => value?.cleanup?.());
     },
   };
 }
@@ -666,7 +715,10 @@ test("All Regions hides the tree, Specific requires districts, and saved inactiv
   let scope = "all";
   const shared = load("src/components/admin/common/RegionScopeSelector.tsx", {
     ...ui,
-    "@/components/admin/common/ComponentCard": { __esModule: true, default: "card" },
+    "@/components/admin/common/ComponentCard": {
+      __esModule: true,
+      default: "card",
+    },
     "./DistrictCheckboxTree": { __esModule: true, default: "tree" },
   });
   const Regions = load(`${root}_components/StageTimelineRegions.tsx`, {
@@ -695,10 +747,8 @@ test("All Regions hides the tree, Specific requires districts, and saved inactiv
     (element) => element.type === "controller",
   )[0];
   assert.equal(
-    findAll(
-      renderSelector(controller),
-      (element) => element.type === "tree",
-    ).length,
+    findAll(renderSelector(controller), (element) => element.type === "tree")
+      .length,
     0,
   );
   assert.equal(controller.props.rules.validate([]), true);
@@ -712,11 +762,568 @@ test("All Regions hides the tree, Specific requires districts, and saved inactiv
   assert.equal(controller.props.rules.validate([104]), true);
   assert.equal(controller.props.rules.validate([999]), "validation.districts");
   assert.equal(
-    findAll(
-      renderSelector(controller),
-      (element) => element.type === "tree",
-    ).length,
+    findAll(renderSelector(controller), (element) => element.type === "tree")
+      .length,
     1,
+  );
+});
+
+const option = (id, cropId) => ({
+  id,
+  label: `Option ${id}`,
+  is_active: true,
+  ...(cropId && { crop_id: cropId }),
+});
+const queryOptions = {
+  crop: { 3: option(3), 7: option(7), 8: { ...option(8), is_active: false } },
+  stage: { 4: option(4, 3), 44: option(44, 7) },
+  variety: { 5: option(5, 3), 55: option(55, 7) },
+  season: { 6: option(6), 66: { ...option(66), is_active: false } },
+  source: { 9: { ...option(9), verified: false } },
+};
+const queryString =
+  "keyword=flower+%26+bud&crop_id=3&crop_stage_id=4&crop_variety_id=5&season_id=6&source_id=9&status=0&page=2";
+function editorHarness(savedTimeline = timeline) {
+  const lookups = [],
+    choices = [];
+  const Editor = load(`${root}_components/StageTimelineEditor.tsx`, {
+    "next-intl/server": { getTranslations: async () => (key) => key },
+    "next/navigation": {
+      notFound: () => {
+        throw Error("Not found");
+      },
+    },
+    "@/lib/auth/dal": { requireAdmin: async () => {} },
+    "@/lib/api/ApiError": { ApiError },
+    "@/lib/api/handleActionError": {
+      handleActionError: async (error) => ({ message: error.message }),
+    },
+    "@/lib/apis/admin/cropStageTimelines": {
+      stageTimelinesAPI: {
+        show: async () => ({ status: true, data: savedTimeline }),
+      },
+      getTimelineChoices: async (...args) => {
+        choices.push(args);
+        return {};
+      },
+      getTimelineRegions: async () => states,
+      getTimelineOption: async (kind, id) => {
+        lookups.push([kind, id]);
+        if (!queryOptions[kind]?.[id]) throw new ApiError("Missing", 404);
+        return queryOptions[kind][id];
+      },
+      getTimelineSelections: async (_, ids) =>
+        Object.fromEntries(
+          Object.entries(ids).map(([kind, id]) => [
+            kind,
+            queryOptions[kind]?.[id],
+          ]),
+        ),
+    },
+    "./StageTimelineForm": "form",
+  }).default;
+  return { Editor, lookups, choices };
+}
+
+test("timeline create resolves all query dropdowns outside the first options page and loads dependent choices for the crop", async () => {
+  const h = editorHarness();
+  const tree = await h.Editor({
+    searchParams: Promise.resolve(
+      Object.fromEntries(new URLSearchParams(queryString)),
+    ),
+  });
+  assert.equal(tree.type, "form");
+  assert.deepEqual(clone(h.choices), [[3, true, true]]);
+  for (const [kind, id] of [
+    ["crop", 3],
+    ["stage", 4],
+    ["variety", 5],
+    ["season", 6],
+    ["source", 9],
+  ]) {
+    assert.equal(tree.props.selections[kind].id, id);
+    assert.ok(
+      h.lookups.some(
+        ([lookupKind, lookupId]) => lookupKind === kind && lookupId === id,
+      ),
+    );
+  }
+});
+
+test("timeline create rejects mismatched parent relations and unavailable query options while supporting stage-only filters", async () => {
+  const h = editorHarness();
+  let tree = await h.Editor({
+    searchParams: Promise.resolve({
+      crop_id: "3",
+      crop_stage_id: "44",
+      crop_variety_id: "55",
+      season_id: "999",
+    }),
+  });
+  assert.equal(tree.props.selections.crop.id, 3);
+  assert.equal(tree.props.selections.stage, undefined);
+  assert.equal(tree.props.selections.variety, undefined);
+  assert.equal(tree.props.selections.season, undefined);
+  tree = await h.Editor({
+    searchParams: Promise.resolve({
+      crop_id: "bad",
+      crop_stage_id: "-1",
+      crop_variety_id: "1.5",
+      season_id: "66",
+    }),
+  });
+  assert.ok(
+    Object.values(tree.props.selections).every((value) => value === undefined),
+  );
+  tree = await h.Editor({
+    searchParams: Promise.resolve({ crop_stage_id: "4" }),
+  });
+  assert.equal(tree.props.selections.crop.id, 3);
+  assert.equal(tree.props.selections.stage.id, 4);
+  tree = await h.Editor({
+    searchParams: Promise.resolve({ crop_id: "8", crop_stage_id: "4" }),
+  });
+  assert.equal(tree.props.selections.crop, undefined);
+  assert.equal(tree.props.selections.stage, undefined);
+});
+
+test("timeline edit restores saved relations and ignores conflicting query defaults", async () => {
+  const h = editorHarness();
+  const tree = await h.Editor({
+    id: "42",
+    searchParams: Promise.resolve({
+      crop_id: "7",
+      crop_stage_id: "44",
+      crop_variety_id: "55",
+    }),
+  });
+  assert.equal(tree.props.timeline.id, 42);
+  assert.equal(tree.props.selections.crop.id, timeline.crop_id);
+  assert.equal(tree.props.selections.stage.id, timeline.crop_stage_id);
+  assert.equal(h.lookups.length, 0);
+});
+
+function formHarness({
+  saved = null,
+  query = queryString,
+  responses = [],
+} = {}) {
+  const runtime = hooks(),
+    calls = [],
+    tasks = [],
+    navigations = [],
+    notices = [];
+  let form, unsubscribe;
+  const props = {
+    timeline: saved,
+    choices: {},
+    states,
+    selections: {
+      crop: queryOptions.crop[3],
+      stage: queryOptions.stage[4],
+      variety: queryOptions.variety[5],
+      season: queryOptions.season[6],
+      source: queryOptions.source[9],
+    },
+  };
+  const Form = load(`${root}_components/StageTimelineForm.tsx`, {
+    ...ui,
+    react: {
+      ...runtime.react,
+      useTransition() {
+        const [pending, start] = runtime.react.useTransition();
+        return [pending, (callback) => tasks.push(start(callback))];
+      },
+    },
+    "react-hook-form": {
+      useForm(options) {
+        if (!form) {
+          form = {
+            ...createFormControl({
+              ...options,
+              defaultValues: clone(options.defaultValues),
+            }),
+            formState: { isSubmitting: false },
+          };
+          Object.keys(options.defaultValues).forEach((name) =>
+            form.register(name),
+          );
+          unsubscribe = form.subscribe({
+            formState: { values: true },
+            callback() {},
+          });
+        }
+        return form;
+      },
+    },
+    "next/navigation": { useSearchParams: () => new URLSearchParams(query) },
+    "@/i18n/navigation": {
+      useRouter: () => ({ push: (url) => navigations.push(url) }),
+    },
+    "react-hot-toast": {
+      success: (message) => notices.push(message),
+      error: (message) => notices.push(message),
+    },
+    "@/hooks/useModal": {
+      useModal: () => ({ isOpen: false, openModal() {}, closeModal() {} }),
+    },
+    "@/actions/admin/cropStageTimelines": {
+      saveStageTimeline: async (...args) => {
+        calls.push(clone(args));
+        return (
+          responses.shift() ?? {
+            success: true,
+            data: timeline,
+            message: "Saved",
+          }
+        );
+      },
+    },
+    "@/components/admin/common/ComponentCard": "card",
+    "@/components/admin/ui/badge/Badge": "badge",
+    "./StageTimelineFields": "fields",
+    "./StageTimelineRegions": "regions",
+    "./StageTimelineConfirmDialog": "confirm",
+  }).default;
+  function render() {
+    runtime.reset();
+    const tree = Form(props);
+    runtime.flush();
+    return tree;
+  }
+  render();
+  return {
+    props,
+    form,
+    calls,
+    navigations,
+    notices,
+    render,
+    changeQuery(value, selections) {
+      query = value;
+      if (selections) props.selections = selections;
+      return render();
+    },
+    cleanup() {
+      unsubscribe();
+      runtime.cleanup();
+    },
+    cancel() {
+      findAll(
+        render(),
+        (node) => node.type === "button" && node.props.children === "cancel",
+      )[0].props.onClick();
+    },
+    async submit() {
+      findAll(render(), (node) => node.type === "form")[0].props.onSubmit({
+        preventDefault() {},
+        persist() {},
+      });
+      await new Promise((resolve) => setImmediate(resolve));
+      await Promise.all(tasks.splice(0));
+      render();
+    },
+  };
+}
+
+test("timeline form synchronizes reused query defaults without clearing timing, coverage or unrelated manual choices", () => {
+  const h = formHarness();
+  assert.equal(h.form.getValues("crop_stage_id"), "4");
+  h.form.setValue("days_after_sowing_min", "0");
+  h.form.setValue("days_after_sowing_max", "15");
+  h.form.setValue("region_scope", "specific");
+  h.form.setValue("region_ids", [101]);
+  h.form.setValue("crop_id", "7");
+  h.form.setValue("crop_stage_id", "44");
+  h.form.setValue("crop_variety_id", "55");
+  h.render();
+  assert.equal(h.form.getValues("crop_id"), "7");
+  h.changeQuery("crop_id=3&season_id=", {
+    ...h.props.selections,
+    season: undefined,
+  });
+  assert.equal(h.form.getValues("season_id"), "");
+  assert.equal(
+    h.form.getValues("crop_id"),
+    "7",
+    "season changes preserve manual crop selection",
+  );
+  h.changeQuery("crop_id=3&crop_stage_id=10", {
+    ...h.props.selections,
+    stage: option(10, 3),
+  });
+  assert.equal(h.form.getValues("crop_id"), "3");
+  assert.equal(h.form.getValues("crop_stage_id"), "10");
+  assert.equal(h.form.getValues("crop_variety_id"), "5");
+  h.changeQuery("crop_id=7&crop_stage_id=44&crop_variety_id=55", {
+    ...h.props.selections,
+    crop: queryOptions.crop[7],
+    stage: queryOptions.stage[44],
+    variety: queryOptions.variety[55],
+  });
+  assert.equal(h.form.getValues("crop_stage_id"), "44");
+  h.changeQuery(queryString, {
+    ...h.props.selections,
+    crop: queryOptions.crop[3],
+    stage: queryOptions.stage[4],
+    variety: queryOptions.variety[5],
+  });
+  assert.equal(h.form.getValues("crop_id"), "3");
+  assert.equal(h.form.getValues("crop_stage_id"), "4");
+  assert.equal(h.form.getValues("crop_variety_id"), "5");
+  assert.equal(h.form.getValues("days_after_sowing_max"), "15");
+  assert.deepEqual(h.form.getValues("region_ids"), [101]);
+  assert.equal(h.form.getValues("source_id"), "9");
+  h.cleanup();
+});
+
+test("timeline form edit uses saved values despite different query selections", () => {
+  const h = formHarness({
+    saved: timeline,
+    query: "crop_id=7&crop_stage_id=44",
+  });
+  h.changeQuery("crop_id=7&crop_stage_id=44", {
+    ...h.props.selections,
+    crop: queryOptions.crop[7],
+    stage: queryOptions.stage[44],
+  });
+  assert.equal(h.form.getValues("crop_id"), "3");
+  assert.equal(h.form.getValues("crop_stage_id"), "4");
+  assert.equal(h.form.getValues("crop_variety_id"), "");
+  h.cleanup();
+});
+
+test("timeline query defaults wait for an in-progress save and preserve recoverable errors on other fields", async () => {
+  let resolve;
+  const h = formHarness({
+    responses: [
+      new Promise((done) => {
+        resolve = done;
+      }),
+    ],
+  });
+  h.form.setValue("days_after_sowing_min", "0");
+  h.form.setValue("days_after_sowing_max", "15");
+  const pending = h.submit();
+  await new Promise((done) => setImmediate(done));
+  h.changeQuery("crop_id=7&crop_stage_id=44&crop_variety_id=55&status=0", {
+    ...h.props.selections,
+    crop: queryOptions.crop[7],
+    stage: queryOptions.stage[44],
+    variety: queryOptions.variety[55],
+  });
+  assert.equal(h.form.getValues("crop_id"), "3");
+  h.cancel();
+  assert.equal(h.navigations.length, 0);
+  resolve({
+    success: false,
+    message: "Try again",
+    errors: { days_after_sowing_max: ["Check range"] },
+  });
+  await pending;
+  assert.equal(h.calls[0][1].crop_stage_id, 4);
+  assert.equal(h.form.getValues("crop_id"), "7");
+  assert.equal(h.form.getValues("crop_stage_id"), "44");
+  assert.equal(h.form.getValues("days_after_sowing_max"), "15");
+  assert.equal(
+    h.form.getFieldState("days_after_sowing_max").error.message,
+    "Check range",
+  );
+  h.cleanup();
+});
+
+test("timeline save/update and cancel restore the full filtered URL, and failed saves preserve inputs for retry", async () => {
+  for (const saved of [null, timeline]) {
+    const h = formHarness({
+      saved,
+      responses: [
+        {
+          success: false,
+          message: "Try again",
+          errors: { days_after_sowing_max: ["Check range"] },
+        },
+      ],
+    });
+    h.form.setValue("days_after_sowing_min", "0");
+    h.form.setValue("days_after_sowing_max", "15");
+    await h.submit();
+    assert.equal(h.navigations.length, 0);
+    assert.equal(h.form.getValues("days_after_sowing_max"), "15");
+    assert.equal(
+      h.form.getFieldState("days_after_sowing_max").error.message,
+      "Check range",
+    );
+    await h.submit();
+    assert.equal(h.calls[1][0], saved?.id ?? null);
+    assert.equal(h.calls[1][1].days_after_sowing_min, 0);
+    assert.equal("crop_id" in h.calls[1][1], false);
+    assert.equal("page" in h.calls[1][1], false);
+    assert.equal(
+      h.navigations[0],
+      `/admin/crop-stage-timelines?${queryString}`,
+    );
+    h.cancel();
+    assert.equal(
+      h.navigations.at(-1),
+      `/admin/crop-stage-timelines?${queryString}`,
+    );
+    h.cleanup();
+  }
+  const plain = formHarness({ query: "" });
+  plain.cancel();
+  assert.equal(plain.navigations[0], "/admin/crop-stage-timelines");
+  plain.cleanup();
+});
+
+test("timeline dropdown displays a new server-resolved selection even when its cached page and previous selection differ", () => {
+  const runtime = hooks();
+  const Combo = load(`${root}_components/TimelineRelationSelect.tsx`, {
+    ...ui,
+    react: runtime.react,
+    "@headlessui/react": {
+      Combobox: "combo",
+      ComboboxInput: "input",
+      ComboboxButton: "button",
+      ComboboxOption: "option",
+      ComboboxOptions: "options",
+    },
+    "@/actions/admin/cropStageTimelines": {
+      searchTimelineOptions() {
+        throw Error("Unexpected lookup");
+      },
+    },
+  }).default;
+  const props = {
+    kind: "season",
+    id: "season",
+    label: "Season",
+    value: "6",
+    initialSelection: queryOptions.season[6],
+    initialPage: { options: [], pagination: { current_page: 1, last_page: 1 } },
+  };
+  const render = () => {
+    runtime.reset();
+    const tree = Combo(props);
+    runtime.flush();
+    return tree;
+  };
+  render();
+  props.value = "77";
+  props.initialSelection = {
+    ...option(77),
+    label: "Selected season beyond page one",
+  };
+  const tree = render();
+  assert.equal(
+    findAll(tree, (node) => node.type === "input")[0].props.displayValue(),
+    "Selected season beyond page one",
+  );
+  runtime.cleanup();
+});
+
+test("timeline content carries full URL parameters into Add/Edit links without sending them as mutation values", async () => {
+  const Content = load(`${root}_components/StageTimelinesContent.tsx`, {
+    "next-intl/server": {
+      getLocale: async () => "en",
+      getTranslations: async () => (key) => key,
+    },
+    "@/i18n/navigation": {
+      redirect() {
+        throw Error("Unexpected redirect");
+      },
+    },
+    "@/lib/auth/dal": { requireAdmin: async () => {} },
+    "@/lib/api/ApiError": { ApiError },
+    "@/lib/api/handleActionError": {
+      handleActionError: async (error) => {
+        throw error;
+      },
+    },
+    "@/lib/apis/admin/cropStageTimelines": {
+      getTimelineChoices: async () => ({}),
+      getTimelineSelections: async () => ({}),
+      stageTimelinesAPI: {
+        list: async () => ({
+          status: true,
+          data: [timeline],
+          pagination: { current_page: 2, last_page: 3 },
+        }),
+      },
+    },
+    "./StageTimelineFilters": "filters",
+    "./StageTimelineList": "list",
+  }).default;
+  const tree = await Content({
+    searchParams: Promise.resolve({
+      keyword: "flower & bud",
+      crop_id: "3",
+      crop_stage_id: "4",
+      crop_variety_id: "5",
+      season_id: "6",
+      status: "0",
+      page: "2",
+      extra: ["one", "two"],
+    }),
+  });
+  const list = findAll(tree, (node) => node.type === "list")[0];
+  const params = new URLSearchParams(list.props.returnQuery);
+  assert.equal(params.get("keyword"), "flower & bud");
+  assert.equal(params.get("status"), "0");
+  assert.equal(params.get("page"), "2");
+  assert.deepEqual(params.getAll("extra"), ["one", "two"]);
+  const RowActions = load(`${root}_components/StageTimelineRowActions.tsx`, {
+    ...ui,
+    react: hooks().react,
+    "@headlessui/react": {
+      Menu: "menu",
+      MenuButton: "button",
+      MenuItem: "item",
+      MenuItems: "items",
+    },
+    "@/i18n/navigation": { Link: "link" },
+    "@/hooks/useModal": {
+      useModal: () => ({ isOpen: false, openModal() {}, closeModal() {} }),
+    },
+    "@/icons": {
+      DocsIcon: "docs",
+      HorizontaLDots: "dots",
+      PencilIcon: "pencil",
+      TrashBinIcon: "trash",
+    },
+    "./StageTimelineConfirmDialog": "confirm",
+  }).default;
+  const actions = RowActions({
+    timeline,
+    name: "Timeline",
+    returnQuery: list.props.returnQuery,
+  });
+  const links = findAll(actions, (node) => node.type === "link");
+  assert.equal(
+    links[0].props.href,
+    `/admin/crop-stage-timelines/42/edit?${list.props.returnQuery}`,
+  );
+  assert.equal(links[1].props.href, "/admin/knowledge-sources/9");
+});
+
+test("timeline create page passes search parameters into the existing editor boundary", async () => {
+  const Page = load(`${root}create/page.tsx`, {
+    react: { Suspense: "suspense" },
+    "next-intl/server": {
+      getTranslations: async () => (key) => key,
+      setRequestLocale() {},
+    },
+    "@/components/admin/common/SuspenseFallback": "loading",
+    "../_components/StageTimelinesHeader": "header",
+    "../_components/StageTimelineEditor": "editor",
+  }).default;
+  const searchParams = Promise.resolve({ crop_id: "3", crop_stage_id: "4" });
+  const tree = await Page({
+    params: Promise.resolve({ locale: "en" }),
+    searchParams,
+  });
+  assert.equal(
+    findAll(tree, (node) => node.type === "editor")[0].props.searchParams,
+    searchParams,
   );
 });
 
@@ -755,7 +1362,20 @@ test("timeline listing has seven columns, shows variety under crop and formats e
       pagination: { total: 1, current_page: 1, last_page: 1, from: 1, to: 1 },
     },
     filtered: false,
+    returnQuery: queryString,
   });
+  assert.ok(
+    findAll(
+      tree,
+      (element) =>
+        element.props.href ===
+        `/admin/crop-stage-timelines/create?${queryString}`,
+    ).length,
+  );
+  assert.equal(
+    findAll(tree, (element) => element.type === "actions")[0].props.returnQuery,
+    queryString,
+  );
   assert.deepEqual(
     findAll(tree, (element) => element.props.isHeader).map(
       (element) => element.props.children,

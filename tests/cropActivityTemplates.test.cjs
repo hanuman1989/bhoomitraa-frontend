@@ -341,6 +341,25 @@ test("mutations authenticate and guard unsafe IDs, schedules, integer bounds, du
   await denied.actions.updateCropActivityTemplateStatus(42, true);
   assert.equal(denied.requests.length, 0);
 });
+test("all configured schedule types are accepted by the template action", async () => {
+  const h = harness(
+    Array(domain.templateScheduleTypes.length).fill({
+      status: true,
+      data: template,
+    }),
+  );
+  for (const schedule_type of domain.templateScheduleTypes) {
+    const result = await h.actions.saveCropActivityTemplate(null, {
+      ...payload,
+      schedule_type,
+    });
+    assert.equal(result.success, true, schedule_type);
+    assert.equal(
+      h.requests.at(-1).options.data.schedule_type,
+      schedule_type,
+    );
+  }
+});
 test("only reviewers activate; ordinary admins can deactivate and conflicts/field failures remain recoverable", async () => {
   const h = harness([{ status: true, data: template }], {
     is_super_user: false,
@@ -917,6 +936,7 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
       keyword: ["  field  ", "ignore"],
       crop_id: "3",
       category_id: "-1",
+      schedule_type: "before_sowing",
       priority: "bad",
       status: "0",
       page: "bad",
@@ -925,6 +945,7 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
   assert.equal(calls[0].status, "0");
   assert.equal(calls[0].crop_id, "3");
   assert.equal(calls[0].category_id, "");
+  assert.equal(calls[0].schedule_type, "before_sowing");
   assert.equal(calls[0].priority, "");
   assert.equal(calls[0].keyword, "field");
   assert.equal(calls[0].page, 1);
@@ -936,6 +957,7 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
     Content({
       searchParams: Promise.resolve({
         crop_id: "3",
+        schedule_type: "after_harvesting",
         priority: "high",
         status: "0",
         page: "9",
@@ -944,6 +966,10 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
     (error) => {
       assert.equal(error.destination.href.query.page, 1);
       assert.equal(error.destination.href.query.priority, "high");
+      assert.equal(
+        error.destination.href.query.schedule_type,
+        "after_harvesting",
+      );
       assert.equal(error.destination.href.query.status, "0");
       return true;
     },
@@ -971,6 +997,7 @@ test("filter crop changes clear dependencies only and URL apply/reset preserve u
     crop_variety_id: "4",
     crop_stage_id: "5",
     season_id: "6",
+    schedule_type: "",
     priority: "high",
     status: "0",
   };

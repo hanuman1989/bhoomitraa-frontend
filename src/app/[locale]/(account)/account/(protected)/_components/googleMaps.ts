@@ -128,6 +128,7 @@ export interface MapsSDK {
     editable: boolean;
     clickable: boolean;
     geodesic: boolean;
+    zIndex?: number;
   }) => MapsPolygon;
   Polyline: new (options: {
     map: MapsInstance;
@@ -136,6 +137,7 @@ export interface MapsSDK {
     strokeOpacity: number;
     strokeWeight: number;
     geodesic: boolean;
+    zIndex?: number;
     icons?: {
       icon: { path: string; strokeOpacity: number; scale: number };
       offset: string;

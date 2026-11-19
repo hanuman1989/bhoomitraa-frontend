@@ -16,11 +16,14 @@ import StageTimelineRowActions from "./StageTimelineRowActions";
 export default function StageTimelineList({
   result,
   filtered,
+  returnQuery = "",
 }: {
   result: StageTimelinesResponse;
   filtered: boolean;
+  returnQuery?: string;
 }) {
   const t = useTranslations("stageTimelines");
+  const query = returnQuery ? `?${returnQuery}` : "";
   const cell = "px-4 py-4 text-start text-sm text-gray-700 dark:text-gray-300";
   return (
     <section
@@ -40,7 +43,7 @@ export default function StageTimelineList({
           </Badge>
         </div>
         <Link
-          href="/admin/crop-stage-timelines/create"
+          href={`/admin/crop-stage-timelines/create${query}`}
           className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white focus-visible:outline-2"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
@@ -121,6 +124,7 @@ export default function StageTimelineList({
                 <TableCell className={cell}>
                   <StageTimelineRowActions
                     timeline={timeline}
+                    returnQuery={returnQuery}
                     name={t("recordName", {
                       crop: timeline.crop_name ?? t("notAvailable"),
                       stage:
@@ -147,7 +151,7 @@ export default function StageTimelineList({
             href={
               filtered
                 ? "/admin/crop-stage-timelines"
-                : "/admin/crop-stage-timelines/create"
+                : `/admin/crop-stage-timelines/create${query}`
             }
             className="text-brand-600 dark:text-brand-400 text-sm font-medium hover:underline"
           >

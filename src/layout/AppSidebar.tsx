@@ -302,15 +302,8 @@ const AppSidebar: React.FC = () => {
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // const isActive = (path: string) => path === pathname;
-
   const isActive = useCallback(
-    (path: string) =>
-      path === pathname ||
-      ((path === "/admin/knowledge-sources" ||
-        path === "/admin/crop-categories" ||
-        path === "/admin/crops") &&
-        pathname.startsWith(`${path}/`)),
+    (path: string) => path === pathname || pathname.startsWith(`${path}/`),
     [pathname],
   );
 

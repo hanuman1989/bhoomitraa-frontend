@@ -11,6 +11,7 @@ import { handleActionError } from "@/lib/api/handleActionError";
 import type { PageProps } from "@/types/api";
 import {
   templatePriorities,
+  templateScheduleTypes,
   type CropActivityTemplateFilters,
   type CropActivityTemplatesResponse,
 } from "@/types/admin/cropActivityTemplate";
@@ -42,6 +43,10 @@ export default async function CropActivityTemplatesContent({
     crop_variety_id: id("crop_variety_id"),
     crop_stage_id: id("crop_stage_id"),
     season_id: id("season_id"),
+    schedule_type:
+      templateScheduleTypes.find(
+        (schedule) => schedule === value("schedule_type"),
+      ) ?? "",
     priority:
       templatePriorities.find((priority) => priority === value("priority")) ??
       "",

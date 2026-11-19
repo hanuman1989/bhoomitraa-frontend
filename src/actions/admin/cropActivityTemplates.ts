@@ -10,6 +10,7 @@ import type { ActionResult } from "@/types/api";
 import {
   maxTemplateOffset,
   templatePriorities,
+  templateScheduleTypes,
   requiredTemplateLocales,
   type CropActivityTemplate,
   type CropActivityTemplatePayload,
@@ -40,7 +41,9 @@ export async function saveCropActivityTemplate(
       !validId(values.source_id) ||
       (values.crop_variety_id !== null && !validId(values.crop_variety_id)) ||
       (values.crop_stage_id !== null && !validId(values.crop_stage_id)) ||
-      values.schedule_type !== "after_sowing" ||
+      !templateScheduleTypes.some(
+        (schedule) => schedule === values.schedule_type,
+      ) ||
       !templatePriorities.some((priority) => priority === values.priority) ||
       !Number.isInteger(values.start_offset_days) ||
       values.start_offset_days < 0 ||

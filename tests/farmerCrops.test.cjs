@@ -24,6 +24,7 @@ function load(path, deps = {}, globals = {}) {
     exports: mod.exports,
     URLSearchParams,
     FormData,
+    structuredClone,
     crypto: require("node:crypto").webcrypto,
     setTimeout,
     clearTimeout,
@@ -111,6 +112,9 @@ function formHarness() {
   let values;
   const rules = {};
   const errors = {};
+  const setValue = (name, value) => {
+    values[name] = value;
+  };
   const form = {
     useForm({ defaultValues }) {
       values ??= structuredClone(defaultValues);
@@ -120,9 +124,7 @@ function formHarness() {
           rules[name] = rule;
           return { name };
         },
-        setValue(name, value) {
-          values[name] = value;
-        },
+        setValue,
         setError(name, error) {
           errors[name] = error;
         },
@@ -252,7 +254,10 @@ test("crop catalogue dialog keeps search and category filters with a fixed 12-it
     ),
     true,
   );
-  assert.equal(nodes(tree).some((node) => node.type === "aside"), true);
+  assert.equal(
+    nodes(tree).some((node) => node.type === "aside"),
+    true,
+  );
   runtime.cleanup();
 });
 
@@ -353,9 +358,9 @@ test("selection renders backend season presentation and hides Other when only th
   const cropSelector = nodes(tree).find(
     (node) => node.type === "Controller" && node.props.name === "crop_id",
   );
-  nodes(cropSelector.props.render()).find(
-    (node) => node.type === "CropChoice",
-  ).props.onClick();
+  nodes(cropSelector.props.render())
+    .find((node) => node.type === "CropChoice")
+    .props.onClick();
   const selectedTree = runtime.render(Component, props);
   assert.equal(
     cropPreview(selectedTree).props.src,
@@ -386,8 +391,7 @@ test("selection renders backend season presentation and hides Other when only th
     ),
   );
   const methodSelector = nodes(tree).find(
-    (node) =>
-      node.type === "Controller" && node.props.name === "sowing_method",
+    (node) => node.type === "Controller" && node.props.name === "sowing_method",
   );
   const methodCards = nodes(
     methodSelector.props.render({
@@ -612,6 +616,7 @@ test("editing a different parcel or interior ring preserves every other crop rin
     .find((n) => n.type === "select" && n.props.id === "crop-boundary-part")
     .props.onChange({ target: { value: "1:0" } });
   session.boundary = box(5, 5, 7, 7);
+  session.points = geometry.boundaryPoints(session.boundary);
   tree = runtime.render(Component, props);
   await tree.props.onSubmit();
   assert.equal(saves[0].step, 2);
@@ -627,6 +632,7 @@ test("editing a different parcel or interior ring preserves every other crop rin
     .find((n) => n.type === "select" && n.props.id === "crop-boundary-part")
     .props.onChange({ target: { value: "0:1" } });
   session.boundary = box(1.6, 1.6, 2.1, 2.1);
+  session.points = geometry.boundaryPoints(session.boundary);
   tree = runtime.render(Component, props);
   await tree.props.onSubmit();
   assert.deepEqual(
@@ -654,6 +660,398 @@ const box = (x1, y1, x2, y2) => ({
       ],
     ],
   ],
+});
+
+function boundaryStepHarness({ crop = {}, overview = {}, response } = {}) {
+  const runtime = hooks(),
+    form = formHarness();
+  const area = require("./helpers/areaUnits.cjs");
+  const farmBoundary = box(75, 26, 75.001, 26.001);
+  const farm = { id: 8, name: "Farm", area_unit: "acre" };
+  const sqm = geometry.boundaryArea(geometry.boundaryPoints(farmBoundary));
+  const stats = { value: "2.7", unit: "acre", square_metres: String(sqm) };
+  const occupancy = {
+    farm,
+    farm_boundary: farmBoundary,
+    existing_active_crops: [],
+    measured_farm_area: stats,
+    recorded_farm_area: { ...stats, value: "9" },
+    remaining_area: stats,
+    existing_crop_area: { ...stats, square_metres: "0" },
+    can_use_full_farm_boundary: true,
+    ...overview,
+  };
+  const requests = [],
+    saves = [],
+    validities = [],
+    watches = [],
+    cleared = [];
+  let saveResult = { success: true },
+    occupancyResponse = response;
+  const useBoundary = load(
+    "src/hooks/useFarmBoundary.ts",
+    {
+      react: runtime.react,
+      "@/lib/areaUnits": area.utils,
+      ["@/" + base.slice(4) + "_components/farmGeometry"]: geometry,
+    },
+    {
+      document: { addEventListener() {}, removeEventListener() {} },
+      window: { isSecureContext: true },
+      navigator: {
+        geolocation: {
+          watchPosition(success, error) {
+            watches.push({ success, error });
+            return watches.length;
+          },
+          clearWatch(id) {
+            cleared.push(id);
+          },
+        },
+      },
+      setInterval() {
+        return 1;
+      },
+      clearInterval() {},
+    },
+  ).default;
+  const Component = load(feature + "CropBoundaryStep.tsx", {
+    ...formDeps(runtime, form),
+    ...area.dependencies,
+    "@/hooks/useFarmBoundary": useBoundary,
+    "@/actions/account/farm-crops": {
+      getCropOccupancy: async (...args) => {
+        requests.push(args);
+        return occupancyResponse ?? { success: true, data: occupancy };
+      },
+    },
+    "@/components/common/maps/FarmBoundaryEditor": "Editor",
+    "@/components/common/maps/farmMapStyle": { farmMapColor: () => "green" },
+    "../../_components/farmGeometry": geometry,
+  });
+  const props = {
+    crop: {
+      id: 4,
+      farm,
+      boundary_source: null,
+      area_unit: "acre",
+      cultivated_area: null,
+      calculated_area_sqm: null,
+      boundary_details: { boundary: null, gps_accuracy_m: null },
+      ...crop,
+    },
+    busy: false,
+    onDirty() {},
+    onValidity: (valid) => validities.push(valid),
+    onSave: async (step, values) => {
+      saves.push({ step, values: clone(values) });
+      return saveResult;
+    },
+  };
+  let tree;
+  const render = () => (tree = runtime.render(Component.default, props));
+  return {
+    runtime,
+    props,
+    form,
+    occupancy,
+    requests,
+    saves,
+    watches,
+    cleared,
+    render,
+    get valid() {
+      return validities.at(-1);
+    },
+    get editor() {
+      return nodes(render()).find((n) => n.type === "Editor").props;
+    },
+    get confirm() {
+      return nodes(render()).find((n) => n.type === "Confirm").props;
+    },
+    button(label) {
+      return nodes(render()).find(
+        (n) => n.type === "button" && n.props.children === label,
+      ).props;
+    },
+    submit: () => render().props.onSubmit(),
+    setSaveResult(result) {
+      saveResult = result;
+    },
+    setOccupancyResponse(result) {
+      occupancyResponse = result;
+    },
+    async mount() {
+      render();
+      await tick();
+      return render();
+    },
+  };
+}
+
+test("available farm initializes one independent full-farm crop, measured area and a ready form without confirmation", async () => {
+  const h = boundaryStepHarness();
+  await h.mount();
+  const editor = h.editor;
+  assert.deepEqual(clone(editor.displayGeometry), h.occupancy.farm_boundary);
+  assert.notEqual(editor.displayGeometry, h.occupancy.farm_boundary);
+  assert.notEqual(
+    editor.displayGeometry.coordinates[0][0][0],
+    h.occupancy.farm_boundary.coordinates[0][0][0],
+  );
+  assert.equal(editor.session.phase, "confirmed");
+  assert.equal(editor.session.points.length, 4);
+  assert.equal(
+    editor.session.area,
+    Number(h.occupancy.measured_farm_area.square_metres),
+  );
+  assert.equal(editor.boundaryStatus, "usingCompleteFarmBoundary");
+  assert.equal(h.valid, true);
+  assert.deepEqual(clone(h.form.values.boundary), h.occupancy.farm_boundary);
+  for (let i = 0; i < 4; i++)
+    assert.equal(h.editor.displayGeometry, editor.displayGeometry);
+  assert.deepEqual(h.requests, [[8, 4]]);
+  await h.submit();
+  assert.equal(h.saves[0].step, 2);
+  assert.equal(h.saves[0].values.boundary_source, "farm_boundary");
+  assert.deepEqual(h.saves[0].values.boundary, h.occupancy.farm_boundary);
+  h.runtime.cleanup();
+});
+
+test("default MultiPolygon editing retains other parcels and holes without changing any farm coordinates", async () => {
+  const boundary = box(75, 26, 75.001, 26.001);
+  boundary.coordinates[0].push(
+    [...box(75.0002, 26.0002, 75.0003, 26.0003).coordinates[0][0]].reverse(),
+  );
+  boundary.coordinates.push(box(75.002, 26, 75.003, 26.001).coordinates[0]);
+  const before = clone(boundary);
+  const h = boundaryStepHarness({ overview: { farm_boundary: boundary } });
+  await h.mount();
+  assert.deepEqual(clone(h.editor.displayGeometry), before);
+  h.editor.session.edit();
+  nodes(h.render())
+    .find((n) => n.props.id === "crop-boundary-part" && n.type === "select")
+    .props.onChange({ target: { value: "1:0" } });
+  h.editor.session.edit();
+  const changed = box(75.0021, 26.0001, 75.0028, 26.0008);
+  h.editor.session.update(geometry.boundaryPoints(changed));
+  h.editor.session.confirm();
+  await h.submit();
+  assert.deepEqual(
+    h.saves[0].values.boundary.coordinates[0],
+    before.coordinates[0],
+  );
+  assert.deepEqual(
+    h.saves[0].values.boundary.coordinates[1],
+    changed.coordinates[0],
+  );
+  assert.deepEqual(boundary, before);
+  h.runtime.cleanup();
+});
+
+test("editing the copied boundary updates only the crop, recalculates its area and requires custom confirmation", async () => {
+  const h = boundaryStepHarness();
+  await h.mount();
+  const before = clone(h.occupancy.farm_boundary),
+    oldArea = h.editor.session.area;
+  h.editor.session.edit();
+  assert.equal(h.form.values.boundary_source, "manual");
+  assert.equal(h.editor.session.phase, "editing");
+  const smaller = box(75.0001, 26.0001, 75.0008, 26.0008);
+  h.editor.session.update(geometry.boundaryPoints(smaller));
+  assert.equal(h.valid, false);
+  assert.ok(h.editor.session.area < oldArea);
+  assert.deepEqual(clone(h.editor.displayGeometry), smaller);
+  await h.submit();
+  assert.equal(h.saves.length, 0);
+  assert.equal(h.form.errors.boundary.message, "confirmBoundary");
+  assert.equal(h.editor.session.confirm(), true);
+  assert.equal(h.editor.session.phase, "confirmed");
+  await h.submit();
+  assert.equal(h.saves[0].values.boundary_source, "manual");
+  assert.deepEqual(h.saves[0].values.boundary, smaller);
+  assert.deepEqual(h.occupancy.farm_boundary, before);
+  h.runtime.cleanup();
+});
+
+test("clear and redraw never recreate the default or remove reference layers; Use Farm Boundary restores an independent ready selection", async () => {
+  const h = boundaryStepHarness();
+  await h.mount();
+  const refs = h.editor.referenceLayers;
+  h.editor.session.clear();
+  assert.equal(h.editor.displayGeometry, null);
+  assert.equal(h.editor.referenceLayers, refs);
+  assert.equal(h.form.values.boundary_source, "manual");
+  assert.equal(h.valid, false);
+  assert.equal(h.editor.displayGeometry, null);
+  h.editor.session.draw();
+  for (const point of geometry.boundaryPoints(
+    box(75.0001, 26.0001, 75.0008, 26.0008),
+  ))
+    h.editor.session.add(point);
+  assert.equal(h.editor.session.phase, "drawing");
+  assert.ok(h.editor.session.area > 0);
+  assert.equal(h.valid, false);
+  h.button("useFarmBoundary").onClick();
+  h.confirm.onClose();
+  assert.equal(h.form.values.boundary_source, "manual");
+  h.button("useFarmBoundary").onClick();
+  h.confirm.onConfirm();
+  assert.equal(h.editor.session.phase, "confirmed");
+  assert.equal(h.form.values.boundary_source, "farm_boundary");
+  assert.equal(h.valid, true);
+  assert.notEqual(h.editor.displayGeometry, h.occupancy.farm_boundary);
+  h.runtime.cleanup();
+});
+
+test("occupied farms keep read-only layers, disable full-farm selection and reject overlapping or outside custom geometry", async () => {
+  const occupied = box(75, 26, 75.0005, 26.001);
+  const h = boundaryStepHarness({
+    overview: {
+      can_use_full_farm_boundary: false,
+      existing_active_crops: [
+        {
+          id: 99,
+          boundary: occupied,
+          crop_name: "Wheat",
+          crop_color: "gold",
+          cultivated_area: "1",
+          area_unit: "acre",
+        },
+      ],
+    },
+  });
+  await h.mount();
+  assert.equal(h.form.values.boundary_source, "manual");
+  assert.equal(h.editor.displayGeometry, null);
+  assert.equal(h.button("useFarmBoundary").disabled, true);
+  assert.deepEqual(
+    clone(h.editor.referenceLayers.map((r) => [r.id, r.zIndex])),
+    [
+      ["farm", 1],
+      ["crop-99", 2],
+    ],
+  );
+  for (const [shape, error] of [
+    [occupied, "overlap"],
+    [box(75.002, 26, 75.003, 26.001), "outsideFarm"],
+  ]) {
+    h.editor.session.draw();
+    for (const point of geometry.boundaryPoints(shape))
+      h.editor.session.add(point);
+    h.editor.session.confirm();
+    await h.submit();
+    assert.equal(h.saves.length, 0);
+    assert.equal(h.form.errors.boundary.message, error);
+  }
+  h.editor.session.draw();
+  for (const point of geometry.boundaryPoints(box(75.0005, 26, 75.001, 26.001)))
+    h.editor.session.add(point);
+  h.editor.session.confirm();
+  await h.submit();
+  assert.equal(h.saves.length, 1, "shared occupied edge remains allowed");
+  h.editor.session.clear();
+  assert.equal(h.editor.referenceLayers.length, 2);
+  h.runtime.cleanup();
+});
+
+test("saved farm, manual and GPS boundaries survive resume and occupancy reload without being replaced", async () => {
+  for (const source of ["farm_boundary", "manual", "gps"]) {
+    const boundary = box(75.0001, 26.0001, 75.0008, 26.0008);
+    const h = boundaryStepHarness({
+      crop: {
+        boundary_source: source,
+        boundary_details: { boundary, gps_accuracy_m: "8" },
+        calculated_area_sqm: "5000",
+      },
+    });
+    await h.mount();
+    assert.deepEqual(clone(h.editor.displayGeometry), boundary);
+    assert.equal(h.editor.boundaryStatus, undefined);
+    assert.equal(h.requests.length, 1);
+    h.setSaveResult({
+      success: false,
+      conflict: true,
+      errors: { boundary: ["Check allocation"] },
+    });
+    await h.submit();
+    await tick();
+    assert.deepEqual(clone(h.editor.displayGeometry), boundary);
+    assert.equal(h.form.errors.boundary.message, "Check allocation");
+    assert.equal(h.requests.length, 2);
+    h.runtime.cleanup();
+  }
+});
+
+test("occupancy failures block default selection and saving until retry, and unmapped farms retain manual-area fallback", async () => {
+  const h = boundaryStepHarness({
+    response: { success: false, message: "Unavailable" },
+  });
+  await h.mount();
+  assert.equal(h.form.values.boundary, null);
+  assert.equal(h.valid, false);
+  await h.submit();
+  assert.equal(h.saves.length, 0);
+  h.setOccupancyResponse(undefined);
+  h.button("retry").onClick();
+  h.render();
+  await tick();
+  assert.equal(h.editor.session.phase, "confirmed");
+  h.runtime.cleanup();
+  const unmapped = boundaryStepHarness({
+    overview: { farm_boundary: null, can_use_full_farm_boundary: false },
+  });
+  await unmapped.mount();
+  assert.equal(unmapped.form.values.boundary_source, "manual_area");
+  assert.equal(unmapped.form.values.boundary, null);
+  assert.equal(
+    nodes(unmapped.render()).some((n) => n.type === "Editor"),
+    false,
+  );
+  unmapped.runtime.cleanup();
+});
+
+test("GPS retains the crop until a new route is reviewed and reuses the shared watcher cleanup", async () => {
+  const h = boundaryStepHarness();
+  await h.mount();
+  const original = clone(h.editor.displayGeometry);
+  h.editor.session.changeMode("gps");
+  assert.deepEqual(clone(h.editor.displayGeometry), original);
+  h.editor.session.start();
+  assert.equal(h.watches.length, 1);
+  assert.equal(h.valid, false);
+  const route = geometry.boundaryPoints(
+    box(75.0001, 26.0001, 75.0003, 26.0003),
+  );
+  for (let i = 0; i < route.length; i++) {
+    h.watches[0].success({
+      coords: { latitude: route[i].lat, longitude: route[i].lng, accuracy: 5 },
+      timestamp: Date.now() - (route.length - i) * 3000,
+    });
+    h.render();
+  }
+  assert.deepEqual(clone(h.editor.displayGeometry), original);
+  assert.equal(h.editor.session.confirm(), true);
+  assert.deepEqual(
+    clone(h.editor.displayGeometry),
+    clone(geometry.pointsToBoundary(route)),
+  );
+  await h.submit();
+  assert.equal(h.saves[0].values.boundary_source, "gps");
+  assert.equal(h.saves[0].values.gps_accuracy_m, 5);
+  h.editor.session.edit();
+  h.editor.session.update(
+    geometry.boundaryPoints(box(75.0001, 26.0001, 75.0002, 26.0002)),
+  );
+  assert.equal(h.form.values.boundary_source, "gps");
+  assert.equal(h.valid, false);
+  h.editor.session.confirm();
+  await h.submit();
+  assert.equal(h.saves[1].values.boundary_source, "gps");
+  assert.notDeepEqual(h.saves[1].values.boundary, h.saves[0].values.boundary);
+  assert.deepEqual(h.occupancy.farm_boundary, original);
+  assert.ok(h.cleared.length > 0);
+  h.runtime.cleanup();
 });
 
 test("crop allocation accepts shared edges and full-farm coverage, but rejects crossing, nesting and identical occupied areas", () => {
@@ -904,6 +1302,7 @@ const steps = [
 function detail(next = 2, revision = 1, status = "draft") {
   return {
     id: 41,
+    farm: { id: 8 },
     revision,
     status,
     next_step: next,
@@ -1059,6 +1458,46 @@ test("new crop creation blocks duplicate submits, reuses its idempotency key aft
   const boundary = nodes(h.render()).find((n) => n.type === "CropBoundaryStep");
   assert.equal(boundary.props.crop.id, 41);
   assert.equal(h.changed, 1);
+  h.runtime.cleanup();
+});
+
+test("Step 2 waits for the boundary API and advances with authoritative geometry, area and revision after one success toast", async () => {
+  let resolve;
+  const authoritative = {
+    ...detail(3, 8),
+    boundary_details: { boundary: box(75, 26, 75.001, 26.001) },
+    calculated_area_sqm: "10000",
+  };
+  const h = wizardHarness({
+    id: 41,
+    server: detail(2, 7),
+    responses: {
+      saveCropBoundary: () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    },
+  });
+  h.render();
+  await tick();
+  const step = nodes(h.render()).find((n) => n.type === "CropBoundaryStep");
+  const values = {
+    boundary_source: "farm_boundary",
+    area_unit: "acre",
+    boundary: authoritative.boundary_details.boundary,
+  };
+  const pending = step.props.onSave(2, values);
+  assert.ok(nodes(h.render()).some((n) => n.type === "CropBoundaryStep"));
+  assert.equal(h.notices.length, 0);
+  assert.deepEqual(
+    clone(h.calls.find((call) => call[0] === "saveCropBoundary")),
+    ["saveCropBoundary", 41, 7, values],
+  );
+  resolve({ success: true, data: authoritative, message: "Boundary saved" });
+  await pending;
+  const next = nodes(h.render()).find((n) => n.type === "SeedSowingStep");
+  assert.equal(next.props.crop, authoritative);
+  assert.deepEqual(h.notices, ["Boundary saved"]);
   h.runtime.cleanup();
 });
 

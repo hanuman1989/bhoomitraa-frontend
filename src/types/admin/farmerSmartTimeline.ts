@@ -1,4 +1,7 @@
-import type { TemplatePriority } from "@/types/admin/cropActivityTemplate";
+import type {
+  TemplatePriority,
+  TemplateScheduleType,
+} from "@/types/admin/cropActivityTemplate";
 import type { KnowledgeSource } from "@/types/admin/knowledgeSource";
 
 export interface TimelinePreviewInput {
@@ -55,7 +58,7 @@ export interface TimelineActivity extends TimelineWindow {
   category_name: string | null;
   crop_stage_id: number | null;
   crop_stage_name: string | null;
-  schedule_type: "after_sowing";
+  schedule_type: TemplateScheduleType;
   priority: TemplatePriority;
   source_id: number;
   source: TimelineSource;

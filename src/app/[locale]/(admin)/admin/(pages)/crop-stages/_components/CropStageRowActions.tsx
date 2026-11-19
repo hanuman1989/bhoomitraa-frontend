@@ -12,9 +12,11 @@ import CropStageConfirmDialog from "./CropStageConfirmDialog";
 export default function CropStageRowActions({
   stage,
   name,
+  returnQuery = "",
 }: {
   stage: CropStageListItem;
   name: string;
+  returnQuery?: string;
 }) {
   const t = useTranslations("cropStages");
   const { isOpen, openModal, closeModal } = useModal();
@@ -42,7 +44,10 @@ export default function CropStageRowActions({
           className="shadow-theme-lg z-99999 w-52 rounded-xl border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900"
         >
           <MenuItem>
-            <Link href={`/admin/crop-stages/${stage.id}/edit`} className={item}>
+            <Link
+              href={`/admin/crop-stages/${stage.id}/edit${returnQuery ? `?${returnQuery}` : ""}`}
+              className={item}
+            >
               <PencilIcon aria-hidden="true" className="size-4" />
               {t("actions.edit")}
             </Link>

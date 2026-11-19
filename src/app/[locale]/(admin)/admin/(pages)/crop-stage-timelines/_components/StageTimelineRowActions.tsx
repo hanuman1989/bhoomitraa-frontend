@@ -12,9 +12,11 @@ import StageTimelineConfirmDialog from "./StageTimelineConfirmDialog";
 export default function StageTimelineRowActions({
   timeline,
   name,
+  returnQuery = "",
 }: {
   timeline: StageTimelineListItem;
   name: string;
+  returnQuery?: string;
 }) {
   const t = useTranslations("stageTimelines");
   const { isOpen, openModal, closeModal } = useModal();
@@ -43,7 +45,7 @@ export default function StageTimelineRowActions({
         >
           <MenuItem>
             <Link
-              href={`/admin/crop-stage-timelines/${timeline.id}/edit`}
+              href={`/admin/crop-stage-timelines/${timeline.id}/edit${returnQuery ? `?${returnQuery}` : ""}`}
               className={item}
             >
               <PencilIcon aria-hidden="true" className="size-4" />

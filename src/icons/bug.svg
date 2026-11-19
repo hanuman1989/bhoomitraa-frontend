@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="#EA580C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <title>Pest Management</title>
+  <rect x="9" y="10" width="14" height="18" rx="7" fill="#EA580C" fill-opacity="0.12"/>
+  <path d="M12 10V8a4 4 0 0 1 8 0v2M13 5l-3-3M19 5l3-3M16 15v13M9 16h14M9 13l-5-3V7M23 13l5-3V7M9 19H3M23 19h6M10 24l-5 3v2M22 24l5 3v2"/>
+  <circle cx="12.5" cy="20" r="1" fill="#EA580C" stroke="none"/>
+  <circle cx="19.5" cy="20" r="1" fill="#EA580C" stroke="none"/>
+</svg>

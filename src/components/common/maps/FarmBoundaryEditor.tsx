@@ -32,6 +32,7 @@ export default function FarmBoundaryEditor({
   referenceLayers,
   displayGeometry,
   toolbar,
+  boundaryStatus,
   collapsibleTools = false,
 }: {
   session: FarmBoundarySession;
@@ -40,6 +41,7 @@ export default function FarmBoundaryEditor({
   referenceLayers?: ComponentProps<typeof FarmBoundaryMap>["referenceLayers"];
   displayGeometry?: ComponentProps<typeof FarmBoundaryMap>["displayGeometry"];
   toolbar?: ReactNode;
+  boundaryStatus?: string;
   collapsibleTools?: boolean;
 }) {
   const t = useTranslations("farmerFarms");
@@ -448,7 +450,10 @@ export default function FarmBoundaryEditor({
                 {areaLabel}
               </strong>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t(s.phase === "confirmed" ? "boundaryReady" : "boundaryDraft")}
+                {boundaryStatus ??
+                  t(
+                    s.phase === "confirmed" ? "boundaryReady" : "boundaryDraft",
+                  )}
               </p>
             </div>
           </div>

@@ -161,7 +161,7 @@ export async function getTimelineOptions(
   keyword = "",
   page = 1,
 ): Promise<TimelineOptionPage> {
-  const params = { keyword: keyword || undefined, page, per_page: 20 };
+  const params = { keyword: keyword || undefined, page, per_page: 30 };
   switch (kind) {
     case "seed": {
       const r = await seedsAPI.list({

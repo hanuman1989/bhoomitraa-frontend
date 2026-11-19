@@ -10,6 +10,7 @@ import FilterSelect from "@/components/admin/common/FilterSelect";
 import TimelineRelationSelect from "@/app/[locale]/(admin)/admin/(pages)/crop-stage-timelines/_components/TimelineRelationSelect";
 import {
   templatePriorities,
+  templateScheduleTypes,
   type CropActivityTemplateFilters as FilterValues,
 } from "@/types/admin/cropActivityTemplate";
 import type {
@@ -41,6 +42,7 @@ export default function CropActivityTemplateFilters({
           crop_variety_id: "",
           crop_stage_id: "",
           season_id: "",
+          schedule_type: "",
           priority: "",
           status: "",
         }
@@ -59,6 +61,7 @@ export default function CropActivityTemplateFilters({
         crop_variety_id: "",
         crop_stage_id: "",
         season_id: "",
+        schedule_type: "",
         priority: "",
         status: "",
       });
@@ -179,6 +182,28 @@ export default function CropActivityTemplateFilters({
           disabled={pending}
           emptyLabel={t("filters.allSeasons")}
         />
+        <FilterSelect
+          id="template-filter-schedule"
+          label={t("fields.schedule")}
+          value={values.schedule_type}
+          className="h-11"
+          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+            setValues((previous) => ({
+              ...previous,
+              schedule_type:
+                templateScheduleTypes.find(
+                  (schedule) => schedule === event.target.value,
+                ) ?? "",
+            }))
+          }
+        >
+          <option value="">{t("filters.allSchedules")}</option>
+          {templateScheduleTypes.map((schedule) => (
+            <option key={schedule} value={schedule}>
+              {t(`schedule.${schedule}`)}
+            </option>
+          ))}
+        </FilterSelect>
         <FilterSelect
           id="template-filter-priority"
           label={t("fields.priority")}

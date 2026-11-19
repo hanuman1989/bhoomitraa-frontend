@@ -5,6 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const ts = require("typescript");
 const jsxRuntime = require("react/jsx-runtime");
+const { createFormControl } = require("react-hook-form");
 
 const root = "src/app/[locale]/(admin)/admin/(pages)/crop-stages/";
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -346,6 +347,245 @@ const ui = {
   },
   "@/components/admin/form/Label": { __esModule: true, default: "label" },
 };
+
+function stageFormHarness({
+  savedStage = null,
+  query = "crop_id=3",
+  responses = [],
+} = {}) {
+  const slots = [],
+    effects = [],
+    tasks = [],
+    calls = [],
+    navigations = [];
+  let cursor = 0,
+    form,
+    unsubscribe;
+  const props = {
+    stage: savedStage,
+    crops: [
+      { id: 3, name: "Wheat" },
+      { id: 7, name: "Rice" },
+    ],
+  };
+  const react = {
+    useRef(initial) {
+      return (slots[cursor++] ??= { current: initial });
+    },
+    useState(initial) {
+      const index = cursor++;
+      slots[index] ??= { value: initial };
+      return [
+        slots[index].value,
+        (value) => {
+          slots[index].value =
+            typeof value === "function" ? value(slots[index].value) : value;
+        },
+      ];
+    },
+    useTransition() {
+      const [pending, setPending] = react.useState(false);
+      return [
+        pending,
+        (callback) => {
+          setPending(true);
+          tasks.push(
+            Promise.resolve(callback()).finally(() => setPending(false)),
+          );
+        },
+      ];
+    },
+    useEffect(callback, dependencies) {
+      const index = cursor++;
+      if (
+        !slots[index] ||
+        dependencies.some((value, i) => !Object.is(value, slots[index][i]))
+      ) {
+        slots[index] = dependencies;
+        effects.push(callback);
+      }
+    },
+  };
+  const Form = load(`${root}_components/CropStageForm.tsx`, {
+    ...ui,
+    react,
+    "react-hook-form": {
+      useForm(options) {
+        if (!form) {
+          form = {
+            ...createFormControl(options),
+            formState: { isSubmitting: false },
+          };
+          // Use the installed RHF control with the same mount/registration lifecycle
+          // as the form; defaults stay cached across subsequent renders.
+          form.register("crop_id");
+          form.register("code");
+          form.register("sequence");
+          unsubscribe = form.subscribe({
+            formState: { values: true },
+            callback() {},
+          });
+        }
+        return form;
+      },
+    },
+    "next/navigation": { useSearchParams: () => new URLSearchParams(query) },
+    "@/i18n/navigation": {
+      useRouter: () => ({ push: (url) => navigations.push(url) }),
+    },
+    "react-hot-toast": { success() {}, error() {} },
+    "@/actions/admin/cropStages": {
+      saveCropStage: async (...args) => {
+        calls.push(clone(args));
+        return responses.shift() ?? { success: true, data: stage };
+      },
+    },
+    "@/components/admin/common/ComponentCard": "card",
+    "./CropStageBasicFields": "fields",
+    "./CropStageTranslations": "translations",
+    "./CropStageSettings": "settings",
+  }).default;
+  function render() {
+    cursor = 0;
+    const tree = Form(props);
+    effects.splice(0).forEach((callback) => callback());
+    return tree;
+  }
+  render();
+  return {
+    props,
+    form,
+    calls,
+    navigations,
+    render,
+    changeQuery(value) {
+      query = value;
+      return render();
+    },
+    cleanup() {
+      unsubscribe();
+    },
+    async submit() {
+      render().props.onSubmit({ preventDefault() {}, persist() {} });
+      await new Promise((resolve) => setImmediate(resolve));
+      await Promise.all(tasks.splice(0));
+    },
+  };
+}
+
+test("stage form updates the crop on query changes without resetting typed fields or manual choices on ordinary rerenders", () => {
+  const h = stageFormHarness();
+  assert.equal(h.form.getValues("crop_id"), "3");
+  h.form.setValue("code", "flowering");
+  h.form.setValue("sequence", "4");
+  h.form.setValue("translations.en.name", "My stage");
+  h.form.setError("sequence", { message: "Sequence conflict" });
+  h.form.setValue("crop_id", "7");
+  h.render();
+  assert.equal(
+    h.form.getValues("crop_id"),
+    "7",
+    "ordinary rerenders preserve a manual choice",
+  );
+  h.changeQuery("crop_id=7&status=0&page=2");
+  assert.equal(h.form.getValues("crop_id"), "7");
+  h.changeQuery("crop_id=3&status=0&page=2");
+  assert.equal(h.form.getValues("crop_id"), "3");
+  assert.equal(h.form.getValues("code"), "flowering");
+  assert.equal(h.form.getValues("sequence"), "4");
+  assert.equal(h.form.getValues("translations.en.name"), "My stage");
+  assert.equal(
+    h.form.getFieldState("sequence").error.message,
+    "Sequence conflict",
+  );
+  h.cleanup();
+});
+
+test("stage form clears stale crop defaults for missing/unavailable query IDs and selects an option when it becomes available", () => {
+  const h = stageFormHarness();
+  h.changeQuery("crop_id=999");
+  assert.equal(h.form.getValues("crop_id"), "");
+  h.changeQuery("crop_id=7");
+  assert.equal(h.form.getValues("crop_id"), "7");
+  h.changeQuery("");
+  assert.equal(h.form.getValues("crop_id"), "");
+  h.changeQuery("crop_id=9");
+  h.props.crops = [...h.props.crops, { id: 9, name: "Millet" }];
+  h.render();
+  assert.equal(h.form.getValues("crop_id"), "9");
+  h.cleanup();
+});
+
+test("stage form ignores conflicting crop query changes on edit", () => {
+  const h = stageFormHarness({ savedStage: stage, query: "crop_id=7" });
+  h.changeQuery("crop_id=9");
+  assert.equal(h.form.getValues("crop_id"), String(stage.crop_id));
+  h.cleanup();
+});
+
+test("stage form preserves a partially created crop and its retry ID when the query changes", async () => {
+  let resolve;
+  const h = stageFormHarness({
+    responses: [
+      new Promise((done) => {
+        resolve = done;
+      }),
+    ],
+  });
+  h.form.setValue("code", "flowering");
+  h.form.setValue("sequence", "4");
+  h.form.setValue("translations.en.name", "Flowering");
+  h.form.setValue("translations.hi.name", "पुष्पन");
+  const pending = h.submit();
+  await new Promise((done) => setImmediate(done));
+  h.changeQuery("crop_id=7");
+  assert.equal(
+    h.form.getValues("crop_id"),
+    "3",
+    "a pending create keeps its submitted crop",
+  );
+  resolve({ success: false, data: stage, message: "Status failed" });
+  await pending;
+  assert.equal(h.calls[0][0], null);
+  h.changeQuery("crop_id=7&status=0");
+  assert.equal(h.form.getValues("crop_id"), "3");
+  await h.submit();
+  assert.equal(h.calls[1][0], stage.id);
+  assert.equal(h.calls[1][1].crop_id, stage.crop_id);
+  assert.equal(h.navigations[0], "/admin/crop-stages?crop_id=7&status=0");
+  h.cleanup();
+});
+
+test("stage form keeps a manual crop choice after a failed create with an unchanged query", async () => {
+  let resolve;
+  const h = stageFormHarness({
+    responses: [
+      new Promise((done) => {
+        resolve = done;
+      }),
+    ],
+  });
+  h.form.setValue("crop_id", "7");
+  h.form.setValue("code", "flowering");
+  h.form.setValue("sequence", "4");
+  h.form.setValue("translations.en.name", "Flowering");
+  h.form.setValue("translations.hi.name", "पुष्पन");
+  const pending = h.submit();
+  await new Promise((done) => setImmediate(done));
+  h.render();
+  resolve({
+    success: false,
+    message: "Validation failed",
+    errors: { sequence: ["Taken"] },
+  });
+  await pending;
+  h.render();
+  assert.equal(h.form.getValues("crop_id"), "7");
+  assert.equal(h.form.getValues("code"), "flowering");
+  assert.equal(h.form.getFieldState("sequence").error.message, "Taken");
+  assert.equal(h.navigations.length, 0);
+  h.cleanup();
+});
 
 test("stage translations require English/Hindi, allow optional blanks, reject description-only drafts and preserve legacy fields", () => {
   let description = "";

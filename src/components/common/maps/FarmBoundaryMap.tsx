@@ -63,6 +63,7 @@ export default function FarmBoundaryMap({
     boundary: FarmGeometry;
     color: string;
     fillOpacity?: number;
+    zIndex?: number;
   }[];
   displayGeometry?: FarmGeometry | null;
 }) {
@@ -197,6 +198,7 @@ export default function FarmBoundaryMap({
           name: layer.name,
           color: layer.color,
           opacity: layer.fillOpacity ?? 0.15,
+          zIndex: layer.zIndex ?? 1,
         },
         geometry: layer.boundary,
       })),
@@ -209,7 +211,7 @@ export default function FarmBoundaryMap({
       fillOpacity: Number(feature.getProperty("opacity")),
       strokeColor: String(feature.getProperty("color")),
       strokeWeight: 3,
-      zIndex: 1,
+      zIndex: Number(feature.getProperty("zIndex")),
       title: String(feature.getProperty("name")),
     }));
     return () => {
@@ -250,6 +252,7 @@ export default function FarmBoundaryMap({
       strokeWeight: 3,
       editable,
       clickable: editable,
+      zIndex: 4,
       geodesic: true,
     });
     const resource: PolygonResources = { polygon, listeners: [] };
@@ -289,6 +292,7 @@ export default function FarmBoundaryMap({
         strokeColor: gps ? "#465fff" : "#039855",
         strokeWeight: 3,
         strokeOpacity: gps ? 0 : 1,
+        zIndex: 4,
         geodesic: true,
         ...(gps
           ? {
@@ -328,6 +332,7 @@ export default function FarmBoundaryMap({
     });
     vertices.setStyle({
       clickable: false,
+      zIndex: 5,
       icon: {
         path: sdk.SymbolPath.CIRCLE,
         scale: 5,

@@ -2665,6 +2665,7 @@ function boundaryMapHarness({
 } = {}) {
   const runtime = hooks(),
     polygons = [],
+    layers = [],
     paths = [],
     lines = [],
     maps = [],
@@ -2702,6 +2703,7 @@ function boundaryMapHarness({
   }
   class Polygon {
     constructor(options) {
+      this.options = options;
       this.map = options.map;
       const points = Array.isArray(options.paths[0])
         ? options.paths[0]
@@ -2738,9 +2740,19 @@ function boundaryMapHarness({
     panTo() {}
   }
   class Data {
-    addGeoJson() {}
-    setStyle() {}
-    setMap() {}
+    constructor(options) {
+      this.map = options.map;
+      layers.push(this);
+    }
+    addGeoJson(value) {
+      this.geometry = value;
+    }
+    setStyle(value) {
+      this.style = value;
+    }
+    setMap(map) {
+      this.map = map;
+    }
   }
   class Line {
     constructor(options) {
@@ -2814,6 +2826,7 @@ function boundaryMapHarness({
     render,
     props,
     polygons,
+    layers,
     paths,
     lines,
     maps,
@@ -2842,6 +2855,68 @@ test("an empty or incomplete boundary never creates a polygon or subscribes to a
     assert.equal(h.polygons.length, 0);
   }
   h.runtime.cleanup();
+});
+
+test("crop map orders independent read-only references below the current selection, keeps vertices noneditable and cleans overlays without duplicates", async () => {
+  const h = boundaryMapHarness({ points: square });
+  const boundary = geometry.pointsToBoundary(square);
+  h.props.referenceLayers = [
+    {
+      id: "farm",
+      name: "Farm",
+      boundary,
+      color: "green",
+      fillOpacity: 0,
+      zIndex: 1,
+    },
+    {
+      id: "occupied",
+      name: "Crop",
+      boundary: structuredClone(boundary),
+      color: "gold",
+      zIndex: 2,
+    },
+  ];
+  h.props.displayGeometry = structuredClone(boundary);
+  await h.mount();
+  const references = h.layers.find(
+    (layer) => layer.geometry.features?.[0]?.id === "farm",
+  );
+  const selected = h.layers.find((layer) => layer.geometry.type === "Feature");
+  const vertices = h.layers.find(
+    (layer) => layer.geometry.features?.[0]?.geometry.type === "Point",
+  );
+  for (const feature of references.geometry.features) {
+    const style = references.style({
+      getProperty: (name) => feature.properties[name],
+    });
+    assert.equal(style.editable, false);
+    assert.equal(style.draggable, false);
+    assert.equal(style.clickable, false);
+    assert.ok(style.zIndex < selected.style.zIndex);
+  }
+  assert.equal(selected.style.zIndex, 3);
+  assert.equal(selected.style.editable, false);
+  assert.equal(vertices.style.zIndex, 5);
+  assert.equal(h.polygons[0].options.editable, false);
+  assert.equal(h.polygons[0].options.zIndex, 4);
+  assert.equal(h.layers.filter((layer) => layer.map !== null).length, 3);
+  const count = h.layers.length;
+  h.render();
+  h.render();
+  assert.equal(h.layers.length, count);
+  h.props.editable = true;
+  h.render();
+  assert.equal(h.polygons.at(-1).options.editable, true);
+  assert.equal(references.map, h.maps[0]);
+  h.props.points = [];
+  h.props.displayGeometry = null;
+  h.render();
+  assert.equal(references.map, h.maps[0]);
+  assert.equal(selected.map, null);
+  h.runtime.cleanup();
+  assert.ok(h.layers.every((layer) => layer.map === null));
+  assert.ok(h.polygons.every((polygon) => polygon.map === null));
 });
 
 test("manual drawing uses a line until completion; clearing a polygon removes its path listeners safely", async () => {

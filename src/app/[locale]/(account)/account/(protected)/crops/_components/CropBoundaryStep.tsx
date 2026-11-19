@@ -1,5 +1,12 @@
 "use client";
-import { useEffect, useMemo, useState, startTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  startTransition,
+} from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "next-intl";
 import useFarmBoundary from "@/hooks/useFarmBoundary";
@@ -18,6 +25,8 @@ import { farmMapColor } from "@/components/common/maps/farmMapStyle";
 import {
   boundaryArea,
   cropAllocationError,
+  isFarmGeometry,
+  pointsToBoundary,
 } from "../../_components/farmGeometry";
 import type { Boundary } from "@/types/account/farm";
 import type {
@@ -35,22 +44,24 @@ export default function CropBoundaryStep({
   onValidity,
 }: CropStepProps & { onValidity?: (valid: boolean) => void }) {
   const t = useTranslations("farmerCrops");
+  const tf = useTranslations("farmerFarms");
   const locale = useLocale();
   const units = useAreaUnits();
   const [occupancy, setOccupancy] = useState<CropOccupancy | null>(null);
   const [error, setErrorMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState<"farm" | "draw" | null>(
+    null,
+  );
   const [preserveParts, setPreserveParts] = useState(true);
-  const initialBoundary =
-    crop.boundary_source === "manual" || crop.boundary_source === "gps"
-      ? crop.boundary_details.boundary
-      : null;
-  const [parts, setParts] = useState(initialBoundary);
+  const [parts, setParts] = useState(() =>
+    structuredClone(crop.boundary_details.boundary),
+  );
+  const initialized = useRef(Boolean(crop.boundary_source || parts));
   const [activeRing, setActiveRing] = useState({ polygon: 0, ring: 0 });
   const s = useFarmBoundary(
     {
-      boundary: initialBoundary,
+      boundary: parts,
       boundary_source: crop.boundary_source === "gps" ? "gps" : "manual",
       gps_accuracy_m: crop.boundary_details.gps_accuracy_m
         ? Number(crop.boundary_details.gps_accuracy_m)
@@ -68,35 +79,58 @@ export default function CropBoundaryStep({
   } = useForm<BoundaryStepPayload>({
     defaultValues: {
       boundary_source: crop.boundary_source ?? "farm_boundary",
+      boundary: parts,
       cultivated_area: crop.cultivated_area ?? "",
       area_unit: crop.area_unit ?? crop.farm.area_unit,
     },
   });
   const source = useWatch({ control, name: "boundary_source" });
   const areaUnit = useWatch({ control, name: "area_unit" });
+  const loadBoundary = s.loadBoundary;
+  const loadFullFarm = useCallback(
+    (farmBoundary: Boundary) => {
+      const copy = structuredClone(farmBoundary);
+      setParts(copy);
+      setPreserveParts(true);
+      setActiveRing({ polygon: 0, ring: 0 });
+      loadBoundary({
+        boundary: copy,
+        boundary_source: "manual",
+        gps_accuracy_m: null,
+      });
+      setValue("boundary_source", "farm_boundary", { shouldDirty: true });
+    },
+    [loadBoundary, setValue],
+  );
   useEffect(() => {
     let active = true;
     startTransition(async () => {
+      setOccupancy(null);
       const result = await getCropOccupancy(crop.farm.id, crop.id);
       if (!active) return;
       if (result.success && result.data) {
         setOccupancy(result.data);
         setErrorMessage("");
-        if (!crop.boundary_source)
-          setValue(
-            "boundary_source",
-            result.data.farm_boundary
-              ? result.data.can_use_full_farm_boundary
-                ? "farm_boundary"
-                : "manual"
-              : "manual_area",
-          );
+        if (!initialized.current) {
+          initialized.current = true;
+          const farmBoundary = result.data.farm_boundary;
+          if (farmBoundary && isFarmGeometry(farmBoundary)) {
+            if (result.data.can_use_full_farm_boundary)
+              loadFullFarm(farmBoundary);
+            else setValue("boundary_source", "manual");
+          } else setValue("boundary_source", "manual_area");
+        }
       } else setErrorMessage(result.message);
     });
     return () => {
       active = false;
     };
-  }, [crop.id, crop.farm.id, crop.boundary_source, attempt, setValue]);
+  }, [crop.id, crop.farm.id, attempt, setValue, loadFullFarm]);
+  const canUseFullFarm = Boolean(
+    occupancy?.can_use_full_farm_boundary &&
+    occupancy.farm_boundary &&
+    isFarmGeometry(occupancy.farm_boundary),
+  );
   const references = useMemo(
     () =>
       occupancy
@@ -109,6 +143,7 @@ export default function CropBoundaryStep({
                     boundary: occupancy.farm_boundary,
                     color: "#039855",
                     fillOpacity: 0,
+                    zIndex: 1,
                   },
                 ]
               : []),
@@ -120,29 +155,47 @@ export default function CropBoundaryStep({
                 boundary: c.boundary!,
                 color: c.crop_color || farmMapColor(c.id),
                 fillOpacity: 0.3,
+                zIndex: 2,
               })),
           ]
         : [],
     [occupancy, crop.farm.name],
   );
-  const boundary: Boundary | null =
-    source === "farm_boundary"
-      ? (occupancy?.farm_boundary ?? null)
-      : s.boundary && preserveParts && parts
-        ? {
-            type: "MultiPolygon",
-            coordinates: parts.coordinates.map((polygon, polygonIndex) =>
-              polygon.map((ring, ringIndex) =>
-                polygonIndex === activeRing.polygon &&
-                ringIndex === activeRing.ring
-                  ? activeRing.ring
-                    ? [...s.boundary!.coordinates[0][0]].reverse()
-                    : s.boundary!.coordinates[0][0]
-                  : ring,
-              ),
-            ),
-          }
-        : s.boundary;
+  // The session edits one ring; parts retains the other parcels/holes and the
+  // previous selection while a replacement GPS route is being reviewed.
+  const boundary = useMemo<Boundary | null>(() => {
+    if (source === "manual_area") return null;
+    if (source === "farm_boundary") return parts;
+    if (source === "gps" && (s.phase === "idle" || s.phase === "drawing"))
+      return parts;
+    const edited = pointsToBoundary(s.points);
+    if (!edited || !preserveParts || !parts) return edited;
+    const originalRing = parts.coordinates[activeRing.polygon][activeRing.ring];
+    if (
+      originalRing.length === s.points.length + 1 &&
+      s.points.every(
+        (point, index) =>
+          point.lng === originalRing[index][0] &&
+          point.lat === originalRing[index][1],
+      )
+    )
+      return parts;
+    return {
+      type: "MultiPolygon",
+      coordinates: parts.coordinates.map((polygon, polygonIndex) =>
+        polygon.map((ring, ringIndex) =>
+          polygonIndex === activeRing.polygon && ringIndex === activeRing.ring
+            ? activeRing.ring
+              ? [...edited.coordinates[0][0]].reverse()
+              : edited.coordinates[0][0]
+            : ring,
+        ),
+      ),
+    };
+  }, [source, s.points, s.phase, preserveParts, parts, activeRing]);
+  useEffect(() => {
+    setValue("boundary", boundary);
+  }, [boundary, setValue]);
   const spatialError =
     boundary && occupancy?.farm_boundary
       ? cropAllocationError(
@@ -153,27 +206,29 @@ export default function CropBoundaryStep({
           ),
         )
       : null;
+  const geometryChanged =
+    JSON.stringify(boundary) !== JSON.stringify(crop.boundary_details.boundary);
   const selectedSqm =
     source === "farm_boundary"
       ? occupancy?.measured_farm_area.square_metres
-      : boundary
-        ? boundary.coordinates.reduce(
-            (total, rings) =>
-              total +
-              rings.reduce(
-                (area, ring, index) =>
-                  area +
-                  (index ? -1 : 1) *
-                    boundaryArea(
-                      ring.slice(0, -1).map(([lng, lat]) => ({ lng, lat })),
-                    ),
-                0,
-              ),
-            0,
-          )
-        : s.area;
-  const geometryChanged =
-    JSON.stringify(boundary) !== JSON.stringify(crop.boundary_details.boundary);
+      : !geometryChanged && crop.calculated_area_sqm
+        ? crop.calculated_area_sqm
+        : boundary
+          ? boundary.coordinates.reduce(
+              (total, rings) =>
+                total +
+                rings.reduce(
+                  (area, ring, index) =>
+                    area +
+                    (index ? -1 : 1) *
+                      boundaryArea(
+                        ring.slice(0, -1).map(([lng, lat]) => ({ lng, lat })),
+                      ),
+                  0,
+                ),
+              0,
+            )
+          : s.area;
   useEffect(
     () =>
       onDirty(
@@ -189,12 +244,17 @@ export default function CropBoundaryStep({
   const valid = Boolean(
     occupancy &&
     !s.active &&
+    !error &&
     isSupportedAreaUnit(areaUnit, units.config) &&
     (source === "manual_area"
       ? Number(manualArea) > 0 && !occupancy.existing_active_crops.length
       : boundary &&
+        isFarmGeometry(boundary) &&
+        s.phase === "confirmed" &&
+        Number(selectedSqm) > 0 &&
         !spatialError &&
-        (source !== "farm_boundary" || occupancy.can_use_full_farm_boundary)),
+        !occupancy.existing_active_crops.some((c) => !c.boundary) &&
+        (source !== "farm_boundary" || canUseFullFarm)),
   );
   useEffect(() => {
     onValidity?.(valid);
@@ -218,10 +278,27 @@ export default function CropBoundaryStep({
     setValue("boundary_source", "manual", { shouldDirty: true });
   }
   function reset() {
+    if (!canUseFullFarm || !occupancy?.farm_boundary) return;
+    if (s.mode !== "manual") s.changeMode("manual");
+    loadFullFarm(occupancy.farm_boundary);
+    setResetConfirm(null);
+  }
+  function selectFarm() {
+    if (source !== "farm_boundary" && (boundary || s.points.length))
+      setResetConfirm("farm");
+    else reset();
+  }
+  function clear() {
     s.clear();
+    setParts(null);
     setPreserveParts(false);
-    setValue("boundary_source", "farm_boundary", { shouldDirty: true });
-    setResetConfirm(false);
+    setActiveRing({ polygon: 0, ring: 0 });
+    custom();
+  }
+  function draw() {
+    clear();
+    if (s.mode !== "manual") s.changeMode("manual");
+    s.draw();
   }
   return (
     <form
@@ -234,29 +311,30 @@ export default function CropBoundaryStep({
         }
         if (
           values.boundary_source !== "manual_area" &&
-          (!boundary || spatialError)
+          (!boundary ||
+            s.phase !== "confirmed" ||
+            Number(selectedSqm) <= 0 ||
+            spatialError)
         ) {
           setError("boundary", {
             message: t(spatialError || "confirmBoundary"),
           });
           return;
         }
-        if (
-          values.boundary_source === "farm_boundary" &&
-          !occupancy?.can_use_full_farm_boundary
-        ) {
+        if (values.boundary_source === "farm_boundary" && !canUseFullFarm) {
           setError("boundary", { message: t("occupiedFarm") });
+          return;
+        }
+        if (!valid) {
+          setError("boundary", {
+            message: t(error ? "loadFailed" : "confirmBoundary"),
+          });
           return;
         }
         const result = await onSave(2, {
           ...values,
           boundary,
-          boundary_source:
-            values.boundary_source === "manual_area" ||
-            values.boundary_source === "farm_boundary"
-              ? values.boundary_source
-              : s.source,
-          gps_accuracy_m: s.source === "gps" ? s.accuracy : null,
+          gps_accuracy_m: values.boundary_source === "gps" ? s.accuracy : null,
         });
         if (!result.success) {
           cropFieldErrors(result, setError);
@@ -288,14 +366,15 @@ export default function CropBoundaryStep({
             Number(occupancy.remaining_area.square_metres) === 0 && (
               <CropNotice error>{t("noAvailableArea")}</CropNotice>
             )}
+          {occupancy.existing_active_crops.some((c) => !c.boundary) && (
+            <CropNotice error>{t("unverifiedCropBoundary")}</CropNotice>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              disabled={!occupancy.can_use_full_farm_boundary || s.active}
-              onClick={() => {
-                if (s.points.length) setResetConfirm(true);
-                else reset();
-              }}
+              disabled={!canUseFullFarm || s.active}
+              onClick={selectFarm}
+              aria-pressed={source === "farm_boundary"}
               className={cropButton}
             >
               {t("useFarmBoundary")}
@@ -303,7 +382,10 @@ export default function CropBoundaryStep({
             {occupancy.farm_boundary && (
               <button
                 type="button"
-                onClick={custom}
+                onClick={() => {
+                  if (boundary || s.points.length) setResetConfirm("draw");
+                  else draw();
+                }}
                 disabled={s.active}
                 className={cropButton}
               >
@@ -406,37 +488,43 @@ export default function CropBoundaryStep({
             <>
               <FarmBoundaryEditor
                 collapsibleTools
+                boundaryStatus={
+                  source === "farm_boundary" &&
+                  valid &&
+                  (geometryChanged || source !== crop.boundary_source)
+                    ? t("usingCompleteFarmBoundary")
+                    : undefined
+                }
                 session={{
                   ...s,
-                  ...(source === "farm_boundary"
-                    ? {
-                        points: [],
-                        boundary: null,
-                        area:
-                          Number(occupancy.measured_farm_area.square_metres) ||
-                          null,
-                      }
-                    : {}),
-                  clear: () => {
-                    s.clear();
-                    custom();
-                    setPreserveParts(false);
-                  },
-                  draw: () => {
-                    custom();
-                    s.draw();
+                  area: selectedSqm == null ? null : Number(selectedSqm),
+                  clear,
+                  draw,
+                  start: () => {
+                    setValue("boundary_source", "gps", { shouldDirty: true });
+                    s.start();
                   },
                   edit: () => {
-                    custom();
+                    if (source !== "gps") custom();
                     s.edit();
                   },
                   changeMode: (mode) => {
-                    custom();
+                    setParts(boundary ? structuredClone(boundary) : null);
+                    setValue("boundary_source", mode, { shouldDirty: true });
                     setPreserveParts(false);
+                    setActiveRing({ polygon: 0, ring: 0 });
                     s.changeMode(mode);
+                    if (mode === "manual" && boundary) {
+                      setPreserveParts(true);
+                      loadBoundary({
+                        boundary,
+                        boundary_source: "manual",
+                        gps_accuracy_m: null,
+                      });
+                    }
                   },
                   update: (points) => {
-                    custom();
+                    if (source !== "gps") custom();
                     s.update(points);
                   },
                 }}
@@ -449,17 +537,14 @@ export default function CropBoundaryStep({
                   .filter(Boolean)
                   .join(", ")}
                 referenceLayers={references}
-                displayGeometry={
-                  source === "farm_boundary"
-                    ? occupancy.farm_boundary
-                    : boundary
-                }
+                displayGeometry={boundary}
                 toolbar={
                   <button
                     type="button"
-                    disabled={!occupancy.can_use_full_farm_boundary || s.active}
+                    disabled={!canUseFullFarm || s.active}
                     className="text-success-700 rounded-lg px-3 py-2 text-start text-sm font-semibold disabled:opacity-40"
-                    onClick={() => setResetConfirm(true)}
+                    onClick={selectFarm}
+                    aria-pressed={source === "farm_boundary"}
                   >
                     {t("useFarmBoundary")}
                   </button>
@@ -522,10 +607,24 @@ export default function CropBoundaryStep({
       )}
       {resetConfirm && (
         <BoundaryConfirmDialog
-          title={t("resetBoundary")}
-          description={t("resetBoundaryDescription")}
-          onClose={() => setResetConfirm(false)}
-          onConfirm={reset}
+          title={
+            resetConfirm === "farm"
+              ? t("resetBoundary")
+              : tf("discardBoundaryTitle")
+          }
+          description={
+            resetConfirm === "farm"
+              ? t("resetBoundaryDescription")
+              : tf("discardBoundaryDescription")
+          }
+          onClose={() => setResetConfirm(null)}
+          onConfirm={() => {
+            if (resetConfirm === "farm") reset();
+            else {
+              draw();
+              setResetConfirm(null);
+            }
+          }}
         />
       )}
     </form>

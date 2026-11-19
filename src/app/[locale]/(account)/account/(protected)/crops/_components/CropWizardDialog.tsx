@@ -161,13 +161,15 @@ export default function CropWizardDialog({
         } else
           result = await saveCropSelection(crop.id, crop.revision, selection);
       } else if (!crop) return { success: false, message: t("saveFailed") };
-      else if (number === 2)
+      else if (number === 2) {
         result = await saveCropBoundary(
           crop.id,
           crop.revision,
           values as BoundaryStepPayload,
         );
-      else if (number === 3)
+        if (result.success && result.data)
+          toast.success(result.message || t("saved"));
+      } else if (number === 3)
         result = await saveCropSeed(
           crop.id,
           crop.revision,
@@ -362,7 +364,7 @@ export default function CropWizardDialog({
                   {crop && step === 2 && (
                     <CropBoundaryStep
                       onValidity={setBoundaryReady}
-                      key={`${crop.id}-${crop.revision}-2`}
+                      key={`${crop.id}-${crop.farm.id}-${crop.revision}-2`}
                       crop={crop}
                       busy={busy}
                       onSave={save}
