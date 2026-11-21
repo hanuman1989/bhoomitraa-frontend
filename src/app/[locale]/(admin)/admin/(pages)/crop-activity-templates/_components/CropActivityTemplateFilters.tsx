@@ -9,7 +9,9 @@ import Label from "@/components/admin/form/Label";
 import FilterSelect from "@/components/admin/common/FilterSelect";
 import TimelineRelationSelect from "@/app/[locale]/(admin)/admin/(pages)/crop-stage-timelines/_components/TimelineRelationSelect";
 import {
+  templateActivityTypes,
   templatePriorities,
+  templateScheduleBases,
   templateScheduleTypes,
   type CropActivityTemplateFilters as FilterValues,
 } from "@/types/admin/cropActivityTemplate";
@@ -43,6 +45,8 @@ export default function CropActivityTemplateFilters({
           crop_stage_id: "",
           season_id: "",
           schedule_type: "",
+          schedule_basis: "",
+          activity_type: "",
           priority: "",
           status: "",
         }
@@ -62,6 +66,8 @@ export default function CropActivityTemplateFilters({
         crop_stage_id: "",
         season_id: "",
         schedule_type: "",
+        schedule_basis: "",
+        activity_type: "",
         priority: "",
         status: "",
       });
@@ -82,174 +88,224 @@ export default function CropActivityTemplateFilters({
         event.preventDefault();
         navigate(false);
       }}
-      className="shadow-theme-xs rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
+      className="shadow-theme-xs rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
     >
       <fieldset
         disabled={pending}
-        className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-4"
+        className="space-y-3 [&_.space-y-2]:space-y-1 [&_input]:!h-9 [&_input]:!py-1.5 [&_label]:mb-1 [&_label]:text-xs [&_select]:!h-9"
       >
         <legend className="sr-only">{t("filters.label")}</legend>
-        <div>
-          <Label htmlFor="template-keyword">{t("filters.keyword")}</Label>
-          <Input
-            id="template-keyword"
-            value={values.keyword}
-            maxLength={150}
-            placeholder={t("filters.placeholder")}
-            onChange={(event) =>
-              setValues((previous) => ({
-                ...previous,
-                keyword: event.target.value,
-              }))
+        <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div>
+            <Label htmlFor="template-keyword">{t("filters.keyword")}</Label>
+            <Input
+              id="template-keyword"
+              value={values.keyword}
+              maxLength={150}
+              placeholder={t("filters.placeholder")}
+              onChange={(event) =>
+                setValues((previous) => ({
+                  ...previous,
+                  keyword: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <TimelineRelationSelect
+            kind="crop"
+            id="template-filter-crop"
+            label={t("fields.crop")}
+            value={values.crop_id}
+            onChange={(value) =>
+              setValues((previous) =>
+                previous.crop_id === value
+                  ? previous
+                  : {
+                      ...previous,
+                      crop_id: value,
+                      crop_stage_id: "",
+                      crop_variety_id: "",
+                    },
+              )
             }
+            initialPage={choices.crop}
+            initialSelection={selections.crop}
+            disabled={pending}
+            emptyLabel={t("filters.allCrops")}
+          />
+          <TimelineRelationSelect
+            key={`variety-${values.crop_id}`}
+            kind="variety"
+            id="template-filter-variety"
+            label={t("fields.variety")}
+            value={values.crop_variety_id}
+            onChange={(value) =>
+              setValues((previous) => ({ ...previous, crop_variety_id: value }))
+            }
+            cropId={cropId}
+            initialPage={sameCrop ? choices.variety : undefined}
+            initialSelection={sameCrop ? selections.variety : null}
+            disabled={pending}
+            emptyLabel={t("filters.allVarieties")}
           />
         </div>
-        <TimelineRelationSelect
-          kind="crop"
-          id="template-filter-crop"
-          label={t("fields.crop")}
-          value={values.crop_id}
-          onChange={(value) =>
-            setValues((previous) =>
-              previous.crop_id === value
-                ? previous
-                : {
-                    ...previous,
-                    crop_id: value,
-                    crop_stage_id: "",
-                    crop_variety_id: "",
-                  },
-            )
-          }
-          initialPage={choices.crop}
-          initialSelection={selections.crop}
-          disabled={pending}
-          emptyLabel={t("filters.allCrops")}
-        />
-        <TimelineRelationSelect
-          kind="category"
-          id="template-filter-category"
-          label={t("fields.category")}
-          value={values.category_id}
-          onChange={(value) =>
-            setValues((previous) => ({ ...previous, category_id: value }))
-          }
-          initialPage={choices.category}
-          initialSelection={selections.category}
-          disabled={pending}
-          emptyLabel={t("filters.allCategories")}
-        />
-        <TimelineRelationSelect
-          key={`variety-${values.crop_id}`}
-          kind="variety"
-          id="template-filter-variety"
-          label={t("fields.variety")}
-          value={values.crop_variety_id}
-          onChange={(value) =>
-            setValues((previous) => ({ ...previous, crop_variety_id: value }))
-          }
-          cropId={cropId}
-          initialPage={sameCrop ? choices.variety : undefined}
-          initialSelection={sameCrop ? selections.variety : null}
-          disabled={pending}
-          emptyLabel={t("filters.allVarieties")}
-        />
-        <TimelineRelationSelect
-          key={`stage-${values.crop_id}`}
-          kind="stage"
-          id="template-filter-stage"
-          label={t("fields.stage")}
-          value={values.crop_stage_id}
-          onChange={(value) =>
-            setValues((previous) => ({ ...previous, crop_stage_id: value }))
-          }
-          cropId={cropId}
-          initialPage={sameCrop ? choices.stage : undefined}
-          initialSelection={sameCrop ? selections.stage : null}
-          disabled={pending}
-          emptyLabel={t("filters.allStages")}
-        />
-        <TimelineRelationSelect
-          kind="season"
-          id="template-filter-season"
-          label={t("fields.season")}
-          value={values.season_id}
-          onChange={(value) =>
-            setValues((previous) => ({ ...previous, season_id: value }))
-          }
-          initialPage={choices.season}
-          initialSelection={selections.season}
-          disabled={pending}
-          emptyLabel={t("filters.allSeasons")}
-        />
-        <FilterSelect
-          id="template-filter-schedule"
-          label={t("fields.schedule")}
-          value={values.schedule_type}
-          className="h-11"
-          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-            setValues((previous) => ({
-              ...previous,
-              schedule_type:
-                templateScheduleTypes.find(
-                  (schedule) => schedule === event.target.value,
-                ) ?? "",
-            }))
-          }
-        >
-          <option value="">{t("filters.allSchedules")}</option>
-          {templateScheduleTypes.map((schedule) => (
-            <option key={schedule} value={schedule}>
-              {t(`schedule.${schedule}`)}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect
-          id="template-filter-priority"
-          label={t("fields.priority")}
-          value={values.priority}
-          className="h-11"
-          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-            setValues((previous) => ({
-              ...previous,
-              priority:
-                templatePriorities.find(
-                  (priority) => priority === event.target.value,
-                ) ?? "",
-            }))
-          }
-        >
-          <option value="">{t("filters.allPriorities")}</option>
-          {templatePriorities.map((priority) => (
-            <option key={priority} value={priority}>
-              {t(`priorities.${priority}`)}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect
-          id="template-filter-status"
-          label={t("fields.status")}
-          value={values.status}
-          className="h-11"
-          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-            setValues((previous) => ({
-              ...previous,
-              status:
-                event.target.value === "0" || event.target.value === "1"
-                  ? event.target.value
-                  : "",
-            }))
-          }
-        >
-          <option value="">{t("filters.allStatus")}</option>
-          <option value="1">{t("active")}</option>
-          <option value="0">{t("inactive")}</option>
-        </FilterSelect>
-        <div className="flex flex-wrap justify-end gap-3 md:col-span-2 2xl:col-span-4">
+        <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <TimelineRelationSelect
+            kind="category"
+            id="template-filter-category"
+            label={t("fields.category")}
+            value={values.category_id}
+            onChange={(value) =>
+              setValues((previous) => ({ ...previous, category_id: value }))
+            }
+            initialPage={choices.category}
+            initialSelection={selections.category}
+            disabled={pending}
+            emptyLabel={t("filters.allCategories")}
+          />
+          <TimelineRelationSelect
+            key={`stage-${values.crop_id}`}
+            kind="stage"
+            id="template-filter-stage"
+            label={t("fields.stage")}
+            value={values.crop_stage_id}
+            onChange={(value) =>
+              setValues((previous) => ({ ...previous, crop_stage_id: value }))
+            }
+            cropId={cropId}
+            initialPage={sameCrop ? choices.stage : undefined}
+            initialSelection={sameCrop ? selections.stage : null}
+            disabled={pending}
+            emptyLabel={t("filters.allStages")}
+          />
+          <TimelineRelationSelect
+            kind="season"
+            id="template-filter-season"
+            label={t("fields.season")}
+            value={values.season_id}
+            onChange={(value) =>
+              setValues((previous) => ({ ...previous, season_id: value }))
+            }
+            initialPage={choices.season}
+            initialSelection={selections.season}
+            disabled={pending}
+            emptyLabel={t("filters.allSeasons")}
+          />
+          <FilterSelect
+            id="template-filter-schedule"
+            label={t("fields.schedule")}
+            value={values.schedule_type}
+            className="!h-9"
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              setValues((previous) => ({
+                ...previous,
+                schedule_type:
+                  templateScheduleTypes.find(
+                    (schedule) => schedule === event.target.value,
+                  ) ?? "",
+              }))
+            }
+          >
+            <option value="">{t("filters.allSchedules")}</option>
+            {templateScheduleTypes.map((schedule) => (
+              <option key={schedule} value={schedule}>
+                {t(`schedule.${schedule}`)}
+              </option>
+            ))}
+          </FilterSelect>
+        </div>
+        <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <FilterSelect
+            id="template-filter-schedule-basis"
+            label={t("fields.scheduleBasis")}
+            value={values.schedule_basis}
+            className="!h-9"
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              setValues((previous) => ({
+                ...previous,
+                schedule_basis:
+                  templateScheduleBases.find(
+                    (basis) => basis === event.target.value,
+                  ) ?? "",
+              }))
+            }
+          >
+            <option value="">{t("filters.allScheduleBases")}</option>
+            {templateScheduleBases.map((basis) => (
+              <option key={basis} value={basis}>
+                {t(`scheduleBases.${basis}`)}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterSelect
+            id="template-filter-activity-type"
+            label={t("fields.activityType")}
+            value={values.activity_type}
+            className="!h-9"
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              setValues((previous) => ({
+                ...previous,
+                activity_type:
+                  templateActivityTypes.find(
+                    (type) => type === event.target.value,
+                  ) ?? "",
+              }))
+            }
+          >
+            <option value="">{t("filters.allActivityTypes")}</option>
+            {templateActivityTypes.map((type) => (
+              <option key={type} value={type}>
+                {t(`activityTypes.${type}`)}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterSelect
+            id="template-filter-priority"
+            label={t("fields.priority")}
+            value={values.priority}
+            className="!h-9"
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              setValues((previous) => ({
+                ...previous,
+                priority:
+                  templatePriorities.find(
+                    (priority) => priority === event.target.value,
+                  ) ?? "",
+              }))
+            }
+          >
+            <option value="">{t("filters.allPriorities")}</option>
+            {templatePriorities.map((priority) => (
+              <option key={priority} value={priority}>
+                {t(`priorities.${priority}`)}
+              </option>
+            ))}
+          </FilterSelect>
+          <FilterSelect
+            id="template-filter-status"
+            label={t("fields.status")}
+            value={values.status}
+            className="!h-9"
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+              setValues((previous) => ({
+                ...previous,
+                status:
+                  event.target.value === "0" || event.target.value === "1"
+                    ? event.target.value
+                    : "",
+              }))
+            }
+          >
+            <option value="">{t("filters.allStatus")}</option>
+            <option value="1">{t("active")}</option>
+            <option value="0">{t("inactive")}</option>
+          </FilterSelect>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="submit"
             disabled={pending}
-            className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 h-11 rounded-lg px-5 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+            className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
           >
             {t("filters.apply")}
           </button>
@@ -257,7 +313,7 @@ export default function CropActivityTemplateFilters({
             type="button"
             disabled={pending}
             onClick={() => navigate(true)}
-            className="h-11 rounded-lg border border-gray-300 px-5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             {t("filters.reset")}
           </button>

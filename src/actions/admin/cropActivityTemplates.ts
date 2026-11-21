@@ -8,9 +8,13 @@ import { cropActivityTemplatesAPI } from "@/lib/apis/admin/cropActivityTemplates
 import { handleActionError } from "@/lib/api/handleActionError";
 import type { ActionResult } from "@/types/api";
 import {
+  applicabilityScopes,
   maxTemplateOffset,
+  templateActivityTypes,
   templatePriorities,
+  templateScheduleBases,
   templateScheduleTypes,
+  templateSmartActions,
   requiredTemplateLocales,
   type CropActivityTemplate,
   type CropActivityTemplatePayload,
@@ -18,6 +22,11 @@ import {
 
 function validId(id: number) {
   return Number.isSafeInteger(id) && id > 0;
+}
+function validIds(ids: number[]) {
+  return (
+    Array.isArray(ids) && ids.every(validId) && new Set(ids).size === ids.length
+  );
 }
 function invalidate() {
   revalidatePath("/[locale]/admin/crop-activity-templates", "page");
@@ -37,26 +46,65 @@ export async function saveCropActivityTemplate(
       !values ||
       !validId(values.crop_id) ||
       !validId(values.category_id) ||
-      !validId(values.season_id) ||
-      !validId(values.source_id) ||
-      (values.crop_variety_id !== null && !validId(values.crop_variety_id)) ||
       (values.crop_stage_id !== null && !validId(values.crop_stage_id)) ||
+      !applicabilityScopes.includes(values.variety_scope) ||
+      !validIds(values.crop_variety_ids) ||
+      (values.variety_scope === "all"
+        ? values.crop_variety_ids.length !== 0
+        : values.crop_variety_ids.length === 0) ||
+      !applicabilityScopes.includes(values.season_scope) ||
+      !validIds(values.season_ids) ||
+      (values.season_scope === "all"
+        ? values.season_ids.length !== 0
+        : values.season_ids.length === 0) ||
+      !validIds(values.knowledge_source_ids) ||
       !templateScheduleTypes.some(
         (schedule) => schedule === values.schedule_type,
       ) ||
+      !templateScheduleBases.includes(values.schedule_basis) ||
+      !templateActivityTypes.includes(values.activity_type) ||
+      (values.schedule_basis === "growth_stage" &&
+        (values.schedule_type !== "after_sowing" ||
+          values.crop_stage_id === null ||
+          values.start_offset_days !== null ||
+          values.end_offset_days !== null)) ||
+      (values.schedule_basis === "fixed_offsets" &&
+        (!Number.isInteger(values.start_offset_days) ||
+          values.start_offset_days === null ||
+          values.start_offset_days < 0 ||
+          values.start_offset_days > maxTemplateOffset ||
+          !Number.isInteger(values.end_offset_days) ||
+          values.end_offset_days === null ||
+          values.end_offset_days < values.start_offset_days ||
+          values.end_offset_days > maxTemplateOffset)) ||
+      [
+        values.allow_status_update,
+        values.allow_expenses,
+        values.allow_labour,
+        values.allow_notes,
+        values.allow_attachments,
+        values.allow_rescheduling,
+      ].some((feature) => typeof feature !== "boolean") ||
+      (values.activity_type === "information" &&
+        [
+          values.allow_status_update,
+          values.allow_expenses,
+          values.allow_labour,
+          values.allow_notes,
+          values.allow_attachments,
+          values.allow_rescheduling,
+        ].some(Boolean)) ||
+      (values.activity_type === "observation" && values.allow_status_update) ||
+      !Array.isArray(values.smart_actions) ||
+      values.smart_actions.some(
+        (action) =>
+          !templateSmartActions.some((supported) => supported === action),
+      ) ||
+      new Set(values.smart_actions).size !== values.smart_actions.length ||
       !templatePriorities.some((priority) => priority === values.priority) ||
-      !Number.isInteger(values.start_offset_days) ||
-      values.start_offset_days < 0 ||
-      values.start_offset_days > maxTemplateOffset ||
-      !Number.isInteger(values.end_offset_days) ||
-      values.end_offset_days < values.start_offset_days ||
-      values.end_offset_days > maxTemplateOffset ||
       !["all", "specific"].includes(values.region_scope) ||
-      !Array.isArray(values.region_ids) ||
-      (values.region_scope === "specific" &&
-        (!values.region_ids.length ||
-          !values.region_ids.every(validId) ||
-          new Set(values.region_ids).size !== values.region_ids.length)) ||
+      !validIds(values.region_ids) ||
+      (values.region_scope === "specific" && !values.region_ids.length) ||
       !values.translations ||
       typeof values.translations !== "object" ||
       Array.isArray(values.translations) ||
@@ -85,14 +133,26 @@ export async function saveCropActivityTemplate(
       };
     }
     const payload: Omit<CropActivityTemplatePayload, "crop_id"> = {
-      crop_variety_id: values.crop_variety_id,
       category_id: values.category_id,
       crop_stage_id: values.crop_stage_id,
-      season_id: values.season_id,
-      source_id: values.source_id,
+      variety_scope: values.variety_scope,
+      crop_variety_ids:
+        values.variety_scope === "all" ? [] : [...values.crop_variety_ids],
+      season_scope: values.season_scope,
+      season_ids: values.season_scope === "all" ? [] : [...values.season_ids],
+      knowledge_source_ids: [...values.knowledge_source_ids],
       schedule_type: values.schedule_type,
+      schedule_basis: values.schedule_basis,
       start_offset_days: values.start_offset_days,
       end_offset_days: values.end_offset_days,
+      activity_type: values.activity_type,
+      allow_status_update: values.allow_status_update,
+      allow_expenses: values.allow_expenses,
+      allow_labour: values.allow_labour,
+      allow_notes: values.allow_notes,
+      allow_attachments: values.allow_attachments,
+      allow_rescheduling: values.allow_rescheduling,
+      smart_actions: [...values.smart_actions],
       region_scope: values.region_scope,
       region_ids: values.region_scope === "all" ? [] : values.region_ids,
       priority: values.priority,

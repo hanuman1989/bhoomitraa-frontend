@@ -19,6 +19,7 @@ import {
   requiredTemplateLocales,
   type CropActivityTemplate,
   type CropActivityTemplateFormValues,
+  type TemplateSelectionOption,
 } from "@/types/admin/cropActivityTemplate";
 import type {
   TimelineChoices,
@@ -33,14 +34,25 @@ const cardClass =
   "rounded-xl shadow-theme-xs [&>div:first-child>h3]:text-xl [&>div:first-child>h3]:font-semibold";
 const emptyValues: CropActivityTemplateFormValues = {
   crop_id: "",
-  crop_variety_id: "",
   category_id: "",
   crop_stage_id: "",
-  season_id: "",
-  source_id: "",
+  variety_scope: "all",
+  crop_variety_ids: [],
+  season_scope: "all",
+  season_ids: [],
+  knowledge_source_ids: [],
   schedule_type: "after_sowing",
+  schedule_basis: "fixed_offsets",
   start_offset_days: "",
   end_offset_days: "",
+  activity_type: "task",
+  allow_status_update: true,
+  allow_expenses: false,
+  allow_labour: false,
+  allow_notes: true,
+  allow_attachments: false,
+  allow_rescheduling: false,
+  smart_actions: [],
   priority: "medium",
   region_scope: "all",
   region_ids: [],
@@ -55,12 +67,18 @@ export default function CropActivityTemplateForm({
   template,
   choices,
   selections,
+  multiSelections,
   states,
   canReview,
 }: {
   template: CropActivityTemplate | null;
   choices: TimelineChoices;
   selections: TimelineSelections;
+  multiSelections: {
+    varieties: TemplateSelectionOption[];
+    seasons: TemplateSelectionOption[];
+    knowledgeSources: TemplateSelectionOption[];
+  };
   states: TimelineState[];
   canReview: boolean;
 }) {
@@ -87,20 +105,28 @@ export default function CropActivityTemplateForm({
     defaultValues: template
       ? {
           crop_id: String(template.crop_id),
-          crop_variety_id:
-            template.crop_variety_id === null
-              ? ""
-              : String(template.crop_variety_id),
           category_id: String(template.category_id),
           crop_stage_id:
             template.crop_stage_id === null
               ? ""
               : String(template.crop_stage_id),
-          season_id: String(template.season_id),
-          source_id: String(template.source_id),
+          variety_scope: template.variety_scope,
+          crop_variety_ids: [...template.crop_variety_ids],
+          season_scope: template.season_scope,
+          season_ids: [...template.season_ids],
+          knowledge_source_ids: [...template.knowledge_source_ids],
           schedule_type: template.schedule_type,
-          start_offset_days: String(template.start_offset_days),
-          end_offset_days: String(template.end_offset_days),
+          schedule_basis: template.schedule_basis,
+          start_offset_days: String(template.start_offset_days ?? ""),
+          end_offset_days: String(template.end_offset_days ?? ""),
+          activity_type: template.activity_type,
+          allow_status_update: template.allow_status_update,
+          allow_expenses: template.allow_expenses,
+          allow_labour: template.allow_labour,
+          allow_notes: template.allow_notes,
+          allow_attachments: template.allow_attachments,
+          allow_rescheduling: template.allow_rescheduling,
+          smart_actions: [...template.smart_actions],
           priority: template.priority,
           region_scope: template.region_scope,
           region_ids: [...template.region_ids],
@@ -139,18 +165,35 @@ export default function CropActivityTemplateForm({
       try {
         const r = await saveCropActivityTemplate(template?.id ?? null, {
           crop_id: Number(values.crop_id),
-          crop_variety_id: values.crop_variety_id
-            ? Number(values.crop_variety_id)
-            : null,
           category_id: Number(values.category_id),
           crop_stage_id: values.crop_stage_id
             ? Number(values.crop_stage_id)
             : null,
-          season_id: Number(values.season_id),
-          source_id: Number(values.source_id),
+          variety_scope: values.variety_scope,
+          crop_variety_ids:
+            values.variety_scope === "all" ? [] : [...values.crop_variety_ids],
+          season_scope: values.season_scope,
+          season_ids:
+            values.season_scope === "all" ? [] : [...values.season_ids],
+          knowledge_source_ids: [...values.knowledge_source_ids],
           schedule_type: values.schedule_type,
-          start_offset_days: Number(values.start_offset_days),
-          end_offset_days: Number(values.end_offset_days),
+          schedule_basis: values.schedule_basis,
+          start_offset_days:
+            values.schedule_basis === "fixed_offsets"
+              ? Number(values.start_offset_days)
+              : null,
+          end_offset_days:
+            values.schedule_basis === "fixed_offsets"
+              ? Number(values.end_offset_days)
+              : null,
+          activity_type: values.activity_type,
+          allow_status_update: values.allow_status_update,
+          allow_expenses: values.allow_expenses,
+          allow_labour: values.allow_labour,
+          allow_notes: values.allow_notes,
+          allow_attachments: values.allow_attachments,
+          allow_rescheduling: values.allow_rescheduling,
+          smart_actions: [...values.smart_actions],
           priority: values.priority,
           region_scope: values.region_scope,
           region_ids:
@@ -182,25 +225,56 @@ export default function CropActivityTemplateForm({
             if (!messages[0]) continue;
             switch (field) {
               case "crop_id":
-              case "crop_variety_id":
               case "category_id":
               case "crop_stage_id":
-              case "season_id":
-              case "source_id":
+              case "variety_scope":
+              case "crop_variety_ids":
+              case "season_scope":
+              case "season_ids":
+              case "knowledge_source_ids":
               case "schedule_type":
+              case "schedule_basis":
               case "start_offset_days":
               case "end_offset_days":
+              case "activity_type":
+              case "allow_status_update":
+              case "allow_expenses":
+              case "allow_labour":
+              case "allow_notes":
+              case "allow_attachments":
+              case "allow_rescheduling":
+              case "smart_actions":
               case "priority":
               case "region_scope":
                 setError(field, { type: "server", message: messages[0] });
                 break;
               default:
-                if (field === "region_ids" || field.startsWith("region_ids."))
+                if (field === "region_ids" || field.startsWith("region_ids.")) {
                   setError("region_ids", {
                     type: "server",
                     message: messages[0],
                   });
-                else
+                } else if (field.startsWith("crop_variety_ids.")) {
+                  setError("crop_variety_ids", {
+                    type: "server",
+                    message: messages[0],
+                  });
+                } else if (field.startsWith("season_ids.")) {
+                  setError("season_ids", {
+                    type: "server",
+                    message: messages[0],
+                  });
+                } else if (field.startsWith("knowledge_source_ids.")) {
+                  setError("knowledge_source_ids", {
+                    type: "server",
+                    message: messages[0],
+                  });
+                } else if (field.startsWith("smart_actions.")) {
+                  setError("smart_actions", {
+                    type: "server",
+                    message: messages[0],
+                  });
+                } else
                   for (const locale of locales) {
                     if (field === `translations.${locale}.title`)
                       setError(`translations.${locale}.title`, {
@@ -287,6 +361,7 @@ export default function CropActivityTemplateForm({
               form={form}
               choices={choices}
               selections={selections}
+              multiSelections={multiSelections}
               initialCrop={template ? String(template.crop_id) : ""}
               editing={!!template}
               busy={busy || locked}
@@ -393,7 +468,12 @@ export default function CropActivityTemplateForm({
             <ComponentCard title={t("form.guidelines")} className={cardClass}>
               <ul className="marker:text-brand-500 list-disc space-y-3 ps-5 text-sm leading-6 text-gray-700 dark:text-gray-300">
                 <li>{t("form.guideRelations")}</li>
+                <li>{t("form.guideVarieties")}</li>
+                <li>{t("form.guideSeasons")}</li>
+                <li>{t("form.guideSources")}</li>
                 <li>{t("form.guideSchedule")}</li>
+                <li>{t("form.guideFeatures")}</li>
+                <li>{t("form.guideSmartActions")}</li>
                 <li>{t("form.guideRegions")}</li>
                 <li>{t("form.guideLanguages")}</li>
                 <li>{t("form.guideReview")}</li>

@@ -60,6 +60,7 @@ export default function CropActivityTemplateList({
                 "category",
                 "stage",
                 "season",
+                "activityType",
                 "schedule",
                 "priority",
                 "status",
@@ -95,7 +96,30 @@ export default function CropActivityTemplateList({
                       t("recordId", { id: template.crop_id })}
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {template.crop_variety_name ?? t("allVarieties")}
+                    {template.variety_scope === "all" ? (
+                      t("allVarieties")
+                    ) : (
+                      <>
+                        <span className="sr-only">
+                          {template.varieties
+                            .map((variety) => variety.name)
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                        <span aria-hidden="true">
+                          {template.varieties.slice(0, 2).map((variety) => (
+                            <span key={variety.id} className="me-1">
+                              <Badge color="light" size="sm">
+                                {variety.name ??
+                                  t("recordId", { id: variety.id })}
+                              </Badge>
+                            </span>
+                          ))}
+                          {template.varieties.length > 2 &&
+                            `+${template.varieties.length - 2}`}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </TableCell>
                 <TableCell className={cell}>
@@ -108,21 +132,67 @@ export default function CropActivityTemplateList({
                   {template.crop_stage_name ?? t("notAvailable")}
                 </TableCell>
                 <TableCell className={cell}>
-                  <Badge color="primary">
-                    {template.season_name ??
-                      t("recordId", { id: template.season_id })}
+                  {template.season_scope === "all" ? (
+                    t("allSeasons")
+                  ) : (
+                    <span>
+                      <span className="sr-only">
+                        {template.seasons
+                          .map((season) => season.name)
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                      <span aria-hidden="true">
+                        {template.seasons.slice(0, 2).map((season) => (
+                          <span key={season.id} className="me-1">
+                            <Badge color="primary" size="sm">
+                              {season.name ?? t("recordId", { id: season.id })}
+                            </Badge>
+                          </span>
+                        ))}
+                        {template.seasons.length > 2 &&
+                          `+${template.seasons.length - 2}`}
+                      </span>
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className={cell}>
+                  <Badge
+                    color={
+                      template.activity_type === "task"
+                        ? "primary"
+                        : template.activity_type === "observation"
+                          ? "warning"
+                          : "light"
+                    }
+                  >
+                    {t(`activityTypes.${template.activity_type}`)}
                   </Badge>
                 </TableCell>
                 <TableCell className={`${cell} whitespace-nowrap`}>
                   <p>{t(`schedule.${template.schedule_type}`)}</p>
-                  <p className="mt-1">
-                    {template.start_offset_days === template.end_offset_days
-                      ? t("daysSingle", { days: template.start_offset_days })
-                      : t("daysRange", {
-                          min: template.start_offset_days,
-                          max: template.end_offset_days,
-                        })}
-                  </p>
+                  {template.schedule_basis === "fixed_offsets" ? (
+                    template.start_offset_days !== null &&
+                    template.end_offset_days !== null && (
+                      <p className="mt-1">
+                        {template.start_offset_days === template.end_offset_days
+                          ? t("daysSingle", {
+                              days: template.start_offset_days,
+                            })
+                          : t("daysRange", {
+                              min: template.start_offset_days,
+                              max: template.end_offset_days,
+                            })}
+                      </p>
+                    )
+                  ) : (
+                    <p className="mt-1">
+                      {t("scheduleBases.growth_stage")}
+                      {template.crop_stage_name
+                        ? ` · ${template.crop_stage_name}`
+                        : ""}
+                    </p>
+                  )}
                 </TableCell>
                 <TableCell className={cell}>
                   <Badge

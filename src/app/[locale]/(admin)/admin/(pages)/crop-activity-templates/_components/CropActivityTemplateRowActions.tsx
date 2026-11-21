@@ -68,20 +68,22 @@ export default function CropActivityTemplateRowActions({
               {t("actions.preview")}
             </Link>
           </MenuItem>
-          <MenuItem>
-            <Link
-              href={`/admin/knowledge-sources/${template.source_id}`}
-              className={item}
-            >
-              <DocsIcon aria-hidden="true" className="size-4 shrink-0" />
-              <span className="min-w-0">
-                <span className="block">{t("actions.source")}</span>
-                <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
-                  {template.source_title ?? t("notAvailable")}
+          {template.knowledge_sources.map((source) => (
+            <MenuItem key={source.id}>
+              <Link
+                href={`/admin/knowledge-sources/${source.id}`}
+                className={item}
+              >
+                <DocsIcon aria-hidden="true" className="size-4 shrink-0" />
+                <span className="min-w-0">
+                  <span className="block">{t("actions.source")}</span>
+                  <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
+                    {source.title ?? t("notAvailable")}
+                  </span>
                 </span>
-              </span>
-            </Link>
-          </MenuItem>
+              </Link>
+            </MenuItem>
+          ))}
           {(template.is_active || canReview) && (
             <MenuItem>
               <button
