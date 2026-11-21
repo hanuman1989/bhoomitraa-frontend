@@ -88,7 +88,39 @@ export default function StageTimelineList({
                       })}
                   </Badge>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {timeline.crop_variety_name ?? t("notAvailable")}
+                    {timeline.variety_scope === "all" ? (
+                      t("applicability.allVarieties")
+                    ) : (
+                      <>
+                        <span className="sr-only">
+                          {timeline.varieties
+                            .map(
+                              (variety) =>
+                                variety.name ??
+                                t("recordId", { id: variety.id }),
+                            )
+                            .join(", ")}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          title={timeline.varieties
+                            .map((variety) => variety.name)
+                            .filter(Boolean)
+                            .join(", ")}
+                        >
+                          {timeline.varieties.slice(0, 2).map((variety) => (
+                            <span key={variety.id} className="me-1">
+                              <Badge color="light" size="sm">
+                                {variety.name ??
+                                  t("recordId", { id: variety.id })}
+                              </Badge>
+                            </span>
+                          ))}
+                          {timeline.varieties.length > 2 &&
+                            `+${timeline.varieties.length - 2}`}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </TableCell>
                 <TableCell className={`${cell} font-semibold`}>
@@ -96,10 +128,36 @@ export default function StageTimelineList({
                     t("recordId", { id: timeline.crop_stage_id })}
                 </TableCell>
                 <TableCell className={cell}>
-                  {timeline.season_name ? (
-                    <Badge color="primary">{timeline.season_name}</Badge>
+                  {timeline.season_scope === "all" ? (
+                    t("applicability.allSeasons")
                   ) : (
-                    t("notAvailable")
+                    <span>
+                      <span className="sr-only">
+                        {timeline.seasons
+                          .map(
+                            (season) =>
+                              season.name ?? t("recordId", { id: season.id }),
+                          )
+                          .join(", ")}
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        title={timeline.seasons
+                          .map((season) => season.name)
+                          .filter(Boolean)
+                          .join(", ")}
+                      >
+                        {timeline.seasons.slice(0, 2).map((season) => (
+                          <span key={season.id} className="me-1">
+                            <Badge color="primary" size="sm">
+                              {season.name ?? t("recordId", { id: season.id })}
+                            </Badge>
+                          </span>
+                        ))}
+                        {timeline.seasons.length > 2 &&
+                          `+${timeline.seasons.length - 2}`}
+                      </span>
+                    </span>
                   )}
                 </TableCell>
                 <TableCell

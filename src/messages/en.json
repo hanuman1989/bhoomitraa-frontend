@@ -2118,7 +2118,12 @@
       "source": "Knowledge Source",
       "status": "Status",
       "addedAt": "Added At",
-      "actions": "Actions"
+      "actions": "Actions",
+      "varietyApplicability": "Variety Applicability",
+      "seasonApplicability": "Season Applicability",
+      "varieties": "Varieties",
+      "seasons": "Seasons",
+      "knowledgeSources": "Knowledge Sources (optional)"
     },
     "filters": {
       "label": "Filter stage timelines",
@@ -2149,19 +2154,21 @@
       "details": "Timeline Details",
       "min": "Days After Sowing (From)",
       "max": "Days After Sowing (To)",
-      "sourceHelp": "Choose an appropriate source. Publication requires an active, verified source with a usable reference; selecting it does not verify the timing.",
+      "sourceHelp": "Knowledge sources are optional. Select one or more sources to provide supporting references for this stage timeline.",
       "publication": "Publication Settings",
       "createInactive": "New timelines are saved as inactive. Activate them after saving using the confirmed status action.",
       "statusHelp": "Status changes are separate from saving this form. Save any draft changes before requesting activation. Publication is subject to backend review and eligibility checks.",
       "guidelines": "Guidelines",
-      "guideRelations": "Choose the correct crop and growth stage. Variety and Season are optional.",
-      "guideDays": "Use nonnegative whole days and a maximum at least equal to the minimum.",
-      "guideSource": "Use a suitable knowledge source; publication requires verified, active evidence.",
+      "guideRelations": "Choose the correct crop and growth stage.",
+      "guideDays": "Use nonnegative whole days; the maximum day must be greater than or equal to the minimum day.",
+      "guideSource": "Knowledge Sources are optional and support multiple selections. Scientific timing still requires appropriate review before publication.",
       "guideRegions": "For Specific Regions, select districts. A state checkbox applies to all its eligible districts, including hidden search matches.",
       "guideApproximate": "Timeline estimates are approximate and are not guaranteed dates. Broad geographic scope still requires supporting evidence.",
       "guideHistory": "Inactive timelines remain available for historical reference.",
       "save": "Save Stage Timeline",
-      "update": "Update Stage Timeline"
+      "update": "Update Stage Timeline",
+      "guideApplicability": "Variety and Season applicability can be set to All or Specific. Specific applicability requires at least one eligible selection.",
+      "guideConflicts": "Avoid conflicting timings for the same applicable crop and growth stage. Laravel checks for overlapping active timelines."
     },
     "regions": {
       "title": "Applicable Regions",
@@ -2191,7 +2198,10 @@
       "days": "Enter a whole number from 0 to 4294967295.",
       "range": "Maximum days must be greater than or equal to minimum days.",
       "scope": "Select a region scope.",
-      "districts": "Select at least one valid district. Each district may be selected only once."
+      "districts": "Select at least one valid district. Each district may be selected only once.",
+      "applicability": "Choose an applicability scope.",
+      "varieties": "Select at least one variety for a specific scope. Each variety may be selected only once.",
+      "seasons": "Select at least one season for a specific scope. Each season may be selected only once."
     },
     "actions": {
       "edit": "Edit Timeline",
@@ -2200,7 +2210,7 @@
       "delete": "Delete Timeline"
     },
     "confirm": {
-      "activate": "Activate “{name}”? Publication requires eligible crop relations, valid district coverage and verified source-backed guidance. Laravel will check for conflicting active rules.",
+      "activate": "Activate “{name}”? Publication requires eligible crop relations and valid district coverage; any selected knowledge sources must be active and verified. Laravel will check for conflicting active rules.",
       "deactivate": "Deactivate “{name}”? It will no longer be used for new selections. Historical references remain available.",
       "delete": "Delete “{name}”? This action cannot be undone.",
       "history": "Active or referenced timelines cannot be deleted. Deactivate the timeline instead to preserve farming history."
@@ -2215,6 +2225,21 @@
       "deleteFailed": "Unable to delete the stage timeline. Please try again.",
       "actionFailed": "Unable to complete the action. Please try again.",
       "loadFailed": "Unable to load stage timelines. Please try again."
+    },
+    "applicability": {
+      "allVarieties": "All Varieties",
+      "allVarietiesHelp": "Apply to all eligible varieties of the selected crop.",
+      "specificVarieties": "Specific Varieties",
+      "specificVarietiesHelp": "Choose one or more eligible varieties.",
+      "allSeasons": "All Seasons",
+      "allSeasonsHelp": "Apply to all eligible seasons.",
+      "specificSeasons": "Specific Seasons",
+      "specificSeasonsHelp": "Choose one or more eligible seasons."
+    },
+    "placeholders": {
+      "varieties": "Search and select varieties...",
+      "seasons": "Search and select seasons...",
+      "knowledgeSources": "Search and select knowledge sources..."
     }
   },
   "activityCategories": {

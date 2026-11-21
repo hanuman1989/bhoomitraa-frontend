@@ -31,6 +31,7 @@ export default function CropActivityTemplateMultiSelect({
   initialSelected,
   cropId = null,
   disabled = false,
+  required = false,
   error,
   placeholder,
   inputRef,
@@ -45,6 +46,7 @@ export default function CropActivityTemplateMultiSelect({
   initialSelected: TemplateSelectionOption[];
   cropId?: number | null;
   disabled?: boolean;
+  required?: boolean;
   error?: string;
   placeholder: string;
   inputRef?: Ref<HTMLInputElement>;
@@ -130,7 +132,17 @@ export default function CropActivityTemplateMultiSelect({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && (
+          <>
+            {" "}
+            <span aria-hidden="true" className="text-error-600">
+              *
+            </span>
+          </>
+        )}
+      </Label>
       <Combobox
         multiple
         value={selected}
@@ -186,6 +198,7 @@ export default function CropActivityTemplateMultiSelect({
               maxLength={150}
               autoComplete="off"
               aria-invalid={!!error}
+              aria-required={required || undefined}
               aria-describedby={`${id}-error`}
               className="focus:border-brand-300 focus:ring-brand-500/20 h-9 w-full rounded-md border-0 bg-transparent ps-2 pe-9 text-sm text-gray-800 outline-none focus:ring-2 dark:text-gray-100"
             />
