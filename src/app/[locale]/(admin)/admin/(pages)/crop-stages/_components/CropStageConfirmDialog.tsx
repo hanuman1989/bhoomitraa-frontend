@@ -111,7 +111,7 @@ export default function CropStageConfirmDialog({
                 onClick={() => {
                   if (!busy.current) onClose();
                 }}
-                className="focus-visible:outline-brand-500 rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 {t("cancel")}
               </button>
@@ -119,7 +119,7 @@ export default function CropStageConfirmDialog({
                 type="button"
                 disabled={pending}
                 onClick={confirm}
-                className={`focus-visible:outline-brand-500 rounded-lg px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50 ${operation === "delete" ? "bg-error-600 hover:bg-error-700" : "bg-brand-600 hover:bg-brand-700"}`}
+                className={`focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50 ${operation === "delete" ? "bg-error-600 hover:bg-error-700" : "bg-brand-600 hover:bg-brand-700"}`}
               >
                 {pending ? t("saving") : t(`actions.${operation}`)}
               </button>

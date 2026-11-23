@@ -10,7 +10,9 @@ import { ApiError } from "@/lib/api/ApiError";
 import { handleActionError } from "@/lib/api/handleActionError";
 import type { PageProps } from "@/types/api";
 import {
+  templateActivityTypes,
   templatePriorities,
+  templateScheduleBases,
   templateScheduleTypes,
   type CropActivityTemplateFilters,
   type CropActivityTemplatesResponse,
@@ -47,6 +49,13 @@ export default async function CropActivityTemplatesContent({
       templateScheduleTypes.find(
         (schedule) => schedule === value("schedule_type"),
       ) ?? "",
+    schedule_basis:
+      templateScheduleBases.find(
+        (basis) => basis === value("schedule_basis"),
+      ) ?? "",
+    activity_type:
+      templateActivityTypes.find((type) => type === value("activity_type")) ??
+      "",
     priority:
       templatePriorities.find((priority) => priority === value("priority")) ??
       "",

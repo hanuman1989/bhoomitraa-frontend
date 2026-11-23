@@ -42,14 +42,25 @@ const domain = load("src/types/admin/cropActivityTemplate.ts");
 const pagination = { current_page: 1, last_page: 1, total: 1, from: 1, to: 1 };
 const payload = {
   crop_id: 3,
-  crop_variety_id: null,
   category_id: 2,
   crop_stage_id: null,
-  season_id: 6,
-  source_id: 9,
+  variety_scope: "specific",
+  crop_variety_ids: [4],
+  season_scope: "specific",
+  season_ids: [6],
+  knowledge_source_ids: [9],
   schedule_type: "after_sowing",
+  schedule_basis: "fixed_offsets",
   start_offset_days: 0,
   end_offset_days: 10,
+  activity_type: "task",
+  allow_status_update: true,
+  allow_expenses: false,
+  allow_labour: false,
+  allow_notes: true,
+  allow_attachments: false,
+  allow_rescheduling: false,
+  smart_actions: [],
   region_scope: "specific",
   region_ids: [101, 104],
   priority: "medium",
@@ -62,12 +73,15 @@ const template = {
   ...payload,
   id: 42,
   crop_name: "Wheat",
-  crop_variety_name: null,
+  varieties: [{ id: 4, name: "Durum" }],
+  variety_scope: "specific",
   category_name: "Monitoring",
   crop_stage_name: null,
-  season_name: "Rabi",
-  source_title: "ICAR",
-  source: null,
+  seasons: [{ id: 6, name: "Rabi" }],
+  season_scope: "specific",
+  knowledge_sources: [
+    { id: 9, title: "ICAR", is_active: true, verification_status: "verified" },
+  ],
   title: "Field monitoring",
   is_active: false,
   regions: [
@@ -271,6 +285,8 @@ test("creates stay inactive, preserve zero/null and allowlist all writable trans
     ...payload,
     is_active: true,
     source: { attachments: ["private"] },
+    allow_attachments: true,
+    smart_actions: ["crop_details", "market_prices"],
     translations: {
       ...payload.translations,
       ar: { title: "مراقبة", description: "", instructions: "", id: 3 },
@@ -283,10 +299,14 @@ test("creates stay inactive, preserve zero/null and allowlist all writable trans
   );
   const sent = h.requests[0].options.data;
   assert.equal(sent.start_offset_days, 0);
-  assert.equal(sent.crop_variety_id, null);
+  assert.deepEqual(sent.crop_variety_ids, [4]);
+  assert.deepEqual(sent.season_ids, [6]);
+  assert.deepEqual(sent.knowledge_source_ids, [9]);
   assert.equal(sent.crop_stage_id, null);
   assert.equal("is_active" in sent, false);
   assert.equal("source" in sent, false);
+  assert.equal(sent.allow_attachments, true);
+  assert.deepEqual(sent.smart_actions, ["crop_details", "market_prices"]);
   assert.deepEqual(sent.translations.ar, {
     title: "مراقبة",
     description: "",
@@ -297,10 +317,27 @@ test("creates stay inactive, preserve zero/null and allowlist all writable trans
   await h.actions.saveCropActivityTemplate(42, {
     ...payload,
     region_scope: "all",
+    region_ids: [],
   });
   assert.equal("crop_id" in h.requests[1].options.data, false);
   assert.deepEqual(h.requests[1].options.data.region_ids, []);
+  assert.deepEqual(h.requests[1].options.data.crop_variety_ids, [4]);
   assert.equal(h.invalidations.length, 6);
+});
+test("all-variety and all-season scopes omit their selected IDs", async () => {
+  const h = harness([{ status: true, data: template }]);
+  const result = await h.actions.saveCropActivityTemplate(null, {
+    ...payload,
+    variety_scope: "all",
+    crop_variety_ids: [],
+    season_scope: "all",
+    season_ids: [],
+    knowledge_source_ids: [],
+  });
+  assert.equal(result.success, true);
+  assert.deepEqual(h.requests[0].options.data.crop_variety_ids, []);
+  assert.deepEqual(h.requests[0].options.data.season_ids, []);
+  assert.deepEqual(h.requests[0].options.data.knowledge_source_ids, []);
 });
 test("mutations authenticate and guard unsafe IDs, schedules, integer bounds, duplicate districts and unsupported priorities", async () => {
   const h = harness();
@@ -321,6 +358,8 @@ test("mutations authenticate and guard unsafe IDs, schedules, integer bounds, du
   for (const values of [
     null,
     { ...payload, schedule_type: "after_transplanting" },
+    { ...payload, variety_scope: "all" },
+    { ...payload, season_scope: "all" },
     { ...payload, start_offset_days: -1 },
     { ...payload, end_offset_days: 2147483648 },
     { ...payload, end_offset_days: 1.5 },
@@ -328,6 +367,9 @@ test("mutations authenticate and guard unsafe IDs, schedules, integer bounds, du
     { ...payload, region_ids: [101, 101] },
     { ...payload, region_ids: [] },
     { ...payload, priority: "urgent" },
+    { ...payload, activity_type: "information" },
+    { ...payload, activity_type: "observation" },
+    { ...payload, smart_actions: ["not_supported"] },
     { ...payload, translations: [] },
   ])
     assert.equal(
@@ -341,7 +383,7 @@ test("mutations authenticate and guard unsafe IDs, schedules, integer bounds, du
   await denied.actions.updateCropActivityTemplateStatus(42, true);
   assert.equal(denied.requests.length, 0);
 });
-test("all configured schedule types are accepted by the template action", async () => {
+test("all configured sowing and harvest schedule types are accepted by the template action", async () => {
   const h = harness(
     Array(domain.templateScheduleTypes.length).fill({
       status: true,
@@ -354,11 +396,29 @@ test("all configured schedule types are accepted by the template action", async 
       schedule_type,
     });
     assert.equal(result.success, true, schedule_type);
-    assert.equal(
-      h.requests.at(-1).options.data.schedule_type,
-      schedule_type,
-    );
+    assert.equal(h.requests.at(-1).options.data.schedule_type, schedule_type);
   }
+});
+test("growth-stage scheduling is accepted only with an after-sowing stage and no fixed offsets", async () => {
+  const h = harness([{ status: true, data: template }]);
+  const result = await h.actions.saveCropActivityTemplate(null, {
+    ...payload,
+    crop_stage_id: 7,
+    schedule_basis: "growth_stage",
+    start_offset_days: null,
+    end_offset_days: null,
+  });
+  assert.equal(result.success, true);
+  assert.equal(h.requests[0].options.data.schedule_basis, "growth_stage");
+  const invalid = await harness().actions.saveCropActivityTemplate(null, {
+    ...payload,
+    schedule_type: "before_sowing",
+    crop_stage_id: 7,
+    schedule_basis: "growth_stage",
+    start_offset_days: null,
+    end_offset_days: null,
+  });
+  assert.equal(invalid.success, false);
 });
 test("only reviewers activate; ordinary admins can deactivate and conflicts/field failures remain recoverable", async () => {
   const h = harness([{ status: true, data: template }], {
@@ -510,14 +570,19 @@ test("translation cards require title for populated optional locales, keep text 
     true,
   );
 });
-test("changing the crop resets only dependent fields; crop is immutable on edit, optional relations and offset limits stay correct", () => {
+test("changing the crop resets stage and varieties but preserves seasons, sources, region selection and offsets", () => {
   const rules = {},
     values = {
       crop_id: "3",
-      crop_variety_id: "4",
+      variety_scope: "specific",
+      crop_variety_ids: [4],
+      season_scope: "specific",
+      season_ids: [6],
+      knowledge_source_ids: [9],
       crop_stage_id: "5",
-      source_id: "9",
-      season_id: "6",
+      schedule_type: "after_sowing",
+      schedule_basis: "fixed_offsets",
+      activity_type: "task",
       start_offset_days: "0",
       region_ids: [104],
     };
@@ -525,7 +590,15 @@ test("changing the crop resets only dependent fields; crop is immutable on edit,
     ...ui,
     "react-hook-form": {
       Controller: "controller",
-      useWatch: () => values.crop_id,
+      useWatch: ({ name }) => values[name],
+    },
+    "@/components/admin/form/switch/Switch": {
+      __esModule: true,
+      default: "switch",
+    },
+    "./CropActivityTemplateMultiSelect": {
+      __esModule: true,
+      default: "multiselect",
     },
     "@/app/[locale]/(admin)/admin/(pages)/crop-stage-timelines/_components/TimelineRelationSelect":
       { __esModule: true, default: "relation" },
@@ -557,22 +630,10 @@ test("changing the crop resets only dependent fields; crop is immutable on edit,
   };
   crop.props.render({ field }).props.onChange("7");
   assert.equal(values.crop_stage_id, "");
-  assert.equal(values.crop_variety_id, "");
-  assert.equal(values.source_id, "9");
+  assert.equal(values.crop_variety_ids.length, 0);
+  assert.deepEqual([...values.season_ids], [6]);
+  assert.deepEqual([...values.knowledge_source_ids], [9]);
   assert.deepEqual(values.region_ids, [104]);
-  assert.equal(
-    controllers.find((e) => e.props.name === "season_id").props.rules.required,
-    "validation.selection",
-  );
-  assert.equal(
-    controllers.find((e) => e.props.name === "source_id").props.rules.required,
-    "validation.selection",
-  );
-  assert.equal(
-    controllers.find((e) => e.props.name === "crop_stage_id").props.rules
-      .required,
-    undefined,
-  );
   assert.equal(rules.start_offset_days.validate("0"), true);
   assert.equal(rules.start_offset_days.validate(""), "validation.days");
   assert.equal(rules.start_offset_days.validate("1.5"), "validation.days");
@@ -582,6 +643,50 @@ test("changing the crop resets only dependent fields; crop is immutable on edit,
   );
   values.start_offset_days = "20";
   assert.equal(rules.end_offset_days.validate.range("10"), "validation.range");
+  values.crop_variety_ids = [4];
+  const varietyScopeController = findAll(
+    Component(props),
+    (element) =>
+      element.type === "controller" && element.props.name === "variety_scope",
+  )[0];
+  findAll(
+    varietyScopeController.props.render({
+      field: {
+        name: "variety_scope",
+        value: values.variety_scope,
+        onChange: (value) => (values.variety_scope = value),
+      },
+    }),
+    (element) =>
+      element.type === "input" &&
+      element.props.name === "variety_scope" &&
+      element.props.value === "all",
+  )[0].props.onChange();
+  assert.equal(values.variety_scope, "all");
+  assert.equal(values.crop_variety_ids.length, 0);
+
+  values.season_ids = [6];
+  const seasonScopeController = findAll(
+    Component(props),
+    (element) =>
+      element.type === "controller" && element.props.name === "season_scope",
+  )[0];
+  findAll(
+    seasonScopeController.props.render({
+      field: {
+        name: "season_scope",
+        value: values.season_scope,
+        onChange: (value) => (values.season_scope = value),
+      },
+    }),
+    (element) =>
+      element.type === "input" &&
+      element.props.name === "season_scope" &&
+      element.props.value === "all",
+  )[0].props.onChange();
+  assert.equal(values.season_scope, "all");
+  assert.equal(values.season_ids.length, 0);
+
   props.editing = true;
   const editCrop = findAll(
     Component(props),
@@ -590,6 +695,91 @@ test("changing the crop resets only dependent fields; crop is immutable on edit,
   assert.equal(editCrop.props.disabled, true);
   editCrop.props.onChange("9");
   assert.equal(values.crop_id, "7");
+  props.editing = false;
+  values.end_offset_days = "10";
+  for (const feature of [
+    "allow_status_update",
+    "allow_expenses",
+    "allow_labour",
+    "allow_notes",
+    "allow_attachments",
+    "allow_rescheduling",
+  ])
+    values[feature] = true;
+  const activityController = findAll(
+    Component(props),
+    (element) =>
+      element.type === "controller" && element.props.name === "activity_type",
+  )[0];
+  const activitySelect = findAll(
+    activityController.props.render({
+      field: {
+        name: "activity_type",
+        value: values.activity_type,
+        onChange: (value) => (values.activity_type = value),
+      },
+    }),
+    (element) => element.type === "select",
+  )[0];
+  activitySelect.props.onChange({ target: { value: "information" } });
+  assert.equal(values.activity_type, "information");
+  assert.ok(
+    [
+      values.allow_status_update,
+      values.allow_expenses,
+      values.allow_labour,
+      values.allow_notes,
+      values.allow_attachments,
+      values.allow_rescheduling,
+    ].every((enabled) => !enabled),
+  );
+  activitySelect.props.onChange({ target: { value: "observation" } });
+  assert.equal(values.allow_status_update, false);
+  assert.equal(values.allow_notes, true);
+  activitySelect.props.onChange({ target: { value: "task" } });
+  assert.equal(values.allow_status_update, true);
+  assert.equal(values.allow_notes, true);
+
+  const basisController = findAll(
+    Component(props),
+    (element) =>
+      element.type === "controller" && element.props.name === "schedule_basis",
+  )[0];
+  const basisOptions = findAll(
+    basisController.props.render({
+      field: {
+        name: "schedule_basis",
+        value: values.schedule_basis,
+        onChange: (value) => (values.schedule_basis = value),
+      },
+    }),
+    (element) => element.type === "input" && element.props.type === "radio",
+  );
+  basisOptions
+    .find((option) => option.props.value === "growth_stage")
+    .props.onChange();
+  assert.equal(values.start_offset_days, "");
+  assert.equal(values.end_offset_days, "");
+
+  const scheduleController = findAll(
+    Component(props),
+    (element) =>
+      element.type === "controller" && element.props.name === "schedule_type",
+  )[0];
+  const scheduleSelect = findAll(
+    scheduleController.props.render({
+      field: {
+        name: "schedule_type",
+        value: values.schedule_type,
+        onChange: (value) => (values.schedule_type = value),
+      },
+    }),
+    (element) => element.type === "select",
+  )[0];
+  scheduleSelect.props.onChange({ target: { value: "before_sowing" } });
+  assert.equal(values.schedule_basis, "fixed_offsets");
+  assert.equal(values.start_offset_days, "0");
+  assert.equal(values.end_offset_days, "0");
 });
 function formHarness(record, responses, canReview = true) {
   const state = hooks(),
@@ -685,10 +875,14 @@ function formHarness(record, responses, canReview = true) {
     },
   };
 }
-test("create defaults and catalog resets include every language, preserve zero and optional null IDs and clear All Regions payload IDs", async () => {
+test("create defaults and catalog resets include the language catalog and send scoped multi-relations", async () => {
   const h = formHarness(null, Array(2).fill({ success: true, data: template }));
   assert.equal(h.values().priority, "medium");
   assert.equal(h.values().schedule_type, "after_sowing");
+  assert.equal(h.values().schedule_basis, "fixed_offsets");
+  assert.equal(h.values().activity_type, "task");
+  assert.equal(h.values().allow_status_update, true);
+  assert.equal(h.values().allow_notes, true);
   assert.deepEqual(h.values().translations.ar, {
     title: "",
     description: "",
@@ -698,8 +892,11 @@ test("create defaults and catalog resets include every language, preserve zero a
     ...h.values(),
     crop_id: "3",
     category_id: "2",
-    season_id: "6",
-    source_id: "9",
+    variety_scope: "specific",
+    crop_variety_ids: [4],
+    season_scope: "specific",
+    season_ids: [6],
+    knowledge_source_ids: [9],
     start_offset_days: "0",
     end_offset_days: "10",
     region_ids: [104],
@@ -712,7 +909,9 @@ test("create defaults and catalog resets include every language, preserve zero a
   await h.submit();
   assert.deepEqual(h.calls[0].data.region_ids, []);
   assert.equal(h.calls[0].data.start_offset_days, 0);
-  assert.equal(h.calls[0].data.crop_variety_id, null);
+  assert.deepEqual(h.calls[0].data.crop_variety_ids, [4]);
+  assert.deepEqual(h.calls[0].data.season_ids, [6]);
+  assert.deepEqual(h.calls[0].data.knowledge_source_ids, [9]);
   assert.equal(h.calls[0].data.crop_stage_id, null);
   assert.equal("ar" in h.calls[0].data.translations, false);
   assert.equal("is_active" in h.calls[0].data, false);
@@ -726,8 +925,11 @@ test("create defaults and catalog resets include every language, preserve zero a
     ...h.values(),
     crop_id: "3",
     category_id: "2",
-    season_id: "6",
-    source_id: "9",
+    variety_scope: "specific",
+    crop_variety_ids: [4],
+    season_scope: "specific",
+    season_ids: [6],
+    knowledge_source_ids: [9],
     start_offset_days: "0",
     end_offset_days: "1",
     translations: {
@@ -835,7 +1037,7 @@ test("active templates are read-only to ordinary admins while deactivation remai
     1,
   );
 });
-test("template listing has exactly nine columns, combined crop/variety and backend titles without dates/source columns", () => {
+test("template listing shows activity type and the scoped crop, variety and season values", () => {
   const List = load(root + "CropActivityTemplateList.tsx", {
     ...ui,
     "@/components/admin/ui/table": {
@@ -867,6 +1069,7 @@ test("template listing has exactly nine columns, combined crop/variety and backe
       "fields.category",
       "fields.stage",
       "fields.season",
+      "fields.activityType",
       "fields.schedule",
       "fields.priority",
       "fields.status",
@@ -874,13 +1077,18 @@ test("template listing has exactly nine columns, combined crop/variety and backe
     ],
   );
   const cells = findAll(tree, (e) => e.type === "td" && !e.props.isHeader);
-  assert.equal(cells.length, 9);
+  assert.equal(cells.length, 10);
   assert.equal(
     findAll(cells[1], (e) => e.props.children === "Wheat").length,
     1,
   );
   assert.equal(
-    findAll(cells[1], (e) => e.props.children === "allVarieties").length,
+    findAll(cells[1], (e) => e.props.children === "Durum").length,
+    2,
+  );
+  assert.equal(findAll(cells[4], (e) => e.props.children === "Rabi").length, 2);
+  assert.equal(
+    findAll(cells[5], (e) => e.props.children === "activityTypes.task").length,
     1,
   );
   assert.equal(
@@ -888,7 +1096,8 @@ test("template listing has exactly nine columns, combined crop/variety and backe
     0,
   );
   assert.equal(
-    findAll(tree, (e) => e.type === "actions")[0].props.template.source_id,
+    findAll(tree, (e) => e.type === "actions")[0].props.template
+      .knowledge_sources[0].id,
     9,
   );
 });
@@ -937,6 +1146,8 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
       crop_id: "3",
       category_id: "-1",
       schedule_type: "before_sowing",
+      schedule_basis: "growth_stage",
+      activity_type: "observation",
       priority: "bad",
       status: "0",
       page: "bad",
@@ -946,6 +1157,8 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
   assert.equal(calls[0].crop_id, "3");
   assert.equal(calls[0].category_id, "");
   assert.equal(calls[0].schedule_type, "before_sowing");
+  assert.equal(calls[0].schedule_basis, "growth_stage");
+  assert.equal(calls[0].activity_type, "observation");
   assert.equal(calls[0].priority, "");
   assert.equal(calls[0].keyword, "field");
   assert.equal(calls[0].page, 1);
@@ -958,6 +1171,8 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
       searchParams: Promise.resolve({
         crop_id: "3",
         schedule_type: "after_harvesting",
+        schedule_basis: "growth_stage",
+        activity_type: "information",
         priority: "high",
         status: "0",
         page: "9",
@@ -970,6 +1185,8 @@ test("server filters preserve zero, normalize IDs/priority/page and retain appli
         error.destination.href.query.schedule_type,
         "after_harvesting",
       );
+      assert.equal(error.destination.href.query.schedule_basis, "growth_stage");
+      assert.equal(error.destination.href.query.activity_type, "information");
       assert.equal(error.destination.href.query.status, "0");
       return true;
     },
@@ -998,6 +1215,8 @@ test("filter crop changes clear dependencies only and URL apply/reset preserve u
     crop_stage_id: "5",
     season_id: "6",
     schedule_type: "",
+    schedule_basis: "growth_stage",
+    activity_type: "observation",
     priority: "high",
     status: "0",
   };
@@ -1020,11 +1239,23 @@ test("filter crop changes clear dependencies only and URL apply/reset preserve u
     findAll(tree, (e) => e.props.kind === "season")[0].props.value,
     "6",
   );
+  assert.equal(
+    findAll(tree, (e) => e.props.id === "template-filter-schedule-basis")[0]
+      .props.value,
+    "growth_stage",
+  );
+  assert.equal(
+    findAll(tree, (e) => e.props.id === "template-filter-activity-type")[0]
+      .props.value,
+    "observation",
+  );
   tree.props.onSubmit({ preventDefault() {} });
   await state.settle();
   let query = new URL(urls[0], "http://localhost").searchParams;
   assert.equal(query.get("status"), "0");
   assert.equal(query.get("priority"), "high");
+  assert.equal(query.get("schedule_basis"), "growth_stage");
+  assert.equal(query.get("activity_type"), "observation");
   assert.equal(query.get("page"), null);
   assert.equal(query.get("keep"), "yes");
   findAll(
@@ -1253,8 +1484,10 @@ test("editor and preview load authenticated details, saved regions and source se
   assert.equal(editor.props.canReview, false);
   assert.deepEqual(editor.props.template.region_ids, [101, 104]);
   assert.equal(regionLoads[0], response.data.regions);
-  assert.equal(selections[0].source, 9);
-  assert.equal(editor.props.selections.source.label, "ICAR");
+  assert.deepEqual(selections[0], { crop: 3, category: 2, stage: null });
+  assert.deepEqual(clone(editor.props.multiSelections.knowledgeSources), [
+    { id: 9, label: "ICAR", is_active: true, verified: true },
+  ]);
   const preview = await Preview({ id: "42" });
   assert.equal(
     findAll(preview, (e) => e.props.href === "/admin/knowledge-sources/9")
@@ -1308,4 +1541,8 @@ test("English/Hindi template messages have matching keys and interpolation with 
   }
   compare(en, hi);
   assert.match(hi.title, /[\u0900-\u097f]/);
+  assert.deepEqual(
+    Object.keys(en.smartActions.items).sort(),
+    [...domain.templateSmartActions].sort(),
+  );
 });

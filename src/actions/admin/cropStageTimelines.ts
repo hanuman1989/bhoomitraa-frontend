@@ -19,6 +19,14 @@ import type {
 function validId(id: number) {
   return Number.isSafeInteger(id) && id > 0;
 }
+function validIds(ids: unknown): ids is number[] {
+  return (
+    Array.isArray(ids) &&
+    ids.every((id) => validId(id)) &&
+    new Set(ids).size === ids.length
+  );
+}
+const scopes = ["all", "specific"];
 function invalidate() {
   revalidatePath("/[locale]/admin/crop-stage-timelines", "page");
   revalidatePath("/[locale]/admin/crop-stage-timelines/[id]/edit", "page");
@@ -35,23 +43,28 @@ export async function saveStageTimeline(
       (id !== null && !validId(id)) ||
       !values ||
       !validId(values.crop_stage_id) ||
-      !validId(values.source_id) ||
-      (values.crop_variety_id !== null && !validId(values.crop_variety_id)) ||
-      (values.season_id !== null && !validId(values.season_id)) ||
-      !["all", "specific"].includes(values.region_scope) ||
-      !Array.isArray(values.region_ids) ||
-      values.region_ids.some((id) => !validId(id)) ||
-      new Set(values.region_ids).size !== values.region_ids.length ||
+      !scopes.includes(values.variety_scope) ||
+      !validIds(values.crop_variety_ids) ||
+      !scopes.includes(values.season_scope) ||
+      !validIds(values.season_ids) ||
+      !validIds(values.knowledge_source_ids) ||
+      !scopes.includes(values.region_scope) ||
+      !validIds(values.region_ids) ||
       [values.days_after_sowing_min, values.days_after_sowing_max].some(
         (day) => !Number.isSafeInteger(day) || day < 0 || day > 4294967295,
       )
     )
       return { success: false, message: t("invalid") };
+    // Full final state: All scopes never carry hidden selections; an empty
+    // knowledge_source_ids explicitly clears sources (verified Laravel sync).
     const payload: StageTimelinePayload = {
       crop_stage_id: values.crop_stage_id,
-      crop_variety_id: values.crop_variety_id,
-      season_id: values.season_id,
-      source_id: values.source_id,
+      variety_scope: values.variety_scope,
+      crop_variety_ids:
+        values.variety_scope === "all" ? [] : values.crop_variety_ids,
+      season_scope: values.season_scope,
+      season_ids: values.season_scope === "all" ? [] : values.season_ids,
+      knowledge_source_ids: values.knowledge_source_ids,
       region_scope: values.region_scope,
       region_ids: values.region_scope === "all" ? [] : values.region_ids,
       days_after_sowing_min: values.days_after_sowing_min,

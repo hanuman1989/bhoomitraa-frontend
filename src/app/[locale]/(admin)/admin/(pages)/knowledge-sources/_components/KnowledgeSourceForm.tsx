@@ -278,14 +278,14 @@ export default function KnowledgeSourceForm({
           <button
             type="button"
             disabled
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm opacity-50"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm opacity-50"
           >
             {t("cancel")}
           </button>
         ) : (
           <Link
             href="/admin/knowledge-sources"
-            className="border-brand-300 text-brand-600 hover:bg-brand-50 dark:text-brand-300 rounded-lg border px-5 py-2.5 text-sm font-medium dark:border-gray-700 dark:hover:bg-gray-800"
+            className="border-brand-300 text-brand-600 hover:bg-brand-50 dark:text-brand-300 inline-flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-medium dark:border-gray-700 dark:hover:bg-gray-800"
           >
             {readOnly ? t("back") : t("cancel")}
           </Link>
@@ -293,7 +293,7 @@ export default function KnowledgeSourceForm({
         {readOnly && source ? (
           <Link
             href={`/admin/knowledge-sources/${source.id}/edit`}
-            className="bg-brand-600 hover:bg-brand-700 rounded-lg px-5 py-2.5 text-sm font-medium text-white"
+            className="bg-brand-600 hover:bg-brand-700 inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-white"
           >
             {t("actions.edit")}
           </Link>
@@ -301,7 +301,7 @@ export default function KnowledgeSourceForm({
           <button
             type="submit"
             disabled={pending}
-            className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50"
+            className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50"
           >
             <DocsIcon aria-hidden="true" className="size-4" />
             {pending ? t("saving") : t("save")}

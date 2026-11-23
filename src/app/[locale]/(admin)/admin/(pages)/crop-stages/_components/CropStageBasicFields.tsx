@@ -73,7 +73,7 @@ export default function CropStageBasicFields({
               aria-required="true"
               aria-invalid={!!errors.crop_id}
               aria-describedby="stage-crop-error"
-              className="focus-visible:outline-brand-500 aria-invalid:border-error-500 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 focus-visible:outline-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              className="focus-visible:outline-brand-500 aria-invalid:border-error-500 h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-800 focus-visible:outline-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             >
               <option value="">{t("form.selectCrop")}</option>
               {crops.map((crop) => (

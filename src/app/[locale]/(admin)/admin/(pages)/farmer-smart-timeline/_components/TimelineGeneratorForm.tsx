@@ -295,7 +295,7 @@ export default function TimelineGeneratorForm({
               <button
                 type="submit"
                 disabled={busy}
-                className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+                className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 flex h-9 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
               >
                 {busy ? (
                   <span

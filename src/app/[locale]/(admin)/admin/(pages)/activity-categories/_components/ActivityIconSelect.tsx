@@ -66,7 +66,7 @@ export default function ActivityIconSelect({
             autoComplete="off"
             aria-invalid={!!error}
             aria-describedby="activity-category-icon-help activity-category-icon-error"
-            className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 h-11 w-full rounded-lg border border-gray-300 bg-transparent ps-12 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 h-9 w-full rounded-lg border border-gray-300 bg-transparent ps-12 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
           <ComboboxButton
             aria-label={t("icons.open")}

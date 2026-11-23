@@ -117,3 +117,5 @@ export { default as DrainageIcon } from "./drainage.svg";
 export { default as WavesIcon } from "./waves.svg";
 export { default as WaterIcon } from "./water-management.svg";
 export { default as FertilizerIcon } from "./fertilizer.svg";
+export { default as SlidersIcon } from "./sliders.svg";
+export { default as PanelTopIcon } from "./panel-top.svg";

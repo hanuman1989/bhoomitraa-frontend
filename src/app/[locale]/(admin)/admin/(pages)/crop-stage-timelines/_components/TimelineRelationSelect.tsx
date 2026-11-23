@@ -34,6 +34,7 @@ export default function TimelineRelationSelect({
   initialSelection = null,
   disabled = false,
   required = false,
+  compact = false,
   error,
   emptyLabel,
   placeholder,
@@ -54,6 +55,7 @@ export default function TimelineRelationSelect({
   initialSelection?: TimelineOption | null;
   disabled?: boolean;
   required?: boolean;
+  compact?: boolean;
   error?: string;
   emptyLabel?: string;
   placeholder?: string;
@@ -168,7 +170,9 @@ export default function TimelineRelationSelect({
             aria-required={required}
             aria-invalid={!!error}
             aria-describedby={`${id}-error ${id}-warning`}
-            className="focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 h-11 w-full rounded-lg border border-gray-300 bg-transparent ps-4 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className={`focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 w-full rounded-lg border border-gray-300 bg-transparent ps-4 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 ${
+              compact ? "!h-9" : "h-9"
+            }`}
           />
           <ComboboxButton
             aria-label={label}

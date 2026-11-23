@@ -43,6 +43,8 @@ export interface LocationDetailsPayload {
 export interface UserLoginPayload {
   login: string;
   password: string;
+  /** true -> 30-day token, false -> 24-hour token (Laravel config). */
+  remember: boolean;
 }
 export interface UserLoginData {
   user: FarmerUser;

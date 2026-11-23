@@ -233,14 +233,14 @@ export default function CropVarietyForm({
           type="button"
           disabled={isSubmitting}
           onClick={() => router.push(listUrl)}
-          className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+          className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-800 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
         >
           {t("cancel")}
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="bg-success-700 hover:bg-success-800 focus-visible:outline-success-600 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+          className="bg-success-700 hover:bg-success-800 focus-visible:outline-success-600 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
         >
           <CheckLineIcon aria-hidden="true" className="size-5" />
           {isSubmitting

@@ -48,7 +48,7 @@ export default function CropBasicFields({
           aria-required="true"
           aria-invalid={!!errors.category_id}
           aria-describedby="crop-category-help crop-category-error"
-          className="shadow-theme-xs focus:border-brand-500 aria-invalid:border-error-500 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+          className="shadow-theme-xs focus:border-brand-500 aria-invalid:border-error-500 h-9 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
         >
           <option value="">{t("form.selectCategory")}</option>
           {crop &&

@@ -505,6 +505,7 @@
     "unavailable": "Your account is temporarily unavailable",
     "retry": "Try Again",
     "brand": "Krishi AI",
+    "logoAlt": "Bhoomitraa logo",
     "loading": "Loading your account…",
     "cancel": "Cancel",
     "language": {
@@ -537,6 +538,7 @@
       "identifierInvalid": "Enter a valid email address or 10-digit mobile number.",
       "passwordRequired": "Password is required.",
       "passwordPlaceholder": "Enter your password",
+      "remember": "Keep me logged in",
       "forgot": "Forgot Password?",
       "submit": "Login",
       "submitting": "Logging in…",
@@ -1037,7 +1039,8 @@
       "stageTimelines": "Stage Timelines",
       "activityCategories": "Activity Categories",
       "cropActivityTemplates": "Crop Activity Templates",
-      "farmerSmartTimeline": "Farmer Smart Timeline"
+      "farmerSmartTimeline": "Farmer Smart Timeline",
+      "cropActivityTimelineBuilder": "Crop Activity Timeline Builder"
     },
     "widget": {
       "title": "#1 Tailwind CSS Dashboard",
@@ -2118,7 +2121,12 @@
       "source": "Knowledge Source",
       "status": "Status",
       "addedAt": "Added At",
-      "actions": "Actions"
+      "actions": "Actions",
+      "varietyApplicability": "Variety Applicability",
+      "seasonApplicability": "Season Applicability",
+      "varieties": "Varieties",
+      "seasons": "Seasons",
+      "knowledgeSources": "Knowledge Sources (optional)"
     },
     "filters": {
       "label": "Filter stage timelines",
@@ -2149,19 +2157,21 @@
       "details": "Timeline Details",
       "min": "Days After Sowing (From)",
       "max": "Days After Sowing (To)",
-      "sourceHelp": "Choose an appropriate source. Publication requires an active, verified source with a usable reference; selecting it does not verify the timing.",
+      "sourceHelp": "Knowledge sources are optional. Select one or more sources to provide supporting references for this stage timeline.",
       "publication": "Publication Settings",
       "createInactive": "New timelines are saved as inactive. Activate them after saving using the confirmed status action.",
       "statusHelp": "Status changes are separate from saving this form. Save any draft changes before requesting activation. Publication is subject to backend review and eligibility checks.",
       "guidelines": "Guidelines",
-      "guideRelations": "Choose the correct crop and growth stage. Variety and Season are optional.",
-      "guideDays": "Use nonnegative whole days and a maximum at least equal to the minimum.",
-      "guideSource": "Use a suitable knowledge source; publication requires verified, active evidence.",
+      "guideRelations": "Choose the correct crop and growth stage.",
+      "guideDays": "Use nonnegative whole days; the maximum day must be greater than or equal to the minimum day.",
+      "guideSource": "Knowledge Sources are optional and support multiple selections. Scientific timing still requires appropriate review before publication.",
       "guideRegions": "For Specific Regions, select districts. A state checkbox applies to all its eligible districts, including hidden search matches.",
       "guideApproximate": "Timeline estimates are approximate and are not guaranteed dates. Broad geographic scope still requires supporting evidence.",
       "guideHistory": "Inactive timelines remain available for historical reference.",
       "save": "Save Stage Timeline",
-      "update": "Update Stage Timeline"
+      "update": "Update Stage Timeline",
+      "guideApplicability": "Variety and Season applicability can be set to All or Specific. Specific applicability requires at least one eligible selection.",
+      "guideConflicts": "Avoid conflicting timings for the same applicable crop and growth stage. Laravel checks for overlapping active timelines."
     },
     "regions": {
       "title": "Applicable Regions",
@@ -2191,7 +2201,10 @@
       "days": "Enter a whole number from 0 to 4294967295.",
       "range": "Maximum days must be greater than or equal to minimum days.",
       "scope": "Select a region scope.",
-      "districts": "Select at least one valid district. Each district may be selected only once."
+      "districts": "Select at least one valid district. Each district may be selected only once.",
+      "applicability": "Choose an applicability scope.",
+      "varieties": "Select at least one variety for a specific scope. Each variety may be selected only once.",
+      "seasons": "Select at least one season for a specific scope. Each season may be selected only once."
     },
     "actions": {
       "edit": "Edit Timeline",
@@ -2200,7 +2213,7 @@
       "delete": "Delete Timeline"
     },
     "confirm": {
-      "activate": "Activate “{name}”? Publication requires eligible crop relations, valid district coverage and verified source-backed guidance. Laravel will check for conflicting active rules.",
+      "activate": "Activate “{name}”? Publication requires eligible crop relations and valid district coverage; any selected knowledge sources must be active and verified. Laravel will check for conflicting active rules.",
       "deactivate": "Deactivate “{name}”? It will no longer be used for new selections. Historical references remain available.",
       "delete": "Delete “{name}”? This action cannot be undone.",
       "history": "Active or referenced timelines cannot be deleted. Deactivate the timeline instead to preserve farming history."
@@ -2215,6 +2228,21 @@
       "deleteFailed": "Unable to delete the stage timeline. Please try again.",
       "actionFailed": "Unable to complete the action. Please try again.",
       "loadFailed": "Unable to load stage timelines. Please try again."
+    },
+    "applicability": {
+      "allVarieties": "All Varieties",
+      "allVarietiesHelp": "Apply to all eligible varieties of the selected crop.",
+      "specificVarieties": "Specific Varieties",
+      "specificVarietiesHelp": "Choose one or more eligible varieties.",
+      "allSeasons": "All Seasons",
+      "allSeasonsHelp": "Apply to all eligible seasons.",
+      "specificSeasons": "Specific Seasons",
+      "specificSeasonsHelp": "Choose one or more eligible seasons."
+    },
+    "placeholders": {
+      "varieties": "Search and select varieties...",
+      "seasons": "Search and select seasons...",
+      "knowledgeSources": "Search and select knowledge sources..."
     }
   },
   "activityCategories": {
@@ -2391,6 +2419,7 @@
     "back": "Back to Crop Activity Templates",
     "actionsFor": "Actions for {name}",
     "allVarieties": "All Varieties",
+    "allSeasons": "All Seasons",
     "daysRange": "{min}–{max} days",
     "daysSingle": "{days} days",
     "empty": "No crop activity templates yet. Add your first template.",
@@ -2403,9 +2432,15 @@
       "variety": "Variety",
       "category": "Activity Category",
       "stage": "Growth Stage",
+      "stageOptional": "Growth Stage (optional)",
       "season": "Season",
       "source": "Knowledge Source",
+      "knowledgeSources": "Knowledge Sources (optional)",
+      "varietyApplicability": "Variety Applicability",
+      "seasonApplicability": "Season Applicability",
+      "activityType": "Activity Type",
       "schedule": "Schedule Type",
+      "scheduleBasis": "Schedule Basis",
       "start": "Start Offset for {schedule} (Days)",
       "end": "End Offset for {schedule} (Days)",
       "priority": "Priority",
@@ -2423,6 +2458,8 @@
       "allStages": "All Growth Stages",
       "allSeasons": "All Seasons",
       "allSchedules": "All Schedule Types",
+      "allScheduleBases": "All Schedule Bases",
+      "allActivityTypes": "All Activity Types",
       "allPriorities": "All Priorities",
       "allStatus": "All Statuses",
       "apply": "Apply Filters",
@@ -2438,27 +2475,71 @@
       "after_harvesting": "After Harvesting",
       "after_sowing": "After Sowing"
     },
+    "scheduleBases": {
+      "fixed_offsets": "Fixed Day Offsets",
+      "growth_stage": "Growth Stage Based"
+    },
+    "activityTypes": {
+      "task": "Task",
+      "observation": "Observation",
+      "information": "Information"
+    },
+    "applicability": {
+      "allVarieties": "All Varieties",
+      "allVarietiesHelp": "Apply this activity to every eligible variety.",
+      "specificVarieties": "Specific Varieties",
+      "specificVarietiesHelp": "Choose one or more eligible varieties.",
+      "allSeasons": "All Seasons",
+      "allSeasonsHelp": "Apply this activity in every eligible season.",
+      "specificSeasons": "Specific Seasons",
+      "specificSeasonsHelp": "Choose one or more eligible seasons."
+    },
+    "placeholders": {
+      "varieties": "Search and select varieties...",
+      "seasons": "Search and select seasons...",
+      "knowledgeSources": "Search and select knowledge sources..."
+    },
+    "multiSelect": {
+      "loading": "Loading options...",
+      "empty": "No matching options found.",
+      "loadFailed": "Unable to load options. Please try again.",
+      "remove": "Remove {name} from {label}",
+      "clearAll": "Clear all",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {total}"
+    },
     "form": {
       "createTitle": "Create Crop Activity Template",
-      "createDescription": "Add a reusable crop activity with season, schedule, region scope and multilingual details.",
+      "createDescription": "Configure a reusable crop activity, its applicability, schedule and farmer features.",
       "editTitle": "Edit Crop Activity Template",
       "editDescription": "Update the activity details, scheduling window, translations and applicable districts.",
       "previewTitle": "Crop Activity Template Details",
-      "previewDescription": "Review the template, multilingual instructions, applicable regions and knowledge source.",
-      "basic": "Basic Information",
+      "previewDescription": "Review the template, applicability, scheduling, features and multilingual instructions.",
+      "basic": "Basic Information & Applicability",
       "scheduling": "Scheduling",
+      "activityConfiguration": "Activity Configuration",
+      "activityConfigurationHelp": "Configure the features that will be available for this activity in the farmer application.",
+      "smartActions": "Smart Actions",
+      "smartActionsHelp": "Select the additional smart functionalities available for this activity.",
       "publication": "Publication Settings",
       "activeLabel": "Active Status",
       "guidelines": "Guidelines",
       "startPlaceholder": "e.g. 10",
       "endPlaceholder": "e.g. 15",
-      "cropLocked": "The parent crop cannot be changed after creation. Publication requires active relations and a verified source with a usable reference.",
-      "sourceHelp": "Choose an active activity category and an appropriate knowledge source. A draft may use a source awaiting verification; publication requires an active, verified source with a usable reference.",
+      "cropLocked": "The parent crop cannot be changed after creation. Publication requires eligible relations, regions and any required verified references.",
+      "knowledgeSourcesHelp": "Knowledge sources are optional. Select one or more sources to provide supporting references for this activity.",
+      "growthStageScheduleHelp": "Activity dates will be determined from the applicable Stage Timeline based on the selected crop, growth stage, variety, season and region.",
       "createInactive": "New templates are saved as inactive. After saving, a reviewer can activate them from the listing once reviewed.",
-      "statusHelp": "Save draft changes before changing status. Activation and editing active templates require reviewer permission. Publication requires instructions for every saved configured language, active relations and eligible districts.",
+      "statusHelp": "Save draft changes before changing status. Activation and editing active templates require reviewer permission. Publication requires instructions for every saved configured language, eligible relations and districts, and verified references when required.",
       "activeReadOnly": "Only reviewers can edit active templates. You can view the saved details or deactivate the template before editing.",
-      "guideRelations": "Select the Crop first, then optionally choose its Variety and Growth Stage. Activity Category, Season and Knowledge Source are required.",
-      "guideSchedule": "Use nonnegative whole-day offsets for the selected schedule. The end offset must be at least the start offset. These are template offsets, not farmer-specific dates.",
+      "guideRelations": "Select a crop and an eligible activity category. The crop cannot be changed after the template is created.",
+      "guideVarieties": "Choose All or Specific varieties. A specific scope requires at least one eligible variety.",
+      "guideSeasons": "Choose All or Specific seasons. A specific scope requires at least one eligible season.",
+      "guideSources": "Knowledge Sources are optional and support multiple selections. Scientific recommendations remain subject to publication requirements.",
+      "guideSchedule": "Fixed Day Offsets require nonnegative whole numbers with the end at or after the start. Growth Stage Based scheduling requires After Sowing and a valid Growth Stage; dates come from the applicable Stage Timeline.",
+      "guideFeatures": "Choose an Activity Type and configure the farmer features allowed for that activity.",
+      "guideSmartActions": "Select any relevant supported Smart Actions. These settings do not implement or guarantee availability of the underlying modules.",
       "guideRegions": "Use All Regions or choose eligible districts. State checkboxes select their eligible districts. Saved inactive districts remain selected until you explicitly remove them.",
       "guideLanguages": "English and Hindi titles are required. Additional configured languages are optional; include a title when providing content. Descriptions and instructions are optional for drafts.",
       "guideReview": "New templates remain inactive until reviewed. Publication requires verified source-backed instructions; estimates do not guarantee outcomes or universal applicability.",
@@ -2478,11 +2559,76 @@
     "validation": {
       "selection": "Select a valid option.",
       "schedule": "Choose a valid schedule type.",
+      "scheduleBasis": "Choose a valid schedule basis.",
+      "activityType": "Choose a valid activity type.",
+      "scope": "Choose an applicability scope.",
+      "varietiesRequired": "Select at least one variety for a specific scope.",
+      "seasonsRequired": "Select at least one season for a specific scope.",
+      "growthStageRequired": "Select a Growth Stage for Growth Stage Based scheduling.",
+      "smartActions": "Select only supported Smart Actions.",
       "days": "Enter a whole number from 0 to 2147483647.",
       "range": "End offset must be greater than or equal to start offset.",
       "priority": "Select a valid priority.",
       "titleRequired": "Enter the activity title in {language}.",
       "max": "Use no more than {count} characters."
+    },
+    "features": {
+      "statusUpdate": "Status Update",
+      "expenses": "Expenses",
+      "labour": "Labour",
+      "notes": "Notes & Comments",
+      "attachments": "Attachments",
+      "rescheduling": "Rescheduling"
+    },
+    "smartActions": {
+      "selectedCount": "{count} selected",
+      "groups": {
+        "crop": "Crop & Planning",
+        "inputs": "Soil, Seeds & Sowing",
+        "care": "Fertilizer, Irrigation & Water",
+        "monitoring": "Weather & Crop Monitoring",
+        "expert": "Expert Assistance",
+        "harvest": "Yield & Harvest",
+        "operations": "Markets & Farm Operations"
+      },
+      "items": {
+        "crop_details": "Crop Details",
+        "crop_planning": "Crop Planning",
+        "soil_assessment": "Soil Assessment",
+        "soil_test": "Soil Test",
+        "seed_calculator": "Seed Calculator",
+        "seed_record": "Seed Record",
+        "sowing_record": "Sowing Record",
+        "fertilizer_recommendation": "Fertilizer Recommendation",
+        "fertilizer_record": "Fertilizer Record",
+        "irrigation_recommendation": "Irrigation Recommendation",
+        "irrigation_record": "Irrigation Record",
+        "water_management": "Water Management",
+        "weather_forecast": "Weather Forecast",
+        "weather_alerts": "Weather Alerts",
+        "crop_observation": "Crop Observation",
+        "growth_stage_tracking": "Growth Stage Tracking",
+        "ai_crop_doctor": "AI Crop Doctor",
+        "ask_agricultural_expert": "Ask an Agricultural Expert",
+        "pest_monitoring": "Pest Monitoring",
+        "disease_monitoring": "Disease Monitoring",
+        "yield_estimation": "Yield Estimation",
+        "actual_yield_record": "Actual Yield Record",
+        "harvest_record": "Harvest Record",
+        "produce_quality": "Produce Quality",
+        "storage_record": "Storage Record",
+        "transport_record": "Transport Record",
+        "market_prices": "Market Prices",
+        "produce_sale": "Produce Sale",
+        "income_estimation": "Income Estimation",
+        "financial_summary": "Financial Summary",
+        "expense_summary": "Expense Summary",
+        "crop_profitability": "Crop Profitability",
+        "machinery_usage": "Machinery Usage",
+        "labour_assignment": "Labour Assignment",
+        "crop_completion": "Crop Completion",
+        "knowledge_reference": "Knowledge Reference"
+      }
     },
     "actions": {
       "edit": "Edit Template",
@@ -4342,6 +4488,7 @@
     },
     "totalEstimatedCost": "Total Estimated Cost",
     "knownSubtotal": "Known Estimated Subtotal",
+    "fertilizerTotal": "Total Estimated Fertilizer Cost",
     "incompleteExpenses": "Some expense information is unavailable.",
     "initialExpensesOnly": "Initial inputs only. Labour, machinery, irrigation, protection and harvesting are not included.",
     "expectedYield": "Expected Yield (Estimated)",
@@ -4376,5 +4523,303 @@
     "noCropsDescription": "Create a crop plan and save each step to resume later.",
     "sampleDate": "Sample collection date",
     "sampleBeforeTest": "Sample collection cannot be after the test date."
+  },
+  "timelineBuilder": {
+    "title": "Crop Activity Timeline Builder",
+    "description": "Build reusable crop activities directly within existing growth stages and stage timelines.",
+    "home": "Home",
+    "farmManager": "Farm Manager",
+    "loading": "Loading timeline builder...",
+    "loadingWorkspace": "Loading crop workspace...",
+    "loadingRecord": "Loading activity...",
+    "configureFirst": "Save a Timeline Configuration to start building activities.",
+    "retry": "Try again",
+    "recordId": "#{id}",
+    "cancel": "Cancel",
+    "close": "Close",
+    "saving": "Saving...",
+    "saveChanges": "Save Changes",
+    "discardPrompt": "Discard unsaved changes?",
+    "discardDescription": "Your changes in this window have not been saved and will be lost.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard",
+    "search": "Search activities or stages",
+    "searchPlaceholder": "Search activities or stages…",
+    "hideFilters": "Hide Filters",
+    "showFilters": "Show Filters",
+    "hideConfiguration": "Hide Configuration",
+    "showConfiguration": "Show Configuration",
+    "showSearch": "Show Search",
+    "hideSearch": "Hide Search",
+    "visibilityControls": "Toolbar sections",
+    "activeFilters": "{count, plural, one {# active filter} other {# active filters}}",
+    "emptyState": {
+      "title": "Create Your Crop Timeline",
+      "description": "Select a crop and configure varieties, seasons, regions, and knowledge sources to start building its activity timeline.",
+      "action": "Make Crop Timeline Builder"
+    },
+    "addActivity": "Add Activity",
+    "createActivity": "Create Activity",
+    "editConfiguration": "Edit Configuration",
+    "fullscreen": "Full-width workspace",
+    "exitFullscreen": "Exit full-width workspace",
+    "selectedCount": "{count} selected",
+    "selectVisible": "Select visible",
+    "clearSelection": "Clear selection",
+    "selectActivity": "Select {title}",
+    "expandActivity": "Expand {title}",
+    "collapseActivity": "Collapse {title}",
+    "expandStage": "Expand {stage}",
+    "collapseStage": "Collapse {stage}",
+    "activityCount": "{count, plural, one {# activity} other {# activities}}",
+    "addInCategory": "+ Add",
+    "stageTimelines": "Stage Timelines",
+    "stageSequence": "Growth stage {sequence}",
+    "emptyStage": "No activities created yet.",
+    "emptyStageMarker": "Growth stage without activities",
+    "uncategorized": "Unavailable category",
+    "noResults": "No matching activities.",
+    "noStage": "None (independent activity)",
+    "selectCategory": "Select a category",
+    "resetToCommon": "Reset to Common Configuration",
+    "derived": "Derived from stage",
+    "allRegions": "All Regions",
+    "specificRegions": "Specific districts",
+    "districtCount": "{count, plural, one {# district} other {# districts}}",
+    "summaryLine": "{seasons} · {regions} · {sources, plural, one {# knowledge source} other {# knowledge sources}}",
+    "detailSummary": "{varieties} · {seasons} · {regions} · {sources} sources · {features} features · {actions} Smart Actions · {priority} priority",
+    "fields": {
+      "crop": "Crop",
+      "varieties": "Varieties",
+      "seasons": "Seasons",
+      "regions": "Regions",
+      "sources": "Knowledge Sources",
+      "startOffset": "Start Offset",
+      "endOffset": "End Offset"
+    },
+    "stats": {
+      "stages": "Growth Stages",
+      "activities": "Activities",
+      "configured": "Configured",
+      "incomplete": "Incomplete"
+    },
+    "badges": {
+      "configured": "Configured",
+      "incomplete": "Incomplete",
+      "active": "Active",
+      "inactive": "Inactive",
+      "custom": "Custom applicability",
+      "exception": "Timing exception"
+    },
+    "timing": {
+      "das": "{day} DAS",
+      "dasRange": "{min}–{max} DAS",
+      "before": "{from}–{to} days before sowing",
+      "sowingDay": "Sowing day",
+      "afterHarvest": "{min}–{max} days after harvest",
+      "afterHarvestDay": "{day} days after harvest",
+      "noStageTiming": "No active Stage Timeline",
+      "codes": {
+        "valid": "Within stage timing",
+        "partial": "Extends outside the stage timing",
+        "outside": "Entirely outside the stage timing",
+        "missing": "Stage timing unavailable",
+        "afterHarvest": "After harvest"
+      }
+    },
+    "groups": {
+      "beforeSowing": "Before Sowing",
+      "sowingDay": "Sowing Day",
+      "afterHarvest": "After Harvesting",
+      "unscheduled": "Unresolved Activities"
+    },
+    "filters": {
+      "status": "Status",
+      "category": "Category",
+      "applicability": "Applicability",
+      "schedule": "Schedule",
+      "jump": "Jump to growth stage…",
+      "reset": "Reset filters",
+      "allCategories": "All categories",
+      "allSchedules": "All schedules",
+      "unresolved": "Unresolved timing",
+      "statuses": {
+        "all": "All statuses",
+        "incomplete": "Incomplete",
+        "configured": "Configured",
+        "active": "Active",
+        "inactive": "Inactive",
+        "exception": "Timing exceptions"
+      },
+      "applicabilities": {
+        "all": "All crop activities",
+        "matching": "Matching applicability",
+        "custom": "Custom defaults",
+        "session": "Current session"
+      }
+    },
+    "view": {
+      "label": "Timeline view",
+      "stage": "Growth Stage View",
+      "chronological": "Chronological View",
+      "groupByCategory": "Group by category",
+      "previewDate": "Preview sowing date",
+      "calendarDates": "Calendar dates",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
+    },
+    "help": {
+      "open": "Timeline information and operations",
+      "title": "Workspace information",
+      "configuration": "Common Configuration",
+      "coverage": "Timeline Coverage",
+      "operations": "Manage Operations",
+      "stagesWithActivities": "Stages with activities",
+      "stagesWithTiming": "Stages with active timing",
+      "exceptions": "Timing exceptions",
+      "export": "Export JSON",
+      "import": "Import JSON",
+      "importUnavailable": "Import needs an authorized, validated backend endpoint.",
+      "languages": "Languages",
+      "note": "New templates are saved inactive. Timing shown here is a display reference from active Stage Timelines; it is not a resolved farmer schedule."
+    },
+    "config": {
+      "title": "Timeline Configuration",
+      "description": "Reusable defaults for new activities. Existing activities are not changed.",
+      "save": "Save Configuration & Continue",
+      "note": "Saved only in this browser for your account. No activity is created."
+    },
+    "create": {
+      "title": "Create Activity Template",
+      "description": "Quick creation. Defaults are copied from the Common Configuration.",
+      "save": "Save Activity",
+      "saveMore": "Save & Add More",
+      "saveNext": "Save & Next Stage",
+      "editApplicability": "Edit applicability for this activity only",
+      "duplicateWarning": "A similar activity already exists for this stage and category. Save again to create another."
+    },
+    "edit": {
+      "basic": "Edit Basic Info",
+      "schedule": "Scheduling",
+      "features": "Activity Configuration",
+      "actions": "Smart Actions",
+      "translations": "Translations",
+      "applicability": "Applicability",
+      "publication": "Publication",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "basic": {
+      "typeHelp": "Changing the activity type applies that type's default farmer features.",
+      "displayOrderUnavailable": "Display order is not supported by the backend yet; equal timings are ordered by record."
+    },
+    "schedule": {
+      "title": "Scheduling",
+      "useStage": "Use Growth Stage Timeline",
+      "later": "Configure Scheduling Later",
+      "laterUnavailable": "Unavailable: the backend cannot save unscheduled drafts yet.",
+      "stageUnavailable": "Growth Stage timing needs a selected stage with an active Stage Timeline.",
+      "stageRequired": "Growth Stage Based needs a growth stage. This activity has none; assign one in Basic Info to use it.",
+      "afterSowingOnly": "Growth Stage Based is available only for After Sowing.",
+      "noStageTiming": "This growth stage has no active Stage Timeline yet. The activity is saved, but its dates appear only after a matching Stage Timeline is activated.",
+      "beforeHelp": "Enter lead times in chronological order, for example 30 then 15 days before sowing.",
+      "stageInfo": "Growth stage: {stage}",
+      "independent": "Independent activity: use fixed offsets.",
+      "justificationUnavailable": "Timing exception justifications cannot be saved until the backend supports them."
+    },
+    "features": {
+      "description": "Choose the farmer features available for this activity. Selecting a feature does not enable a farmer module.",
+      "typeLimited": "{type} activities limit which features can be enabled.",
+      "help": {
+        "statusUpdate": "Allow activity status updates.",
+        "expenses": "Enable expense records.",
+        "labour": "Enable labour records.",
+        "notes": "Allow notes and comments.",
+        "attachments": "Allow supported attachments.",
+        "rescheduling": "Allow activity rescheduling."
+      }
+    },
+    "actions": {
+      "description": "Optional Smart Actions shown with this activity.",
+      "search": "Search Smart Actions…",
+      "total": "{count} of {total} selected",
+      "note": "Selecting an action does not make an unreleased farmer module available."
+    },
+    "translations": {
+      "preserved": "Translations for hidden or unconfigured languages are kept unchanged."
+    },
+    "applicabilityDialog": {
+      "description": "Crop: {crop} (cannot be changed). Changes apply to this activity only.",
+      "revalidate": "Timing is recalculated after saving. Review the schedule if the stage timing no longer fits."
+    },
+    "publication": {
+      "active": "Active status",
+      "incomplete": "Incomplete: the growth stage has no active Stage Timeline, so this activity cannot be activated.",
+      "note": "Activation uses the existing status action and permissions. Laravel validates every change."
+    },
+    "duplicate": {
+      "confirm": "Duplicate",
+      "done": "Activity duplicated as an inactive draft.",
+      "description": "Creates an independent inactive copy, including {locales, plural, one {# saved translation} other {# saved translations}}. You can edit the translations next."
+    },
+    "delete": {
+      "confirm": "Delete",
+      "done": "Activity deleted.",
+      "description": "Delete “{name}”? This cannot be undone.",
+      "history": "Records referenced by farmer history are protected by the backend; deactivate them instead."
+    },
+    "stageDialog": {
+      "title": "Applicable Stage Timelines",
+      "summary": "{records, plural, one {# active record} other {# active records}} · {windows, plural, one {# distinct window} other {# distinct windows}}",
+      "multiple": "Several timing windows exist. Applicability resolution per variety, season and region is not available from the backend yet, so all are shown.",
+      "sources": "{count, plural, one {# knowledge source} other {# knowledge sources}} ·",
+      "regions": "View regions",
+      "empty": "No active Stage Timeline records for this stage.",
+      "note": "Read-only. Edit timings in the Stage Timelines module."
+    },
+    "languages": {
+      "title": "Additional Languages",
+      "description": "Choose which configured translation sections are shown by default.",
+      "required": "Required",
+      "note": "Hiding a language never deletes its saved translations."
+    },
+    "bulk": {
+      "open": "Bulk operations…",
+      "title": "Bulk Operations",
+      "unavailable": "Bulk operations are unavailable until the backend provides a bulk endpoint with per-record results. No records were changed.",
+      "operations": {
+        "features": "Activity Configuration",
+        "actions": "Smart Actions",
+        "priority": "Priority",
+        "sources": "Knowledge Sources",
+        "applicability": "Applicability",
+        "stageScheduling": "Growth Stage Based Scheduling",
+        "clearScheduling": "Clear Scheduling",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "delete": "Delete"
+      }
+    },
+    "validation": {
+      "crop": "Select a crop.",
+      "category": "Select an activity category.",
+      "applicability": "Specific Varieties, Seasons or Regions need at least one selection.",
+      "stageForSchedule": "Growth Stage Based scheduling needs a growth stage. Change the schedule first.",
+      "schedule": {
+        "stage": "Growth Stage scheduling needs a growth stage and After Sowing.",
+        "days": "Enter whole numbers of days from 0.",
+        "order": "End offset must be greater than or equal to start offset."
+      }
+    },
+    "feedback": {
+      "invalid": "Check the details and try again.",
+      "loadFailed": "Unable to load the timeline builder. Please try again.",
+      "saved": "Changes saved.",
+      "saveFailed": "Unable to save the activity. Please try again.",
+      "statusFailed": "Unable to update the activity status. Please try again.",
+      "deleteFailed": "Unable to delete the activity. Please try again.",
+      "configSaved": "Timeline configuration saved.",
+      "storageUnavailable": "Browser storage is unavailable. Preferences will not be remembered."
+    }
   }
 }

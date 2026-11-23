@@ -76,7 +76,7 @@ export default function CropStagesFilters({
             id="stage-filter-crop"
             label={t("fields.crop")}
             value={values.crop_id}
-            className="h-11"
+            className="h-9"
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
               setValues((previous) => ({
                 ...previous,
@@ -103,7 +103,7 @@ export default function CropStagesFilters({
             id="stage-filter-status"
             label={t("fields.status")}
             value={values.status}
-            className="h-11"
+            className="h-9"
             onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
               setValues((previous) => ({
                 ...previous,
@@ -123,7 +123,7 @@ export default function CropStagesFilters({
           <button
             type="submit"
             disabled={pending}
-            className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-11 rounded-lg px-5 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+            className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
           >
             {t("filters.apply")}
           </button>
@@ -131,7 +131,7 @@ export default function CropStagesFilters({
             type="button"
             disabled={pending}
             onClick={() => navigate(true)}
-            className="focus-visible:outline-brand-500 h-11 rounded-lg border border-gray-300 px-5 text-sm text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             {t("filters.reset")}
           </button>

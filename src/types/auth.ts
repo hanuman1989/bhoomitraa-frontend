@@ -8,6 +8,14 @@ export interface AdminLoginPayload {
   isChecked: boolean;
 }
 
+// Body sent to Laravel POST /admin/login
+export interface AdminLoginRequest {
+  email: string;
+  password: string;
+  /** true -> 30-day token, false -> 24-hour token (Laravel config). */
+  remember: boolean;
+}
+
 // Login response data
 export interface AdminLoginData {
   admin_user: AdminUser;

@@ -79,7 +79,7 @@ export default function SuspenseFallback({
             <Bar className="h-9 w-32" />
           </div>
           <div className="space-y-3">
-            <Bar className="h-11 w-full" />
+            <Bar className="h-9 w-full" />
             {Array.from({ length: rowCount }, (_, index) => (
               <div
                 key={index}
@@ -106,9 +106,9 @@ export default function SuspenseFallback({
           </div>
           <LoadingCard>
             <div className="grid gap-4 md:grid-cols-3">
-              <Bar className="h-11 w-full" />
-              <Bar className="h-11 w-full" />
-              <Bar className="h-11 w-full" />
+              <Bar className="h-9 w-full" />
+              <Bar className="h-9 w-full" />
+              <Bar className="h-9 w-full" />
             </div>
           </LoadingCard>
           <div className="grid gap-4 lg:grid-cols-2">

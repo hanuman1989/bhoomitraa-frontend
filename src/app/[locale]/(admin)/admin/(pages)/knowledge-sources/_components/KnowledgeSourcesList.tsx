@@ -48,7 +48,7 @@ export default function KnowledgeSourcesList({
         </div>
         <Link
           href="/admin/knowledge-sources/create"
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-medium text-white focus-visible:outline-2"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
           {t("add")}

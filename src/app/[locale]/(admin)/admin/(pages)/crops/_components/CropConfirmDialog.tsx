@@ -103,7 +103,7 @@ export default function CropConfirmDialog({
                 data-autofocus
                 disabled={pending}
                 onClick={onClose}
-                className="focus-visible:outline-brand-500 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+                className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
               >
                 {t("form.cancel")}
               </button>
@@ -111,7 +111,7 @@ export default function CropConfirmDialog({
                 type="button"
                 disabled={pending}
                 onClick={confirm}
-                className={`rounded-lg px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50 ${operation === "delete" || operation === "removeImage" ? "bg-error-600 hover:bg-error-700 focus-visible:outline-error-500" : "bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500"}`}
+                className={`h-9 rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50 ${operation === "delete" || operation === "removeImage" ? "bg-error-600 hover:bg-error-700 focus-visible:outline-error-500" : "bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500"}`}
               >
                 {pending ? t("working") : t(`actions.${operation}`)}
               </button>

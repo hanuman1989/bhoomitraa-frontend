@@ -64,10 +64,22 @@ export default async function CropActivityTemplateDetails({
           </div>
           <div>
             <dt className="text-gray-500 dark:text-gray-400">
-              {t("fields.variety")}
+              {t("fields.varietyApplicability")}
             </dt>
             <dd className="mt-1 text-gray-900 dark:text-gray-100">
-              {template.crop_variety_name ?? t("allVarieties")}
+              {template.variety_scope === "all" ? (
+                t("allVarieties")
+              ) : (
+                <ul className="flex flex-wrap gap-1">
+                  {template.varieties.map((variety) => (
+                    <li key={variety.id}>
+                      <Badge color="primary">
+                        {variety.name ?? t("recordId", { id: variety.id })}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </dd>
           </div>
           <div>
@@ -89,25 +101,53 @@ export default async function CropActivityTemplateDetails({
           </div>
           <div>
             <dt className="text-gray-500 dark:text-gray-400">
-              {t("fields.season")}
+              {t("fields.seasonApplicability")}
             </dt>
             <dd className="mt-1 text-gray-900 dark:text-gray-100">
-              {template.season_name ??
-                t("recordId", { id: template.season_id })}
+              {template.season_scope === "all" ? (
+                t("allSeasons")
+              ) : (
+                <ul className="flex flex-wrap gap-1">
+                  {template.seasons.map((season) => (
+                    <li key={season.id}>
+                      <Badge color="primary">
+                        {season.name ?? t("recordId", { id: season.id })}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </dd>
           </div>
           <div>
             <dt className="text-gray-500 dark:text-gray-400">
-              {t("fields.source")}
+              {t("fields.activityType")}
+            </dt>
+            <dd className="mt-1 text-gray-900 dark:text-gray-100">
+              {t(`activityTypes.${template.activity_type}`)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-gray-500 dark:text-gray-400">
+              {t("fields.knowledgeSources")}
             </dt>
             <dd className="mt-1">
-              <Link
-                href={`/admin/knowledge-sources/${template.source_id}`}
-                className="text-brand-500 dark:text-brand-400 hover:underline"
-              >
-                {template.source_title ??
-                  t("recordId", { id: template.source_id })}
-              </Link>
+              {template.knowledge_sources.length ? (
+                <ul className="space-y-1">
+                  {template.knowledge_sources.map((source) => (
+                    <li key={source.id}>
+                      <Link
+                        href={`/admin/knowledge-sources/${source.id}`}
+                        className="text-brand-500 dark:text-brand-400 hover:underline"
+                      >
+                        {source.title ?? t("recordId", { id: source.id })}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                t("notAvailable")
+              )}
             </dd>
           </div>
           <div>
@@ -115,13 +155,23 @@ export default async function CropActivityTemplateDetails({
               {t("fields.schedule")}
             </dt>
             <dd className="mt-1 text-gray-900 dark:text-gray-100">
-              {t(`schedule.${template.schedule_type}`)}
-              <p>
-                {t("daysRange", {
-                  min: template.start_offset_days,
-                  max: template.end_offset_days,
-                })}
+              <p>{t(`schedule.${template.schedule_type}`)}</p>
+              <p className="mt-1">
+                {t(`scheduleBases.${template.schedule_basis}`)}
               </p>
+              {template.schedule_basis === "fixed_offsets" &&
+                template.start_offset_days !== null &&
+                template.end_offset_days !== null && (
+                  <p>
+                    {t("daysRange", {
+                      min: template.start_offset_days,
+                      max: template.end_offset_days,
+                    })}
+                  </p>
+                )}
+              {template.schedule_basis === "growth_stage" && (
+                <p>{template.crop_stage_name ?? t("notAvailable")}</p>
+              )}
             </dd>
           </div>
           <div>
@@ -151,6 +201,44 @@ export default async function CropActivityTemplateDetails({
             </dd>
           </div>
         </dl>
+      </ComponentCard>
+      <ComponentCard title={t("form.activityConfiguration")}>
+        <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { key: "statusUpdate", enabled: template.allow_status_update },
+            { key: "expenses", enabled: template.allow_expenses },
+            { key: "labour", enabled: template.allow_labour },
+            { key: "notes", enabled: template.allow_notes },
+            { key: "attachments", enabled: template.allow_attachments },
+            { key: "rescheduling", enabled: template.allow_rescheduling },
+          ].map(({ key, enabled }) => (
+            <div key={key}>
+              <dt className="text-gray-500 dark:text-gray-400">
+                {t(`features.${key}`)}
+              </dt>
+              <dd className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+                {t(enabled ? "active" : "inactive")}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </ComponentCard>
+      <ComponentCard title={t("form.smartActions")}>
+        {template.smart_actions.length ? (
+          <ul className="flex flex-wrap gap-2">
+            {template.smart_actions.map((action) => (
+              <li key={action}>
+                <Badge color="primary">
+                  {t(`smartActions.items.${action}`)}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("notAvailable")}
+          </p>
+        )}
       </ComponentCard>
       <ComponentCard title={tr("title")}>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">

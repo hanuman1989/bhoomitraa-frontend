@@ -37,7 +37,7 @@ export default function CropCategoriesHeader({
       {mode === "list" && (
         <Link
           href="/admin/crop-categories/create"
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-semibold text-white focus-visible:outline-2 lg:absolute lg:end-0 lg:bottom-1 lg:mt-0"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 mt-5 inline-flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white focus-visible:outline-2 lg:absolute lg:end-0 lg:bottom-1 lg:mt-0"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
           {t("add")}

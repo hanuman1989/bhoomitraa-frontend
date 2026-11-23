@@ -53,7 +53,7 @@ export default function SeasonIconSelect({
             onBlur={onBlur}
             aria-invalid={!!error}
             aria-describedby="season-icon-error"
-            className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 flex h-11 w-full items-center gap-3 rounded-lg border border-gray-300 bg-transparent px-4 pe-11 text-start text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 flex h-9 w-full items-center gap-3 rounded-lg border border-gray-300 bg-transparent px-4 pe-11 text-start text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           >
             {value ? (
               <>

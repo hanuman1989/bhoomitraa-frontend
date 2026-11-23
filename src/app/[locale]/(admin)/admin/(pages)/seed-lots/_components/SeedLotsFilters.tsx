@@ -135,7 +135,7 @@ export default function SeedLotsFilters({
           <button
             type="submit"
             disabled={pending}
-            className="bg-brand-500 hover:bg-brand-600 rounded-lg px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            className="bg-brand-500 hover:bg-brand-600 h-9 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {t("filters.apply")}
           </button>
@@ -146,7 +146,7 @@ export default function SeedLotsFilters({
               reset(empty);
               apply(empty);
             }}
-            className="border-brand-200 text-brand-500 dark:border-brand-800 rounded-lg border px-6 py-2.5 text-sm font-medium"
+            className="border-brand-200 text-brand-500 dark:border-brand-800 h-9 rounded-lg border px-4 text-sm font-medium"
           >
             {t("filters.reset")}
           </button>

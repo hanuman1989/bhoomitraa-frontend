@@ -22,7 +22,7 @@ interface AdminUsersFiltersProps {
 const emptyFilters: AdminUsersFilterValues = { keyword: "", status: "" };
 
 const inputClasses =
-  "h-12 w-full rounded-md border border-[#dce3f1] bg-white px-4 text-sm text-[#53699b] outline-none transition focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300";
+  "h-9 w-full rounded-md border border-[#dce3f1] bg-white px-4 text-sm text-[#53699b] outline-none transition focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300";
 
 export default function AdminUsersFilters({
   initialFilters = emptyFilters,
@@ -127,7 +127,7 @@ export default function AdminUsersFilters({
         <button
           type="submit"
           disabled={isPending}
-          className="h-12 flex-1 rounded-md bg-[#004bff] px-6 text-sm font-medium whitespace-nowrap text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
+          className="h-9 flex-1 rounded-md bg-[#004bff] px-4 text-sm font-medium whitespace-nowrap text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60"
         >
           {isPending ? tUi("applying") : tUi("applyFilters")}
         </button>
@@ -135,7 +135,7 @@ export default function AdminUsersFilters({
           type="button"
           onClick={handleReset}
           disabled={isPending}
-          className="h-12 flex-1 rounded-md border border-blue-200 px-6 text-sm font-medium text-[#004bff] transition hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-gray-800"
+          className="h-9 flex-1 rounded-md border border-blue-200 px-4 text-sm font-medium text-[#004bff] transition hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-60 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-gray-800"
         >
           {tUi("reset")}
         </button>

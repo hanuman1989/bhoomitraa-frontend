@@ -179,7 +179,7 @@ export default function ParentRegionSelect({
             aria-required={required}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `${id}-error ${id}-hint` : `${id}-hint`}
-            className="focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 dark:focus:border-brand-800 dark:aria-invalid:border-error-500 h-12 w-full rounded-md border border-gray-300 bg-white ps-4 pe-10 text-sm text-gray-800 transition outline-none placeholder:text-gray-400 focus:ring-3 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500"
+            className="focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 dark:focus:border-brand-800 dark:aria-invalid:border-error-500 h-9 w-full rounded-md border border-gray-300 bg-white ps-4 pe-10 text-sm text-gray-800 transition outline-none placeholder:text-gray-400 focus:ring-3 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500"
           />
           <ComboboxButton
             aria-label={t("selectParent")}

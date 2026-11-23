@@ -13,6 +13,7 @@ import Badge from "@/components/admin/ui/badge/Badge";
 import type {
   StageTimeline,
   StageTimelineFormValues,
+  StageTimelineMultiSelections,
   TimelineChoices,
   TimelineSelections,
   TimelineState,
@@ -24,39 +25,50 @@ import StageTimelineConfirmDialog from "./StageTimelineConfirmDialog";
 const emptyValues: StageTimelineFormValues = {
   crop_id: "",
   crop_stage_id: "",
-  crop_variety_id: "",
-  season_id: "",
-  source_id: "",
+  variety_scope: "all",
+  crop_variety_ids: [],
+  season_scope: "all",
+  season_ids: [],
+  knowledge_source_ids: [],
   days_after_sowing_min: "",
   days_after_sowing_max: "",
   region_scope: "all",
   region_ids: [],
 };
+const sameIds = (first: number[], second: number[]) =>
+  first.length === second.length &&
+  first.every((id, index) => id === second[index]);
 const cardClass =
   "rounded-xl shadow-theme-xs [&>div:first-child>h3]:text-xl [&>div:first-child>h3]:font-semibold";
 export default function StageTimelineForm({
   timeline,
   choices,
   selections,
+  multiSelections = { varieties: [], seasons: [], knowledgeSources: [] },
   states,
 }: {
   timeline: StageTimeline | null;
   choices: TimelineChoices;
   selections: TimelineSelections;
+  multiSelections?: StageTimelineMultiSelections;
   states: TimelineState[];
 }) {
   const t = useTranslations("stageTimelines");
   const router = useRouter();
   const searchParams = useSearchParams();
   const listUrl = `/admin/crop-stage-timelines${searchParams.size ? `?${searchParams.toString()}` : ""}`;
+  // A filtered variety/season/source in the list URL pre-selects that single
+  // record as a Specific selection, preserving the existing query defaults.
   const createDefaults = useMemo<StageTimelineFormValues>(
     () => ({
       ...emptyValues,
       crop_id: selections.crop ? String(selections.crop.id) : "",
       crop_stage_id: selections.stage ? String(selections.stage.id) : "",
-      crop_variety_id: selections.variety ? String(selections.variety.id) : "",
-      season_id: selections.season ? String(selections.season.id) : "",
-      source_id: selections.source ? String(selections.source.id) : "",
+      variety_scope: selections.variety ? "specific" : "all",
+      crop_variety_ids: selections.variety ? [selections.variety.id] : [],
+      season_scope: selections.season ? "specific" : "all",
+      season_ids: selections.season ? [selections.season.id] : [],
+      knowledge_source_ids: selections.source ? [selections.source.id] : [],
     }),
     [
       selections.crop,
@@ -81,13 +93,11 @@ export default function StageTimelineForm({
       ? {
           crop_id: timeline.crop_id === null ? "" : String(timeline.crop_id),
           crop_stage_id: String(timeline.crop_stage_id),
-          crop_variety_id:
-            timeline.crop_variety_id === null
-              ? ""
-              : String(timeline.crop_variety_id),
-          season_id:
-            timeline.season_id === null ? "" : String(timeline.season_id),
-          source_id: String(timeline.source_id),
+          variety_scope: timeline.variety_scope,
+          crop_variety_ids: [...timeline.crop_variety_ids],
+          season_scope: timeline.season_scope,
+          season_ids: [...timeline.season_ids],
+          knowledge_source_ids: [...timeline.knowledge_source_ids],
           days_after_sowing_min: String(timeline.days_after_sowing_min),
           days_after_sowing_max: String(timeline.days_after_sowing_max),
           region_scope: timeline.region_scope,
@@ -113,8 +123,10 @@ export default function StageTimelineForm({
     const cropChanged = previous.crop_id !== createDefaults.crop_id;
     const stageChanged =
       previous.crop_stage_id !== createDefaults.crop_stage_id;
-    const varietyChanged =
-      previous.crop_variety_id !== createDefaults.crop_variety_id;
+    const varietyChanged = !sameIds(
+      previous.crop_variety_ids,
+      createDefaults.crop_variety_ids,
+    );
     const resetCrop =
       (cropChanged || stageChanged || varietyChanged) &&
       getValues("crop_id") !== createDefaults.crop_id;
@@ -124,14 +136,27 @@ export default function StageTimelineForm({
       resetField("crop_stage_id", {
         defaultValue: createDefaults.crop_stage_id,
       });
-    if (cropChanged || resetCrop || varietyChanged)
-      resetField("crop_variety_id", {
-        defaultValue: createDefaults.crop_variety_id,
+    if (cropChanged || resetCrop || varietyChanged) {
+      resetField("variety_scope", {
+        defaultValue: createDefaults.variety_scope,
       });
-    if (previous.season_id !== createDefaults.season_id)
-      resetField("season_id", { defaultValue: createDefaults.season_id });
-    if (previous.source_id !== createDefaults.source_id)
-      resetField("source_id", { defaultValue: createDefaults.source_id });
+      resetField("crop_variety_ids", {
+        defaultValue: createDefaults.crop_variety_ids,
+      });
+    }
+    if (!sameIds(previous.season_ids, createDefaults.season_ids)) {
+      resetField("season_scope", { defaultValue: createDefaults.season_scope });
+      resetField("season_ids", { defaultValue: createDefaults.season_ids });
+    }
+    if (
+      !sameIds(
+        previous.knowledge_source_ids,
+        createDefaults.knowledge_source_ids,
+      )
+    )
+      resetField("knowledge_source_ids", {
+        defaultValue: createDefaults.knowledge_source_ids,
+      });
     appliedDefaults.current = createDefaults;
   }, [timeline, busy, createDefaults, getValues, resetField]);
   function submit(values: StageTimelineFormValues) {
@@ -143,11 +168,17 @@ export default function StageTimelineForm({
       try {
         const r = await saveStageTimeline(timeline?.id ?? null, {
           crop_stage_id: Number(values.crop_stage_id),
-          crop_variety_id: values.crop_variety_id
-            ? Number(values.crop_variety_id)
-            : null,
-          season_id: values.season_id ? Number(values.season_id) : null,
-          source_id: Number(values.source_id),
+          variety_scope: values.variety_scope,
+          crop_variety_ids:
+            values.variety_scope === "all"
+              ? []
+              : [...new Set(values.crop_variety_ids)],
+          season_scope: values.season_scope,
+          season_ids:
+            values.season_scope === "all"
+              ? []
+              : [...new Set(values.season_ids)],
+          knowledge_source_ids: [...new Set(values.knowledge_source_ids)],
           days_after_sowing_min: Number(values.days_after_sowing_min),
           days_after_sowing_max: Number(values.days_after_sowing_max),
           region_scope: values.region_scope,
@@ -161,20 +192,32 @@ export default function StageTimelineForm({
             if (!messages[0]) continue;
             switch (field) {
               case "crop_stage_id":
-              case "crop_variety_id":
-              case "season_id":
-              case "source_id":
+              case "variety_scope":
+              case "season_scope":
               case "days_after_sowing_min":
               case "days_after_sowing_max":
               case "region_scope":
                 setError(field, { type: "server", message: messages[0] });
                 break;
-              default:
-                if (field === "region_ids" || field.startsWith("region_ids."))
-                  setError("region_ids", {
+              default: {
+                // Indexed array errors (e.g. season_ids.1) belong to their
+                // multi-select or district tree.
+                const arrayField = (
+                  [
+                    "crop_variety_ids",
+                    "season_ids",
+                    "knowledge_source_ids",
+                    "region_ids",
+                  ] as const
+                ).find(
+                  (name) => field === name || field.startsWith(`${name}.`),
+                );
+                if (arrayField)
+                  setError(arrayField, {
                     type: "server",
                     message: messages[0],
                   });
+              }
             }
           }
           const message = r.message || t("feedback.saveFailed");
@@ -224,6 +267,7 @@ export default function StageTimelineForm({
             form={form}
             choices={choices}
             selections={selections}
+            multiSelections={multiSelections}
             initialCrop={
               timeline?.crop_id
                 ? String(timeline.crop_id)
@@ -253,7 +297,7 @@ export default function StageTimelineForm({
                   onClick={() => {
                     if (!saving.current) openStatus();
                   }}
-                  className="border-brand-300 text-brand-600 dark:border-brand-800 dark:text-brand-300 rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  className="border-brand-300 text-brand-600 dark:border-brand-800 dark:text-brand-300 h-9 rounded-lg border px-4 text-sm font-medium disabled:opacity-50"
                 >
                   {t(
                     timeline.is_active
@@ -266,9 +310,11 @@ export default function StageTimelineForm({
             <ComponentCard title={t("form.guidelines")} className={cardClass}>
               <ul className="marker:text-brand-500 list-disc space-y-3 ps-5 text-sm leading-6 text-gray-700 dark:text-gray-300">
                 <li>{t("form.guideRelations")}</li>
+                <li>{t("form.guideApplicability")}</li>
                 <li>{t("form.guideDays")}</li>
                 <li>{t("form.guideSource")}</li>
                 <li>{t("form.guideRegions")}</li>
+                <li>{t("form.guideConflicts")}</li>
                 <li>{t("form.guideApproximate")}</li>
                 <li>{t("form.guideHistory")}</li>
               </ul>
@@ -282,14 +328,14 @@ export default function StageTimelineForm({
             onClick={() => {
               if (!saving.current) router.push(listUrl);
             }}
-            className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 rounded-lg px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+            className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
           >
             {pending
               ? t("saving")

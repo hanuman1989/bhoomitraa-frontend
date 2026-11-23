@@ -206,7 +206,7 @@ export default function FertilizerForm({
               onClick={() =>
                 navigate(`/admin/fertilizers/${fertilizer.id}/step/${step - 1}`)
               }
-              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+              className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
             >
               {t("wizard.previous")}
             </button>
@@ -217,7 +217,7 @@ export default function FertilizerForm({
             type="button"
             disabled={busy}
             onClick={() => navigate("/admin/fertilizers")}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
           >
             {t(viewOnly ? "back" : "cancel")}
           </button>
@@ -231,7 +231,7 @@ export default function FertilizerForm({
                   (!fertilizer?.ready_to_finalize ||
                     (!canReview && fertilizer.requested_is_active)))
               }
-              className="bg-brand-500 hover:bg-brand-600 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="bg-brand-500 hover:bg-brand-600 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
             >
               {t(busy ? "saving" : step === 5 ? "wizard.save" : "wizard.next")}
               <ArrowRightIcon

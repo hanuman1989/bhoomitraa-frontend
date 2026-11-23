@@ -43,13 +43,15 @@ class ApiError extends Error {
 }
 const payload = {
   crop_stage_id: 4,
-  crop_variety_id: null,
-  season_id: null,
-  source_id: 9,
-  days_after_sowing_min: 0,
-  days_after_sowing_max: 10,
+  variety_scope: "all",
+  crop_variety_ids: [],
+  season_scope: "all",
+  season_ids: [],
+  knowledge_source_ids: [9],
   region_scope: "specific",
   region_ids: [101, 102],
+  days_after_sowing_min: 0,
+  days_after_sowing_max: 10,
 };
 const timeline = {
   id: 42,
@@ -57,10 +59,43 @@ const timeline = {
   crop_id: 3,
   crop_name: "Wheat",
   crop_stage_name: "Tillering",
-  crop_variety_name: null,
-  season_name: null,
-  source_title: "ICAR",
+  varieties: [],
+  seasons: [],
+  knowledge_sources: [
+    {
+      id: 9,
+      title: "ICAR",
+      verification_status: "verified",
+      is_active: true,
+    },
+  ],
+  regions: [],
   is_active: false,
+};
+const specificTimeline = {
+  ...timeline,
+  variety_scope: "specific",
+  crop_variety_ids: [5, 51],
+  varieties: [
+    { id: 5, name: "Pusa Bold" },
+    { id: 51, name: "Pioneer 45S35" },
+  ],
+  season_scope: "specific",
+  season_ids: [6, 61],
+  seasons: [
+    { id: 6, name: "Rabi" },
+    { id: 61, name: "Zaid" },
+  ],
+  knowledge_source_ids: [9, 10],
+  knowledge_sources: [
+    ...timeline.knowledge_sources,
+    {
+      id: 10,
+      title: "Growth and development of Indian mustard",
+      verification_status: "pending",
+      is_active: false,
+    },
+  ],
 };
 
 function harness(responses = [], admin = true) {
@@ -165,10 +200,45 @@ test("timeline saves allowlist schema fields, preserve zero and null IDs and cre
   await all.actions.saveStageTimeline(42, { ...payload, region_scope: "all" });
   assert.deepEqual(all.requests[0].options.data.region_ids, []);
 });
+test("timeline saves send multiple varieties/seasons/sources, clear All-scope selections and allow no knowledge sources", async () => {
+  const specific = {
+    ...payload,
+    variety_scope: "specific",
+    crop_variety_ids: [5, 51],
+    season_scope: "specific",
+    season_ids: [6, 61],
+    knowledge_source_ids: [9, 10],
+  };
+  const h = harness(Array(3).fill({ status: true, data: timeline }));
+  await h.actions.saveStageTimeline(null, specific);
+  assert.deepEqual(h.requests[0].options.data, specific);
+  await h.actions.saveStageTimeline(42, {
+    ...specific,
+    variety_scope: "all",
+    season_scope: "all",
+  });
+  const cleared = h.requests[1].options.data;
+  assert.deepEqual(
+    [
+      cleared.crop_variety_ids,
+      cleared.season_ids,
+      cleared.knowledge_source_ids,
+    ],
+    [[], [], [9, 10]],
+  );
+  const withoutSources = await h.actions.saveStageTimeline(42, {
+    ...specific,
+    knowledge_source_ids: [],
+  });
+  assert.equal(withoutSources.success, true);
+  assert.deepEqual(h.requests[2].options.data.knowledge_source_ids, []);
+  for (const field of ["crop_variety_id", "season_id", "source_id"])
+    assert.equal(field in h.requests[0].options.data, false);
+});
 test("timeline failures preserve indexed district errors, publication/deletion conflicts and Next control flow", async () => {
   const error = new ApiError("Invalid district", 422, {
     "region_ids.0": ["Inactive"],
-    crop_variety_id: ["Wrong crop"],
+    "crop_variety_ids.1": ["Wrong crop"],
   });
   const h = harness([error]);
   assert.equal(
@@ -214,6 +284,12 @@ test("every timeline mutation and lookup authenticates and constrains unsafe arg
     { ...payload, days_after_sowing_min: 0.5 },
     { ...payload, days_after_sowing_max: 4294967296 },
     { ...payload, region_scope: "state" },
+    { ...payload, variety_scope: "some" },
+    { ...payload, season_scope: undefined },
+    { ...payload, crop_variety_ids: [5, 5] },
+    { ...payload, season_ids: [0] },
+    { ...payload, knowledge_source_ids: null },
+    { ...payload, knowledge_source_ids: [9, 9] },
   ])
     assert.equal(
       (await h.actions.saveStageTimeline(null, invalid)).success,
@@ -627,26 +703,35 @@ test("English and Hindi timeline keys and interpolation parameters match", () =>
   compare(en, hi);
 });
 
-test("changing crop clears only dependent stage/variety fields; timing validates zero, integers and range", () => {
+function fieldsHarness(initial = {}) {
   const values = {
     crop_id: "3",
     crop_stage_id: "4",
-    crop_variety_id: "5",
-    season_id: "6",
-    source_id: "9",
+    variety_scope: "specific",
+    crop_variety_ids: [5, 51],
+    season_scope: "specific",
+    season_ids: [6],
+    knowledge_source_ids: [9],
     days_after_sowing_min: "0",
     days_after_sowing_max: "10",
+    ...initial,
   };
-  const rules = {};
+  const rules = {},
+    cleared = [];
   const Fields = load(`${root}_components/StageTimelineFields.tsx`, {
     ...ui,
     "react-hook-form": {
       Controller: "controller",
-      useWatch: () => values.crop_id,
+      useWatch: ({ name }) => values[name],
     },
     "@/components/admin/common/ComponentCard": {
       __esModule: true,
       default: "card",
+    },
+    "@/app/[locale]/(admin)/admin/(pages)/crop-activity-templates/_components/CropActivityTemplateMultiSelect":
+      { __esModule: true, default: "multi" },
+    "@/types/admin/cropActivityTemplate": {
+      applicabilityScopes: ["all", "specific"],
     },
     "./TimelineRelationSelect": { __esModule: true, default: "relation" },
   }).default;
@@ -657,58 +742,154 @@ test("changing crop clears only dependent stage/variety fields; timing validates
       return { name };
     },
     setValue: (name, value) => {
-      values[name] = value;
+      values[name] = clone(value);
     },
     getValues: (name) => values[name],
-    clearErrors() {},
+    clearErrors(names) {
+      cleared.push(...[names].flat());
+    },
     trigger() {},
     formState: { errors: {} },
   };
-  const tree = Fields({
-    form,
-    choices: {},
-    selections: {},
-    initialCrop: "3",
-    busy: false,
+  const render = (multiSelections) =>
+    Fields({
+      form,
+      choices: {},
+      selections: {},
+      multiSelections,
+      initialCrop: "3",
+      busy: false,
+    });
+  const controllers = (tree) =>
+    findAll(tree, (element) => element.type === "controller");
+  const controller = (tree, name) =>
+    controllers(tree).find((element) => element.props.name === name);
+  const field = (name) => ({
+    name,
+    value: values[name],
+    onChange: (value) => {
+      values[name] = value;
+    },
   });
-  const controllers = findAll(tree, (element) => element.type === "controller");
-  const crop = controllers.find((element) => element.props.name === "crop_id");
-  crop.props
-    .render({
-      field: {
-        value: values.crop_id,
-        onChange: (value) => {
-          values.crop_id = value;
-        },
-      },
-    })
+  return { values, rules, cleared, render, controller, field };
+}
+
+test("changing crop clears only crop-dependent stage/variety selections; timing validates zero, integers and range", () => {
+  const h = fieldsHarness();
+  const tree = h.render();
+  h.controller(tree, "crop_id")
+    .props.render({ field: h.field("crop_id") })
     .props.onChange("8");
-  assert.equal(values.crop_stage_id, "");
-  assert.equal(values.crop_variety_id, "");
-  assert.equal(values.source_id, "9");
-  assert.equal(values.season_id, "6");
-  assert.equal(values.days_after_sowing_max, "10");
+  assert.equal(h.values.crop_stage_id, "");
+  assert.deepEqual(h.values.crop_variety_ids, []);
+  assert.equal(h.values.variety_scope, "specific");
+  assert.deepEqual(h.values.season_ids, [6]);
+  assert.deepEqual(h.values.knowledge_source_ids, [9]);
+  assert.equal(h.values.days_after_sowing_max, "10");
+  assert.equal(h.rules.days_after_sowing_min.validate("0"), true);
   assert.equal(
-    controllers.find((element) => element.props.name === "crop_variety_id")
-      .props.rules.required,
-    undefined,
-  );
-  assert.equal(
-    controllers.find((element) => element.props.name === "season_id").props
-      .rules.required,
-    undefined,
-  );
-  assert.equal(rules.days_after_sowing_min.validate("0"), true);
-  assert.equal(rules.days_after_sowing_min.validate("1.5"), "validation.days");
-  assert.equal(
-    rules.days_after_sowing_max.validate.integer("-1"),
+    h.rules.days_after_sowing_min.validate("1.5"),
     "validation.days",
   );
-  values.days_after_sowing_min = "20";
   assert.equal(
-    rules.days_after_sowing_max.validate.range("10"),
+    h.rules.days_after_sowing_max.validate.integer("-1"),
+    "validation.days",
+  );
+  h.values.days_after_sowing_min = "20";
+  assert.equal(
+    h.rules.days_after_sowing_max.validate.range("10"),
     "validation.range",
   );
+});
+
+test("variety and season scopes: All hides and clears selections, Specific requires distinct selections, sources stay optional", () => {
+  const h = fieldsHarness();
+  let tree = h.render();
+  const varieties = h.controller(tree, "crop_variety_ids");
+  const seasons = h.controller(tree, "season_ids");
+  assert.equal(varieties.props.rules.validate([]), "validation.varieties");
+  assert.equal(varieties.props.rules.validate([5, 5]), "validation.varieties");
+  assert.equal(varieties.props.rules.validate([5, 51]), true);
+  assert.equal(seasons.props.rules.validate([]), "validation.seasons");
+  assert.equal(seasons.props.rules.validate([6, 61]), true);
+  const sources = h.controller(tree, "knowledge_source_ids");
+  assert.equal(sources.props.rules.validate([]), true);
+  assert.equal(sources.props.rules.validate([9, 10]), true);
+  const sourceSelect = sources.props.render({
+    field: h.field("knowledge_source_ids"),
+  });
+  assert.equal(sourceSelect.type, "multi");
+  assert.equal(sourceSelect.props.kind, "source");
+  assert.equal(sourceSelect.props.label, "fields.knowledgeSources");
+  assert.equal(sourceSelect.props.required, undefined);
+  const varietySelect = varieties.props.render({
+    field: h.field("crop_variety_ids"),
+  });
+  assert.equal(varietySelect.props.kind, "variety");
+  assert.equal(varietySelect.props.cropId, 3);
+  assert.equal(varietySelect.props.required, true);
+  assert.equal(varietySelect.props.placeholder, "placeholders.varieties");
+
+  for (const [scopeName, idsName] of [
+    ["variety_scope", "crop_variety_ids"],
+    ["season_scope", "season_ids"],
+  ]) {
+    const fieldset = h.controller(tree, scopeName).props.render({
+      field: h.field(scopeName),
+    });
+    const radios = findAll(
+      fieldset,
+      (element) => element.type === "input" && element.props.type === "radio",
+    );
+    assert.deepEqual(
+      radios.map((radio) => radio.props.value),
+      ["all", "specific"],
+    );
+    radios[0].props.onChange();
+    assert.equal(h.values[scopeName], "all");
+    assert.deepEqual(h.values[idsName], []);
+    assert.ok(h.cleared.includes(idsName));
+  }
+  tree = h.render();
+  assert.equal(h.controller(tree, "crop_variety_ids"), undefined);
+  assert.equal(h.controller(tree, "season_ids"), undefined);
+  assert.ok(h.controller(tree, "knowledge_source_ids"));
+  // Hidden all-scope selections are always valid.
+  assert.equal(varieties.props.rules.validate([]), true);
+});
+
+test("saved multi-select chips render from backend relations and the variety selector waits for a crop", () => {
+  const h = fieldsHarness({ crop_id: "" });
+  const multiSelections = {
+    varieties: [{ id: 5, label: "Pusa Bold" }],
+    seasons: [{ id: 6, label: "Rabi" }],
+    knowledgeSources: [
+      { id: 10, label: "Long source title", is_active: false },
+    ],
+  };
+  const tree = h.render(multiSelections);
+  const variety = h
+    .controller(tree, "crop_variety_ids")
+    .props.render({ field: h.field("crop_variety_ids") });
+  assert.equal(variety.props.disabled, true);
+  assert.deepEqual(clone(variety.props.initialSelected), []);
+  const season = h
+    .controller(tree, "season_ids")
+    .props.render({ field: h.field("season_ids") });
+  assert.deepEqual(season.props.initialSelected, multiSelections.seasons);
+  const source = h
+    .controller(tree, "knowledge_source_ids")
+    .props.render({ field: h.field("knowledge_source_ids") });
+  assert.deepEqual(
+    source.props.initialSelected,
+    multiSelections.knowledgeSources,
+  );
+  const sameCrop = fieldsHarness();
+  const saved = sameCrop
+    .controller(sameCrop.render(multiSelections), "crop_variety_ids")
+    .props.render({ field: sameCrop.field("crop_variety_ids") });
+  assert.deepEqual(saved.props.initialSelected, multiSelections.varieties);
+  assert.equal(saved.props.disabled, false);
 });
 
 test("All Regions hides the tree, Specific requires districts, and saved inactive selections remain valid drafts", () => {
@@ -821,8 +1002,16 @@ function editorHarness(savedTimeline = timeline) {
         ),
     },
     "./StageTimelineForm": "form",
+    "./StageTimelineCreateReset": "reset",
   }).default;
-  return { Editor, lookups, choices };
+  const wrappers = [];
+  // Unwrap the create-only reset boundary so assertions read the form props.
+  async function UnwrappedEditor(props) {
+    const tree = await Editor(props);
+    wrappers.push(tree.type);
+    return tree.type === "reset" ? tree.props.children : tree;
+  }
+  return { Editor: UnwrappedEditor, lookups, choices, wrappers };
 }
 
 test("timeline create resolves all query dropdowns outside the first options page and loads dependent choices for the crop", async () => {
@@ -834,6 +1023,14 @@ test("timeline create resolves all query dropdowns outside the first options pag
   });
   assert.equal(tree.type, "form");
   assert.deepEqual(clone(h.choices), [[3, true, true]]);
+  assert.deepEqual(
+    [
+      tree.props.multiSelections.varieties[0].id,
+      tree.props.multiSelections.seasons[0].id,
+      tree.props.multiSelections.knowledgeSources[0].id,
+    ],
+    [5, 6, 9],
+  );
   for (const [kind, id] of [
     ["crop", 3],
     ["stage", 4],
@@ -848,6 +1045,23 @@ test("timeline create resolves all query dropdowns outside the first options pag
       ),
     );
   }
+});
+
+test("only the Add form is wrapped in the fresh-navigation reset boundary; Edit is unchanged", async () => {
+  const h = editorHarness();
+  await h.Editor({
+    searchParams: Promise.resolve({ crop_id: "3", crop_variety_id: "5" }),
+  });
+  await h.Editor({ id: "42" });
+  assert.deepEqual(h.wrappers, ["reset", "form"]);
+  const Reset = load(`${root}_components/StageTimelineCreateReset.tsx`, {
+    react: { Fragment: "fragment" },
+    "@/i18n/navigation": { useRouter: () => ({ bfcacheId: "nav-2" }) },
+  }).default;
+  const tree = Reset({ children: "child" });
+  assert.equal(tree.type, "fragment");
+  assert.equal(tree.key, "nav-2");
+  assert.equal(tree.props.children, "child");
 });
 
 test("timeline create rejects mismatched parent relations and unavailable query options while supporting stage-only filters", async () => {
@@ -901,6 +1115,32 @@ test("timeline edit restores saved relations and ignores conflicting query defau
   assert.equal(tree.props.selections.crop.id, timeline.crop_id);
   assert.equal(tree.props.selections.stage.id, timeline.crop_stage_id);
   assert.equal(h.lookups.length, 0);
+  const saved = await editorHarness(specificTimeline).Editor({ id: "42" });
+  assert.deepEqual(clone(saved.props.multiSelections), {
+    varieties: [
+      { id: 5, label: "Pusa Bold" },
+      { id: 51, label: "Pioneer 45S35" },
+    ],
+    seasons: [
+      { id: 6, label: "Rabi" },
+      { id: 61, label: "Zaid" },
+    ],
+    knowledgeSources: [
+      { id: 9, label: "ICAR", is_active: true, verified: true },
+      {
+        id: 10,
+        label: "Growth and development of Indian mustard",
+        is_active: false,
+        verified: false,
+      },
+    ],
+  });
+  const empty = await editorHarness({
+    ...timeline,
+    knowledge_source_ids: [],
+    knowledge_sources: [],
+  }).Editor({ id: "42" });
+  assert.deepEqual(clone(empty.props.multiSelections.knowledgeSources), []);
 });
 
 function formHarness({
@@ -1035,14 +1275,17 @@ test("timeline form synchronizes reused query defaults without clearing timing, 
   h.form.setValue("region_ids", [101]);
   h.form.setValue("crop_id", "7");
   h.form.setValue("crop_stage_id", "44");
-  h.form.setValue("crop_variety_id", "55");
+  h.form.setValue("crop_variety_ids", [55]);
   h.render();
   assert.equal(h.form.getValues("crop_id"), "7");
+  assert.equal(h.form.getValues("season_scope"), "specific");
+  assert.deepEqual(clone(h.form.getValues("season_ids")), [6]);
   h.changeQuery("crop_id=3&season_id=", {
     ...h.props.selections,
     season: undefined,
   });
-  assert.equal(h.form.getValues("season_id"), "");
+  assert.equal(h.form.getValues("season_scope"), "all");
+  assert.deepEqual(clone(h.form.getValues("season_ids")), []);
   assert.equal(
     h.form.getValues("crop_id"),
     "7",
@@ -1054,7 +1297,7 @@ test("timeline form synchronizes reused query defaults without clearing timing, 
   });
   assert.equal(h.form.getValues("crop_id"), "3");
   assert.equal(h.form.getValues("crop_stage_id"), "10");
-  assert.equal(h.form.getValues("crop_variety_id"), "5");
+  assert.deepEqual(clone(h.form.getValues("crop_variety_ids")), [5]);
   h.changeQuery("crop_id=7&crop_stage_id=44&crop_variety_id=55", {
     ...h.props.selections,
     crop: queryOptions.crop[7],
@@ -1070,10 +1313,11 @@ test("timeline form synchronizes reused query defaults without clearing timing, 
   });
   assert.equal(h.form.getValues("crop_id"), "3");
   assert.equal(h.form.getValues("crop_stage_id"), "4");
-  assert.equal(h.form.getValues("crop_variety_id"), "5");
+  assert.equal(h.form.getValues("variety_scope"), "specific");
+  assert.deepEqual(clone(h.form.getValues("crop_variety_ids")), [5]);
   assert.equal(h.form.getValues("days_after_sowing_max"), "15");
-  assert.deepEqual(h.form.getValues("region_ids"), [101]);
-  assert.equal(h.form.getValues("source_id"), "9");
+  assert.deepEqual(clone(h.form.getValues("region_ids")), [101]);
+  assert.deepEqual(clone(h.form.getValues("knowledge_source_ids")), [9]);
   h.cleanup();
 });
 
@@ -1089,7 +1333,93 @@ test("timeline form edit uses saved values despite different query selections", 
   });
   assert.equal(h.form.getValues("crop_id"), "3");
   assert.equal(h.form.getValues("crop_stage_id"), "4");
-  assert.equal(h.form.getValues("crop_variety_id"), "");
+  assert.equal(h.form.getValues("variety_scope"), "all");
+  assert.deepEqual(clone(h.form.getValues("crop_variety_ids")), []);
+  assert.deepEqual(clone(h.form.getValues("knowledge_source_ids")), [9]);
+  h.cleanup();
+});
+
+test("timeline edit hydrates multiple saved selections and an unchanged save resubmits the same applicability", async () => {
+  const h = formHarness({ saved: specificTimeline, query: "" });
+  h.changeQuery("crop_id=7&crop_variety_id=55&season_id=66", {
+    ...h.props.selections,
+    variety: queryOptions.variety[55],
+    season: queryOptions.season[66],
+    source: undefined,
+  });
+  assert.equal(h.form.getValues("variety_scope"), "specific");
+  assert.deepEqual(clone(h.form.getValues("crop_variety_ids")), [5, 51]);
+  assert.deepEqual(clone(h.form.getValues("season_ids")), [6, 61]);
+  assert.deepEqual(clone(h.form.getValues("knowledge_source_ids")), [9, 10]);
+  await h.submit();
+  const sent = h.calls[0][1];
+  assert.equal(h.calls[0][0], 42);
+  assert.deepEqual(
+    {
+      variety_scope: sent.variety_scope,
+      crop_variety_ids: sent.crop_variety_ids,
+      season_scope: sent.season_scope,
+      season_ids: sent.season_ids,
+      knowledge_source_ids: sent.knowledge_source_ids,
+      region_scope: sent.region_scope,
+      region_ids: sent.region_ids,
+      days: [sent.days_after_sowing_min, sent.days_after_sowing_max],
+    },
+    {
+      variety_scope: "specific",
+      crop_variety_ids: [5, 51],
+      season_scope: "specific",
+      season_ids: [6, 61],
+      knowledge_source_ids: [9, 10],
+      region_scope: "specific",
+      region_ids: [101, 102],
+      days: [0, 10],
+    },
+  );
+  assert.equal("is_active" in sent, false);
+  h.cleanup();
+});
+
+test("timeline save maps indexed variety, season and source errors to their multi-selects and clears specific scopes to All", async () => {
+  const h = formHarness({
+    saved: specificTimeline,
+    query: "",
+    responses: [
+      {
+        success: false,
+        message: "Invalid",
+        errors: {
+          "crop_variety_ids.1": ["Wrong crop"],
+          "season_ids.0": ["Inactive season"],
+          "knowledge_source_ids.1": ["Unverified source"],
+          season_scope: ["Bad scope"],
+        },
+      },
+    ],
+  });
+  await h.submit();
+  assert.equal(
+    h.form.getFieldState("crop_variety_ids").error.message,
+    "Wrong crop",
+  );
+  assert.equal(
+    h.form.getFieldState("season_ids").error.message,
+    "Inactive season",
+  );
+  assert.equal(
+    h.form.getFieldState("knowledge_source_ids").error.message,
+    "Unverified source",
+  );
+  assert.equal(h.form.getFieldState("season_scope").error.message, "Bad scope");
+  assert.deepEqual(clone(h.form.getValues("crop_variety_ids")), [5, 51]);
+  assert.equal(h.navigations.length, 0);
+  h.form.setValue("variety_scope", "all");
+  h.form.setValue("knowledge_source_ids", []);
+  await h.submit();
+  const sent = h.calls[1][1];
+  assert.deepEqual(clone(sent.crop_variety_ids), []);
+  assert.deepEqual(clone(sent.knowledge_source_ids), []);
+  assert.deepEqual(clone(sent.season_ids), [6, 61]);
   h.cleanup();
 });
 
@@ -1303,6 +1633,26 @@ test("timeline content carries full URL parameters into Add/Edit links without s
     `/admin/crop-stage-timelines/42/edit?${list.props.returnQuery}`,
   );
   assert.equal(links[1].props.href, "/admin/knowledge-sources/9");
+  const many = findAll(
+    RowActions({ timeline: specificTimeline, name: "Timeline" }),
+    (node) => node.type === "link",
+  );
+  assert.deepEqual(
+    many.slice(1).map((link) => link.props.href),
+    ["/admin/knowledge-sources/9", "/admin/knowledge-sources/10"],
+  );
+  const none = findAll(
+    RowActions({
+      timeline: {
+        ...timeline,
+        knowledge_source_ids: [],
+        knowledge_sources: [],
+      },
+      name: "Timeline",
+    }),
+    (node) => node.type === "link",
+  );
+  assert.equal(none.length, 1);
 });
 
 test("timeline create page passes search parameters into the existing editor boundary", async () => {
@@ -1354,12 +1704,18 @@ test("timeline listing has seven columns, shows variety under crop and formats e
       data: [
         {
           ...timeline,
-          crop_variety_name: "HD-2967",
+          variety_scope: "specific",
+          varieties: [
+            { id: 5, name: "HD-2967" },
+            { id: 51, name: "PBW-343" },
+            { id: 52, name: "DBW-187" },
+          ],
           days_after_sowing_max: 0,
           added_at: "5 Nov 2026 10:30 AM",
         },
+        { ...specificTimeline, id: 43, variety_scope: "all", varieties: [] },
       ],
-      pagination: { total: 1, current_page: 1, last_page: 1, from: 1, to: 1 },
+      pagination: { total: 2, current_page: 1, last_page: 1, from: 1, to: 2 },
     },
     filtered: false,
     returnQuery: queryString,
@@ -1399,27 +1755,47 @@ test("timeline listing has seven columns, shows variety under crop and formats e
     1,
   );
   assert.equal(
-    findAll(
-      cropCell,
-      (element) => element.type === "p" && element.props.children === "HD-2967",
-    ).length,
+    findAll(cropCell, (element) => element.props.children === "HD-2967").length,
     1,
   );
-  assert.equal(
+  assert.ok(
+    findAll(
+      cropCell,
+      (element) =>
+        element.props.className === "sr-only" &&
+        element.props.children === "HD-2967, PBW-343, DBW-187",
+    ).length,
+  );
+  assert.ok(
+    findAll(cropCell, (element) =>
+      [element.props.children].flat().includes("+1"),
+    ).length,
+  );
+  const cells = findAll(
+    tree,
+    (element) => element.type === "td" && !element.props.isHeader,
+  );
+  const text = (node) =>
+    findAll(node, () => true)
+      .flatMap((element) => [element.props.children].flat())
+      .filter((child) => typeof child === "string");
+  assert.ok(text(cells[2]).includes("applicability.allSeasons"));
+  assert.ok(text(cells[7]).includes("applicability.allVarieties"));
+  assert.ok(text(cells[9]).includes("Rabi"));
+  assert.ok(text(cells[9]).includes("Zaid"));
+  assert.ok(
     findAll(
       tree,
       (element) =>
         element.type === "td" && element.props.children === "daysSingle",
-    ).length,
-    1,
+    ).length >= 1,
   );
-  assert.equal(
+  assert.ok(
     findAll(
       tree,
       (element) =>
         element.type === "td" &&
         element.props.children === "5 Nov 2026 10:30 AM",
-    ).length,
-    1,
+    ).length >= 1,
   );
 });

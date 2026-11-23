@@ -11,7 +11,10 @@ import {
   getTimelineSelections,
   getTimelineRegions,
 } from "@/lib/apis/admin/cropStageTimelines";
-import type { CropActivityTemplate } from "@/types/admin/cropActivityTemplate";
+import type {
+  CropActivityTemplate,
+  TemplateSelectionOption,
+} from "@/types/admin/cropActivityTemplate";
 import type {
   TimelineChoices,
   TimelineSelections,
@@ -28,6 +31,11 @@ export default async function CropActivityTemplateEditor({
   let template: CropActivityTemplate | null = null;
   let choices: TimelineChoices,
     selections: TimelineSelections,
+    multiSelections: {
+      varieties: TemplateSelectionOption[];
+      seasons: TemplateSelectionOption[];
+      knowledgeSources: TemplateSelectionOption[];
+    },
     states: TimelineState[];
   let canReview = false;
   try {
@@ -48,13 +56,30 @@ export default async function CropActivityTemplateEditor({
     selections = template
       ? await getTimelineSelections(choices, {
           crop: template.crop_id,
-          variety: template.crop_variety_id,
           category: template.category_id,
           stage: template.crop_stage_id,
-          season: template.season_id,
-          source: template.source_id,
         })
       : {};
+    multiSelections = template
+      ? {
+          varieties: template.varieties.map(({ id, name }) => ({
+            id,
+            label: name ?? t("recordId", { id }),
+          })),
+          seasons: template.seasons.map(({ id, name }) => ({
+            id,
+            label: name ?? t("recordId", { id }),
+          })),
+          knowledgeSources: template.knowledge_sources.map(
+            ({ id, title, is_active, verification_status }) => ({
+              id,
+              label: title ?? t("recordId", { id }),
+              is_active,
+              verified: verification_status === "verified",
+            }),
+          ),
+        }
+      : { varieties: [], seasons: [], knowledgeSources: [] };
   } catch (error: unknown) {
     if (error instanceof ApiError && error.status === 404) notFound();
     const failure = await handleActionError(error, t("feedback.loadFailed"));
@@ -73,6 +98,7 @@ export default async function CropActivityTemplateEditor({
       template={template}
       choices={choices}
       selections={selections}
+      multiSelections={multiSelections}
       states={states}
       canReview={canReview}
     />

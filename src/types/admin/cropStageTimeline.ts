@@ -1,5 +1,12 @@
 import type { PaginationMeta, PaginatedResponse } from "@/types/api";
 import type { Region } from "@/types/admin/region";
+import type {
+  ApplicabilityScope,
+  TemplateKnowledgeSourceRelation,
+  TemplateNamedRelation,
+  TemplateSeasonRelation,
+  TemplateSelectionOption,
+} from "@/types/admin/cropActivityTemplate";
 
 export type RegionScope = "all" | "specific";
 export interface StageTimelineListItem {
@@ -9,14 +16,16 @@ export interface StageTimelineListItem {
   crop_color?: string | null;
   crop_stage_id: number;
   crop_stage_name: string | null;
-  crop_variety_id: number | null;
-  crop_variety_name: string | null;
-  season_id: number | null;
-  season_name: string | null;
+  variety_scope: ApplicabilityScope;
+  crop_variety_ids: number[];
+  varieties: TemplateNamedRelation[];
+  season_scope: ApplicabilityScope;
+  season_ids: number[];
+  seasons: TemplateSeasonRelation[];
   days_after_sowing_min: number;
   days_after_sowing_max: number;
-  source_id: number;
-  source_title: string | null;
+  knowledge_source_ids: number[];
+  knowledge_sources: TemplateKnowledgeSourceRelation[];
   is_active: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -29,9 +38,11 @@ export interface StageTimeline extends StageTimelineListItem {
 }
 export interface StageTimelinePayload {
   crop_stage_id: number;
-  crop_variety_id: number | null;
-  season_id: number | null;
-  source_id: number;
+  variety_scope: ApplicabilityScope;
+  crop_variety_ids: number[];
+  season_scope: ApplicabilityScope;
+  season_ids: number[];
+  knowledge_source_ids: number[];
   days_after_sowing_min: number;
   days_after_sowing_max: number;
   region_scope: RegionScope;
@@ -40,13 +51,21 @@ export interface StageTimelinePayload {
 export interface StageTimelineFormValues {
   crop_id: string;
   crop_stage_id: string;
-  crop_variety_id: string;
-  season_id: string;
-  source_id: string;
+  variety_scope: ApplicabilityScope;
+  crop_variety_ids: number[];
+  season_scope: ApplicabilityScope;
+  season_ids: number[];
+  knowledge_source_ids: number[];
   days_after_sowing_min: string;
   days_after_sowing_max: string;
   region_scope: RegionScope;
   region_ids: number[];
+}
+/** Chip labels for saved or query-selected multi-select values. */
+export interface StageTimelineMultiSelections {
+  varieties: TemplateSelectionOption[];
+  seasons: TemplateSelectionOption[];
+  knowledgeSources: TemplateSelectionOption[];
 }
 export interface StageTimelineFilters {
   keyword: string;

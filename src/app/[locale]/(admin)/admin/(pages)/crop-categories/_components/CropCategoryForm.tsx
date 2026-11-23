@@ -264,13 +264,13 @@ export default function CropCategoryForm({
           type="button"
           disabled={busy}
           onClick={() => router.push("/admin/crop-categories")}
-          className="focus-visible:outline-brand-500 rounded-xl border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+          className="focus-visible:outline-brand-500 h-9 rounded-xl border border-gray-300 px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
         >
           {t("form.cancel")}
         </button>
         <button
           disabled={busy}
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex h-9 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
         >
           <CheckLineIcon aria-hidden="true" className="size-5" />
           {busy

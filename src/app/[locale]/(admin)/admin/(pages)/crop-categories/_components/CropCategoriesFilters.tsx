@@ -59,7 +59,7 @@ export default function CropCategoriesFilters({
               setFilters({ ...filters, keyword: event.target.value })
             }
             placeholder={t("filters.placeholder")}
-            className="h-12 ps-10"
+            className="h-9 ps-10"
           />
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function CropCategoriesFilters({
       <div className="flex gap-3 sm:col-span-2 2xl:col-span-1 2xl:justify-end">
         <button
           disabled={pending}
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-12 rounded-lg px-6 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
         >
           {pending ? t("filters.applying") : t("filters.apply")}
         </button>
@@ -93,7 +93,7 @@ export default function CropCategoriesFilters({
             setFilters({ keyword: "", status: "" });
             startTransition(() => router.push(pathname));
           }}
-          className="focus-visible:outline-brand-500 h-12 rounded-lg border border-gray-300 px-6 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
         >
           {t("filters.reset")}
         </button>

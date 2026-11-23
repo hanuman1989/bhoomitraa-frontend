@@ -105,7 +105,7 @@ export default function CropVarietyConfirmDialog({
                 type="button"
                 disabled={pending}
                 onClick={onClose}
-                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                className="h-9 rounded-lg border border-gray-300 px-4 text-sm text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
               >
                 {t("cancel")}
               </button>
@@ -113,7 +113,7 @@ export default function CropVarietyConfirmDialog({
                 type="button"
                 disabled={pending}
                 onClick={confirm}
-                className={`rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${operation === "delete" ? "bg-error-600 hover:bg-error-700" : "bg-brand-600 hover:bg-brand-700"}`}
+                className={`h-9 rounded-lg px-4 text-sm font-medium text-white disabled:opacity-50 ${operation === "delete" ? "bg-error-600 hover:bg-error-700" : "bg-brand-600 hover:bg-brand-700"}`}
               >
                 {pending ? t("saving") : t(`actions.${operation}`)}
               </button>

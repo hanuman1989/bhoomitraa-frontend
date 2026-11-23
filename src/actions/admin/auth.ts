@@ -22,21 +22,28 @@ export async function loginAdmin(
   const isChecked = values?.isChecked === true;
 
   try {
-    const response = await adminAuthAPI.login({ email, password, isChecked });
+    const response = await adminAuthAPI.login({
+      email,
+      password,
+      remember: isChecked,
+    });
     const token = response?.data?.access_token;
+    const expiresAt = response?.data?.expires_at;
 
-    if (!response?.status || typeof token !== "string" || !token) {
+    if (
+      !response?.status ||
+      typeof token !== "string" ||
+      !token ||
+      typeof expiresAt !== "string"
+    ) {
       return {
         success: false,
         message: response?.message || tUi("invalidAuthenticationResponse"),
       };
     }
 
-    console.log(token);
-
-    // IMPORTANT: the session setter must cap cookie expiration to
-    // response.data.expires_at (Laravel token expiration).
-    await setAdminToken(token, isChecked);
+    // Cookie expiry matches the Laravel Sanctum token's expires_at exactly.
+    await setAdminToken(token, expiresAt);
 
     return {
       success: true,

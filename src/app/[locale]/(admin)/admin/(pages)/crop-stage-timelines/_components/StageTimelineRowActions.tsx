@@ -52,20 +52,25 @@ export default function StageTimelineRowActions({
               {t("actions.edit")}
             </Link>
           </MenuItem>
-          <MenuItem>
-            <Link
-              href={`/admin/knowledge-sources/${timeline.source_id}`}
-              className={item}
-            >
-              <DocsIcon aria-hidden="true" className="size-4 shrink-0" />
-              <span className="min-w-0">
-                <span className="block">{t("fields.source")}</span>
-                <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
-                  {timeline.source_title ?? t("notAvailable")}
+          {timeline.knowledge_sources.map((source) => (
+            <MenuItem key={source.id}>
+              <Link
+                href={`/admin/knowledge-sources/${source.id}`}
+                className={item}
+              >
+                <DocsIcon aria-hidden="true" className="size-4 shrink-0" />
+                <span className="min-w-0">
+                  <span className="block">{t("fields.source")}</span>
+                  <span
+                    className="block truncate text-xs text-gray-500 dark:text-gray-400"
+                    title={source.title ?? undefined}
+                  >
+                    {source.title ?? t("recordId", { id: source.id })}
+                  </span>
                 </span>
-              </span>
-            </Link>
-          </MenuItem>
+              </Link>
+            </MenuItem>
+          ))}
           <MenuItem>
             <button
               type="button"

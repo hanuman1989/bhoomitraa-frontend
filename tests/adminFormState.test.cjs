@@ -1382,15 +1382,16 @@ test("Growth stage edits retain saved optional and legacy locales and preserve d
 });
 
 const timelineValues = {
-  crop_id: "3", crop_stage_id: "4", crop_variety_id: "", season_id: "", source_id: "9",
-  days_after_sowing_min: "0", days_after_sowing_max: "10", region_scope: "all", region_ids: [101, 102],
+  crop_id: "3", crop_stage_id: "4", variety_scope: "all", crop_variety_ids: [], season_scope: "all", season_ids: [],
+  knowledge_source_ids: [], days_after_sowing_min: "0", days_after_sowing_max: "10", region_scope: "all", region_ids: [101, 102],
 };
 const timelineRecord = {
-  id: 42, crop_id: 3, crop_stage_id: 4, crop_variety_id: null, season_id: null, source_id: 9,
+  id: 42, crop_id: 3, crop_stage_id: 4, variety_scope: "all", crop_variety_ids: [], varieties: [], season_scope: "all", season_ids: [], seasons: [],
+  knowledge_source_ids: [9], knowledge_sources: [{ id: 9, title: "ICAR", verification_status: "verified", is_active: true }],
   days_after_sowing_min: 0, days_after_sowing_max: 10, region_scope: "specific", region_ids: [101, 102], regions: [], is_active: false,
 };
 
-test("Timeline creates omit UI-only crop/status fields, preserve zero days and optional null IDs, clear all-region IDs and reset after saving", async () => {
+test("Timeline creates omit UI-only crop/status fields, preserve zero days and All scopes with no sources, clear all-region IDs and reset after saving", async () => {
   let sent;
   const form = formHarness("crop-stage-timelines/_components/StageTimelineForm.tsx", { timeline: null, choices: {}, selections: {}, states: [] }, {
     saveStageTimeline: async (id, payload) => { sent = { id, payload }; return { success: true, message: "Saved", data: timelineRecord }; },
@@ -1399,7 +1400,10 @@ test("Timeline creates omit UI-only crop/status fields, preserve zero days and o
   await form.submit();
   assert.equal(sent.id, null);
   assert.equal(sent.payload.days_after_sowing_min, 0);
-  assert.equal(sent.payload.crop_variety_id, null); assert.equal(sent.payload.season_id, null);
+  assert.equal(sent.payload.variety_scope, "all"); assert.deepEqual(clone(sent.payload.crop_variety_ids), []);
+  assert.equal(sent.payload.season_scope, "all"); assert.deepEqual(clone(sent.payload.season_ids), []);
+  assert.deepEqual(clone(sent.payload.knowledge_source_ids), []);
+  for (const field of ["crop_variety_id", "season_id", "source_id"]) assert.equal(field in sent.payload, false);
   assert.deepEqual(clone(sent.payload.region_ids), []);
   assert.equal("crop_id" in sent.payload, false); assert.equal("is_active" in sent.payload, false);
   assert.equal("description" in sent.payload, false); assert.equal("remarks" in sent.payload, false);
@@ -1407,7 +1411,7 @@ test("Timeline creates omit UI-only crop/status fields, preserve zero days and o
   assert.equal(form.navigations[0], "/admin/crop-stage-timelines"); enabled(form);
 });
 
-test("Timeline edit keeps saved district IDs and nullable relations, maps indexed region errors and preserves values for retry", async () => {
+test("Timeline edit keeps saved district IDs and applicability, maps indexed region errors and preserves values for retry", async () => {
   let success = false;
   let sent;
   const form = formHarness("crop-stage-timelines/_components/StageTimelineForm.tsx", { timeline: timelineRecord, choices: {}, selections: {}, states: [] }, {
@@ -1417,8 +1421,9 @@ test("Timeline edit keeps saved district IDs and nullable relations, maps indexe
     },
   });
   form.render();
-  assert.deepEqual(form.values().region_ids, [101, 102]); assert.equal(form.values().crop_variety_id, "");
-  const draft = { ...timelineValues, region_scope: "specific", crop_variety_id: "6", season_id: "7" };
+  assert.deepEqual(form.values().region_ids, [101, 102]); assert.equal(form.values().variety_scope, "all");
+  assert.deepEqual(form.values().knowledge_source_ids, [9]);
+  const draft = { ...timelineValues, region_scope: "specific", variety_scope: "specific", crop_variety_ids: [6], season_scope: "specific", season_ids: [7], knowledge_source_ids: [9] };
   form.fill(draft); await form.submit();
   assert.equal(sent.id, 42); assert.deepEqual(clone(sent.payload.region_ids), [101, 102]);
   assert.ok(form.fieldErrors.some((error) => error.field === "region_ids" && error.message === "Inactive district"));

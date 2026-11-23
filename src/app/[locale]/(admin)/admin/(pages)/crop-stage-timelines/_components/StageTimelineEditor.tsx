@@ -13,12 +13,14 @@ import {
 import type { PageSearchParams } from "@/types/api";
 import type {
   StageTimeline,
+  StageTimelineMultiSelections,
   TimelineChoices,
   TimelineSelections,
   TimelineState,
   TimelineRelationKind,
 } from "@/types/admin/cropStageTimeline";
 import StageTimelineForm from "./StageTimelineForm";
+import StageTimelineCreateReset from "./StageTimelineCreateReset";
 
 export default async function StageTimelineEditor({
   id,
@@ -31,6 +33,7 @@ export default async function StageTimelineEditor({
   let timeline: StageTimeline | null = null;
   let choices: TimelineChoices;
   let selections: TimelineSelections;
+  let multiSelections: StageTimelineMultiSelections;
   let states: TimelineState[];
   try {
     await requireAdmin();
@@ -93,11 +96,36 @@ export default async function StageTimelineEditor({
       ? await getTimelineSelections(choices, {
           crop: timeline.crop_id,
           stage: timeline.crop_stage_id,
-          variety: timeline.crop_variety_id,
-          season: timeline.season_id,
-          source: timeline.source_id,
         })
       : querySelections;
+    // Chip labels come from the saved relations so selections outside the
+    // first options page (including inactive ones) render by name.
+    multiSelections = timeline
+      ? {
+          varieties: timeline.varieties.map(({ id, name }) => ({
+            id,
+            label: name ?? t("recordId", { id }),
+          })),
+          seasons: timeline.seasons.map(({ id, name }) => ({
+            id,
+            label: name ?? t("recordId", { id }),
+          })),
+          knowledgeSources: timeline.knowledge_sources.map(
+            ({ id, title, is_active, verification_status }) => ({
+              id,
+              label: title ?? t("recordId", { id }),
+              is_active,
+              verified: verification_status === "verified",
+            }),
+          ),
+        }
+      : {
+          varieties: querySelections.variety ? [querySelections.variety] : [],
+          seasons: querySelections.season ? [querySelections.season] : [],
+          knowledgeSources: querySelections.source
+            ? [querySelections.source]
+            : [],
+        };
   } catch (error: unknown) {
     const failure = await handleActionError(error, t("feedback.loadFailed"));
     return (
@@ -109,13 +137,21 @@ export default async function StageTimelineEditor({
       </p>
     );
   }
-  return (
+  const form = (
     <StageTimelineForm
       key={timeline?.id ?? "new"}
       timeline={timeline}
       choices={choices}
       selections={selections}
+      multiSelections={multiSelections}
       states={states}
     />
+  );
+  // Only the Add form starts fresh from the URL on each navigation; Edit keeps
+  // its existing behavior.
+  return timeline ? (
+    form
+  ) : (
+    <StageTimelineCreateReset>{form}</StageTimelineCreateReset>
   );
 }

@@ -68,7 +68,7 @@ export default async function RegionsList({
         </span>
         <Link
           href="/admin/regions/create"
-          className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 ms-auto inline-flex h-11 items-center gap-2 rounded-md px-4 text-sm font-medium text-white focus-visible:outline-2"
+          className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 ms-auto inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium text-white focus-visible:outline-2"
         >
           <PlusIcon aria-hidden="true" className="size-4" />
           {t("actions.add")}

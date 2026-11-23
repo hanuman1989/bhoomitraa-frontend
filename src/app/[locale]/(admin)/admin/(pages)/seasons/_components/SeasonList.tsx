@@ -44,7 +44,7 @@ export default function SeasonList({
         </div>
         <Link
           href="/admin/seasons/create"
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
           {t("add")}
