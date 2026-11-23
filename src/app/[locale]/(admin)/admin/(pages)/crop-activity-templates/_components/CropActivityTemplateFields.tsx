@@ -151,18 +151,24 @@ function FeatureToggle({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${
+      className={`rounded-lg border p-3 ${
         checked
           ? "border-brand-300 bg-brand-50 dark:border-brand-800 dark:bg-brand-950"
           : "border-gray-200 dark:border-gray-700"
       } ${disabled ? "opacity-60" : ""}`}
     >
-      <Icon
-        aria-hidden="true"
-        className="text-brand-600 dark:text-brand-400 size-5 shrink-0"
-      />
+      {/* Icon and label lead the row; order-first keeps every switch aligned
+          at the end regardless of label length, and the whole row toggles. */}
       <Switch
-        label={label}
+        label={
+          <span className="order-first flex min-w-0 flex-1 items-center gap-3">
+            <Icon
+              aria-hidden="true"
+              className="text-brand-600 dark:text-brand-400 size-5 shrink-0"
+            />
+            <span className="min-w-0 break-words">{label}</span>
+          </span>
+        }
         checked={checked}
         disabled={disabled}
         onChange={onChange}
@@ -355,7 +361,7 @@ export default function CropActivityTemplateFields({
                   name={field.name}
                   ref={field.ref}
                   value={field.value}
-                  className="h-11"
+                  className="h-9"
                   disabled={busy}
                   aria-required="true"
                   aria-invalid={!!errors.activity_type}
@@ -625,7 +631,7 @@ export default function CropActivityTemplateFields({
                   name={field.name}
                   ref={field.ref}
                   value={field.value}
-                  className="h-11"
+                  className="h-9"
                   disabled={busy}
                   aria-required="true"
                   aria-invalid={!!errors.schedule_type}

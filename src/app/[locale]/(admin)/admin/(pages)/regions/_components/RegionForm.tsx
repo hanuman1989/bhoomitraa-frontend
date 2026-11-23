@@ -132,14 +132,14 @@ export default function RegionForm({ region }: RegionFormProps) {
               type="button"
               disabled={busy}
               onClick={() => router.push("/admin/regions")}
-              className="border-brand-200 text-brand-600 hover:bg-brand-50 focus-visible:outline-brand-500 dark:text-brand-400 rounded-lg border px-6 py-3 text-sm font-medium focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
+              className="border-brand-200 text-brand-600 hover:bg-brand-50 focus-visible:outline-brand-500 dark:text-brand-400 h-9 rounded-lg border px-4 text-sm font-medium focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
             >
               {t("form.cancel")}
             </button>
             <button
               type="submit"
               disabled={busy}
-              className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 rounded-lg px-6 py-3 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50"
+              className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 h-9 rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2 disabled:opacity-50"
             >
               {busy
                 ? t("form.saving")

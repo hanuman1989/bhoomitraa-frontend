@@ -54,7 +54,7 @@ export default function SeedConfirmDialog({
                 data-autofocus
                 disabled={busy}
                 onClick={onClose}
-                className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                className="h-9 rounded-lg border border-gray-300 px-4 text-sm text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
               >
                 {t("cancel")}
               </button>
@@ -62,7 +62,7 @@ export default function SeedConfirmDialog({
                 type="button"
                 disabled={busy}
                 onClick={onConfirm}
-                className={`rounded-lg px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 ${destructive ? "bg-error-600 hover:bg-error-700" : "bg-brand-500 hover:bg-brand-600"}`}
+                className={`h-9 rounded-lg px-4 text-sm font-medium text-white disabled:opacity-50 ${destructive ? "bg-error-600 hover:bg-error-700" : "bg-brand-500 hover:bg-brand-600"}`}
               >
                 {busy ? t("saving") : confirmLabel}
               </button>

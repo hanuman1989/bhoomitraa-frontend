@@ -325,7 +325,7 @@ export default function ActivityCategoryForm({
           onClick={() => {
             if (!saving.current) router.push("/admin/activity-categories");
           }}
-          className="border-brand-200 text-brand-500 hover:bg-brand-50 focus-visible:outline-brand-500 dark:text-brand-400 rounded-lg border bg-white px-6 py-3 text-sm font-semibold focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
+          className="border-brand-200 text-brand-500 hover:bg-brand-50 focus-visible:outline-brand-500 dark:text-brand-400 h-9 rounded-lg border bg-white px-4 text-sm font-semibold focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
         >
           {t("cancel")}
         </button>
@@ -333,7 +333,7 @@ export default function ActivityCategoryForm({
           <button
             type="submit"
             disabled={busy}
-            className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 rounded-lg px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+            className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
           >
             {busy ? t("saving") : t(category ? "form.update" : "form.save")}
           </button>

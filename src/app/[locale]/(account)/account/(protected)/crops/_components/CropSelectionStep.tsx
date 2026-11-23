@@ -68,6 +68,7 @@ export default function CropSelectionStep({
     control,
     register,
     handleSubmit,
+    getValues,
     setValue,
     setError,
     formState: { errors, isDirty },
@@ -137,6 +138,15 @@ export default function CropSelectionStep({
       active = false;
     };
   }, [values.crop_id, attempt]);
+  // The variety <select> is uncontrolled: when editing, its saved value is
+  // applied before the variety options exist, so the browser shows the empty
+  // option. Re-apply the form value once the options have rendered.
+  useEffect(() => {
+    if (!varieties.length) return;
+    const current = getValues("crop_variety_id");
+    if (current !== null && varieties.some((v) => v.id === current))
+      setValue("crop_variety_id", current);
+  }, [varieties, getValues, setValue]);
   const farm = workspace.farms.find((f) => f.id === values.farm_id);
   const season = seasons.find((s) => s.id === values.season_id);
   const selectedCrop =

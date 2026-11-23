@@ -97,7 +97,7 @@ export default function RegionDeleteConfirm({
               data-autofocus
               disabled={isSubmitting}
               onClick={close}
-              className="focus-visible:outline-brand-500 rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+              className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm text-gray-700 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
             >
               {t("form.cancel")}
             </button>
@@ -105,7 +105,7 @@ export default function RegionDeleteConfirm({
               type="button"
               disabled={isSubmitting}
               onClick={confirm}
-              className="bg-error-600 hover:bg-error-700 focus-visible:outline-error-500 dark:bg-error-600 dark:hover:bg-error-500 rounded-lg px-4 py-2 text-sm text-white focus-visible:outline-2 disabled:opacity-50"
+              className="bg-error-600 hover:bg-error-700 focus-visible:outline-error-500 dark:bg-error-600 dark:hover:bg-error-500 h-9 rounded-lg px-4 text-sm text-white focus-visible:outline-2 disabled:opacity-50"
             >
               {isSubmitting ? t("deleteDialog.deleting") : t("actions.delete")}
             </button>

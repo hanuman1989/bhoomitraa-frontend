@@ -15,7 +15,7 @@ import { CloseIcon } from "@/icons";
 import { saveAdminUser } from "@/actions/admin/adminUsers";
 
 const fieldClasses =
-  "mt-2 h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 aria-invalid:border-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:aria-invalid:border-red-500";
+  "mt-2 h-9 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 aria-invalid:border-red-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:aria-invalid:border-red-500";
 const labelClasses =
   "block text-sm font-medium text-gray-700 dark:text-gray-300";
 const errorClasses = "mt-1 text-sm text-red-600 dark:text-red-400";
@@ -384,14 +384,14 @@ export default function AdminUserForm({ user, onClose }) {
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="h-9 rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 {tUi("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-[#004bff] px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-9 rounded-lg bg-[#004bff] px-4 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting
                   ? tUi("saving")

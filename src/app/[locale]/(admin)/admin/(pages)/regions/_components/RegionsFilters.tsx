@@ -106,7 +106,7 @@ export default function RegionsFilters({
               type="search"
               maxLength={150}
               placeholder={t("searchPlaceholder")}
-              className="h-12 rounded-md ps-10"
+              className="h-9 rounded-md ps-10"
             />
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function RegionsFilters({
         <button
           type="submit"
           disabled={busy}
-          className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 dark:focus-visible:outline-brand-400 rounded-md px-6 py-3 text-sm font-medium text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white"
+          className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400 dark:focus-visible:outline-brand-400 h-9 rounded-md px-4 text-sm font-medium text-white transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:text-white"
         >
           {busy ? t("applying") : t("apply")}
         </button>
@@ -182,7 +182,7 @@ export default function RegionsFilters({
           type="button"
           disabled={busy}
           onClick={handleReset}
-          className="border-brand-200 text-brand-600 hover:bg-brand-50 focus-visible:outline-brand-500 dark:border-brand-800 dark:text-brand-400 dark:hover:bg-brand-500/10 dark:focus-visible:outline-brand-400 rounded-md border bg-white px-6 py-3 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-gray-900"
+          className="border-brand-200 text-brand-600 hover:bg-brand-50 focus-visible:outline-brand-500 dark:border-brand-800 dark:text-brand-400 dark:hover:bg-brand-500/10 dark:focus-visible:outline-brand-400 h-9 rounded-md border bg-white px-4 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-gray-900"
         >
           {t("reset")}
         </button>

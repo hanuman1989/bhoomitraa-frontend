@@ -135,7 +135,7 @@ export default function TimelineActivityDetails({
                 type="button"
                 data-autofocus
                 onClick={onClose}
-                className="focus-visible:outline-brand-500 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 {t("close")}
               </button>

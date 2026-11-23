@@ -21,10 +21,11 @@ const Button: React.FC<ButtonProps> = ({
   className = "",
   disabled = false,
 }) => {
-  // Size Classes
+  // Size Classes: every admin action button uses the same compact size,
+  // matching the h-9 form controls. `size` is kept for API compatibility.
   const sizeClasses = {
-    sm: "px-4 py-3 text-sm",
-    md: "px-5 py-3.5 text-sm",
+    sm: "h-9 px-4 text-sm",
+    md: "h-9 px-4 text-sm",
   };
 
   // Variant Classes

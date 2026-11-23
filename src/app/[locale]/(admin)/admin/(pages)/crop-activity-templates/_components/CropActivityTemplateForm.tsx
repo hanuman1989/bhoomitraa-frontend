@@ -388,7 +388,7 @@ export default function CropActivityTemplateForm({
                 })}
                 id="template-priority"
                 label={t("fields.priority")}
-                className="h-11"
+                className="h-9"
                 disabled={busy || locked}
                 aria-required="true"
                 aria-invalid={!!errors.priority}
@@ -425,7 +425,7 @@ export default function CropActivityTemplateForm({
                   onClick={() => {
                     if (!saving.current) openStatus();
                   }}
-                  className="border-brand-300 text-brand-600 dark:border-brand-800 dark:text-brand-300 rounded-lg border px-4 py-2 text-sm font-medium disabled:opacity-50"
+                  className="border-brand-300 text-brand-600 dark:border-brand-800 dark:text-brand-300 h-9 rounded-lg border px-4 text-sm font-medium disabled:opacity-50"
                 >
                   {t(
                     template.is_active
@@ -489,7 +489,7 @@ export default function CropActivityTemplateForm({
               if (!saving.current)
                 router.push("/admin/crop-activity-templates");
             }}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             {t("cancel")}
           </button>
@@ -497,7 +497,7 @@ export default function CropActivityTemplateForm({
             <button
               type="submit"
               disabled={busy}
-              className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 rounded-lg px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
+              className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 disabled:opacity-50"
             >
               {t(busy ? "saving" : template ? "form.update" : "form.save")}
             </button>

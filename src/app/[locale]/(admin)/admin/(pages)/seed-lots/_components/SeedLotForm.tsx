@@ -941,14 +941,14 @@ export default function SeedLotForm({
             onClick={() => {
               if (!saving.current) router.push("/admin/seed-lots");
             }}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
           >
             {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="bg-brand-500 hover:bg-brand-600 inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="bg-brand-500 hover:bg-brand-600 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             <CheckLineIcon aria-hidden="true" className="size-5" />
             {t(busy ? "saving" : record ? "form.update" : "form.save")}

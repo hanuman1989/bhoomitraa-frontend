@@ -43,7 +43,7 @@ export default function CropActivityTemplateList({
         </div>
         <Link
           href="/admin/crop-activity-templates/create"
-          className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white focus-visible:outline-2"
+          className="bg-brand-500 hover:bg-brand-600 focus-visible:outline-brand-500 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
           {t("add")}

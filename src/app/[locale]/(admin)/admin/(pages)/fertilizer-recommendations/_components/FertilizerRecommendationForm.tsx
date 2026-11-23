@@ -1055,7 +1055,7 @@ export default function FertilizerRecommendationForm({
             type="button"
             onClick={back}
             disabled={busy}
-            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
           >
             {t("back")}
           </button>
@@ -1064,7 +1064,7 @@ export default function FertilizerRecommendationForm({
               type="button"
               onClick={back}
               disabled={busy}
-              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+              className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
             >
               {t("cancel")}
             </button>
@@ -1076,7 +1076,7 @@ export default function FertilizerRecommendationForm({
                 !options.recommendation_types.length ||
                 !options.nutrient_codes.length
               }
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="bg-brand-500 hover:bg-brand-600 flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
             >
               <CheckLineIcon aria-hidden="true" className="size-5" />
               {t(busy ? "form.saving" : "form.save")}

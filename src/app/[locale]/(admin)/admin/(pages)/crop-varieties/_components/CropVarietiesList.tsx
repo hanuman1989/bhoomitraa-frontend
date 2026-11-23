@@ -38,7 +38,7 @@ export default function CropVarietiesList({
         </div>
         <Link
           href={`/admin/crop-varieties/create${returnQuery ? `?${returnQuery}` : ""}`}
-          className="bg-success-700 hover:bg-success-800 inline-flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-white"
+          className="bg-success-700 hover:bg-success-800 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white"
         >
           <PlusIcon aria-hidden="true" className="size-5" />
           {t("add")}

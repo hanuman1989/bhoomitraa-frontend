@@ -23,7 +23,7 @@ export default function LoginForm() {
     clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<UserLoginPayload>({
-    defaultValues: { login: "", password: "" },
+    defaultValues: { login: "", password: "", remember: false },
     mode: "onTouched",
   });
   async function submit(values: UserLoginPayload) {
@@ -105,7 +105,20 @@ export default function LoginForm() {
           disabled={isSubmitting}
           error={errors.password?.message}
         />
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label
+            htmlFor="farmer-login-remember"
+            className="flex cursor-pointer items-center gap-3 text-sm sm:text-base"
+          >
+            <input
+              {...register("remember")}
+              id="farmer-login-remember"
+              type="checkbox"
+              disabled={isSubmitting}
+              className="text-success-700 focus:ring-success-600 size-5 shrink-0 rounded border-gray-400"
+            />
+            <span>{t("login.remember")}</span>
+          </label>
           <button
             type="button"
             onClick={openModal}

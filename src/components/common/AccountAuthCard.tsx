@@ -2,7 +2,6 @@ import { Suspense, type ReactNode } from "react";
 import Image from "next/image";
 import AccountLanguageSwitcher from "./AccountLanguageSwitcher";
 import { useTranslations } from "next-intl";
-import { SproutIcon } from "@/icons";
 
 export default function AccountAuthCard({
   title,
@@ -29,13 +28,20 @@ export default function AccountAuthCard({
       </Suspense>
       <section className="shadow-theme-lg w-full max-w-xl rounded-3xl border-2 border-white/80 bg-white/90 px-6 py-8 text-gray-900 backdrop-blur-xl sm:px-10 dark:border-gray-700 dark:bg-gray-900/95 dark:text-white">
         <header className="mb-7 text-center">
-          <SproutIcon
-            aria-hidden="true"
-            className="text-success-600 mx-auto size-16 sm:size-20"
-          />
-          <p className="text-title-lg text-success-800 sm:text-title-xl dark:text-success-400 font-bold tracking-tight">
-            {t("brand")}
-          </p>
+          {/* The logo has a solid white background, so it sits on a white
+              tile in both themes. Decorative: the brand name follows. */}
+          {/* <div className="mx-auto mb-3 flex size-20 items-center justify-center overflow-hidden p-1.5 sm:size-24">
+            <Image
+              src="/images/logo/bhoomitraa-logo.png"
+              alt=""
+              width={120}
+              height={140}
+              priority
+              sizes="(min-width: 640px) 120px, 140px"
+              className="size-full object-contain"
+            />
+          </div> */}
+
           <div className="mt-1 flex items-center justify-center gap-4">
             <span aria-hidden="true" className="bg-success-700 h-px w-12" />
             <h1 className="text-2xl font-semibold sm:text-3xl">{title}</h1>

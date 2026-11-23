@@ -868,7 +868,7 @@ export default function CropSeedRateForm({
           onClick={() => {
             if (!saving.current) router.push("/admin/crop-seed-rates");
           }}
-          className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+          className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
         >
           {t("back")}
         </button>
@@ -879,7 +879,7 @@ export default function CropSeedRateForm({
             onClick={() => {
               if (!saving.current) router.push("/admin/crop-seed-rates");
             }}
-            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
           >
             {t("cancel")}
           </button>
@@ -887,7 +887,7 @@ export default function CropSeedRateForm({
             <button
               type="submit"
               disabled={busy}
-              className="bg-brand-500 hover:bg-brand-600 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="bg-brand-500 hover:bg-brand-600 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
             >
               <CheckLineIcon aria-hidden="true" className="size-5" />
               {t(busy ? "saving" : record ? "form.update" : "form.save")}

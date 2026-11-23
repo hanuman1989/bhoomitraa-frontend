@@ -240,7 +240,7 @@ export default function CropSeedRateDetails({
       </div>
       <Link
         href="/admin/crop-seed-rates"
-        className="inline-block rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300"
+        className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 px-4 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300"
       >
         {t("back")}
       </Link>

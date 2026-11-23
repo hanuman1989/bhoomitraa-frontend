@@ -171,7 +171,7 @@ export default function TimelineRelationSelect({
             aria-invalid={!!error}
             aria-describedby={`${id}-error ${id}-warning`}
             className={`focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 w-full rounded-lg border border-gray-300 bg-transparent ps-4 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 ${
-              compact ? "!h-9" : "h-11"
+              compact ? "!h-9" : "h-9"
             }`}
           />
           <ComboboxButton

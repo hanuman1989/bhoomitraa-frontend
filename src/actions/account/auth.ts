@@ -20,6 +20,7 @@ export async function loginUser(
     const response = await accountAuthAPI.login({
       login: values.login,
       password: values.password,
+      remember: values.remember === true,
     });
     if (
       !response.status ||

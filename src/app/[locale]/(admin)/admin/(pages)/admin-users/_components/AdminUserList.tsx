@@ -52,7 +52,7 @@ export default function AdminUserList({ users }: { users: AdminUser[] }) {
           <button
             type="button"
             onClick={() => setEditor({ user: null })}
-            className="inline-flex h-11 shrink-0 items-center justify-center gap-2.5 rounded-md bg-[#004bff] px-4 text-sm leading-none font-medium whitespace-nowrap text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2.5 rounded-md bg-[#004bff] px-4 text-sm leading-none font-medium whitespace-nowrap text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <PlusIcon aria-hidden="true" className="block size-3 shrink-0" />
             <span>{tUi("addAdmin")}</span>

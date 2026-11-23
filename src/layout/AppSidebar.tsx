@@ -82,6 +82,10 @@ const navItems: NavItem[] = [
       { key: "stageTimelines", path: "/admin/crop-stage-timelines" },
       { key: "activityCategories", path: "/admin/activity-categories" },
       { key: "cropActivityTemplates", path: "/admin/crop-activity-templates" },
+      {
+        key: "cropActivityTimelineBuilder",
+        path: "/admin/crop-activity-timeline-builders",
+      },
     ],
   },
   {
@@ -364,7 +368,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-50 flex h-full flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out xl:mt-0 rtl:right-0 rtl:left-auto rtl:border-r-0 rtl:border-l dark:border-gray-800 dark:bg-gray-900 ${
+      className={`fixed top-0 left-0 z-50 flex h-full flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out max-xl:z-999999 xl:mt-0 rtl:right-0 rtl:left-auto rtl:border-r-0 rtl:border-l dark:border-gray-800 dark:bg-gray-900 ${
         isExpanded || isMobileOpen ? "w-72.5" : isHovered ? "w-72.5" : "w-22.5"
       } ${
         isMobileOpen

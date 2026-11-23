@@ -154,7 +154,7 @@ export default function VarietyRelationSelect({
             aria-required={required}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
-            className="focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 shadow-theme-xs h-11 w-full rounded-lg border border-gray-300 bg-transparent ps-4 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="focus:border-brand-300 focus:ring-brand-500/20 aria-invalid:border-error-500 shadow-theme-xs h-9 w-full rounded-lg border border-gray-300 bg-transparent ps-4 pe-10 text-sm text-gray-800 outline-none focus:ring-3 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
           <ComboboxButton
             aria-label={label}

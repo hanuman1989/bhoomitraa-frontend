@@ -80,7 +80,7 @@ export default function AdminUserDeleteConfirm({
               type="button"
               disabled={isSubmitting}
               onClick={onClose}
-              className="rounded-lg border px-4 py-2"
+              className="h-9 rounded-lg border px-4 text-sm"
             >
               {tUi("cancel")}
             </button>
@@ -88,7 +88,7 @@ export default function AdminUserDeleteConfirm({
               type="button"
               disabled={isSubmitting}
               onClick={confirm}
-              className="rounded-lg bg-red-600 px-4 py-2 text-white disabled:opacity-50"
+              className="h-9 rounded-lg bg-red-600 px-4 text-sm text-white disabled:opacity-50"
             >
               {isSubmitting ? tUi("deleting") : tUi("delete")}
             </button>

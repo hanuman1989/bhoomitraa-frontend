@@ -62,7 +62,7 @@ export default function ColorPicker({
     <div>
       <Label htmlFor={inputId}>{label}</Label>
       <div className="flex flex-wrap items-start gap-3">
-        <label className="focus-within:ring-brand-500/20 relative flex h-11 shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus-within:ring-3 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+        <label className="focus-within:ring-brand-500/20 relative flex h-9 shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus-within:ring-3 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
           <span aria-hidden="true">{t("select")}</span>
           <input
             type="color"
@@ -106,7 +106,7 @@ export default function ColorPicker({
             onClick={() => {
               if (!disabled) onChange(null);
             }}
-            className="focus-visible:outline-brand-500 h-11 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >
             {t("clear")}
           </button>

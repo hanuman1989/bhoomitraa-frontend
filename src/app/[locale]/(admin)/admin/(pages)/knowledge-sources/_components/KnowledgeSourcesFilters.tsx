@@ -69,7 +69,7 @@ export default function KnowledgeSourcesFilters({
             source_type: sourceTypes.find((type) => type === value) ?? "",
           });
         }}
-        className="h-11"
+        className="h-9"
       >
         <option value="">{t("filters.allTypes")}</option>
         {sourceTypes.map((type) => (
@@ -90,7 +90,7 @@ export default function KnowledgeSourcesFilters({
               verificationStatuses.find((status) => status === value) ?? "",
           });
         }}
-        className="h-11"
+        className="h-9"
       >
         <option value="">{t("filters.allStatuses")}</option>
         {verificationStatuses.map((status) => (
@@ -112,7 +112,7 @@ export default function KnowledgeSourcesFilters({
                 : "",
           })
         }
-        className="h-11"
+        className="h-9"
       >
         <option value="">{t("filters.allLanguages")}</option>
         <option value="en">{t("languages.en")}</option>
@@ -121,7 +121,7 @@ export default function KnowledgeSourcesFilters({
       <div className="flex gap-2 sm:col-span-2 2xl:col-span-1">
         <button
           disabled={pending}
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-11 flex-1 rounded-lg px-4 text-sm font-medium whitespace-nowrap text-white focus-visible:outline-2 disabled:opacity-50"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-9 flex-1 rounded-lg px-4 text-sm font-medium whitespace-nowrap text-white focus-visible:outline-2 disabled:opacity-50"
         >
           {pending ? t("filters.applying") : t("filters.apply")}
         </button>
@@ -137,7 +137,7 @@ export default function KnowledgeSourcesFilters({
             });
             startTransition(() => router.push(pathname));
           }}
-          className="border-brand-300 text-brand-600 hover:bg-brand-50 focus-visible:outline-brand-500 dark:text-brand-300 h-11 rounded-lg border px-4 text-sm font-medium focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          className="border-brand-300 text-brand-600 hover:bg-brand-50 focus-visible:outline-brand-500 dark:text-brand-300 h-9 rounded-lg border px-4 text-sm font-medium focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
         >
           {t("filters.reset")}
         </button>

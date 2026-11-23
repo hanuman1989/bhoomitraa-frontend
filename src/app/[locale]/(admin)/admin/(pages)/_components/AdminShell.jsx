@@ -16,8 +16,10 @@ export default function AdminShell({ children }) {
       : "xl:ms-22.5";
   return (
     <div className="min-h-screen xl:flex">
-      <AppSidebar />
+      {/* On mobile both cover the sticky header, as in TailAdmin; the
+          sidebar comes later so it stacks above the backdrop. */}
       <Backdrop />
+      <AppSidebar />
       <div
         className={`min-w-0 flex-1 transition-all duration-300 ease-in-out ${mainContentMargin}`}
       >

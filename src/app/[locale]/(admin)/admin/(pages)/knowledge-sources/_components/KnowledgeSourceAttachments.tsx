@@ -217,7 +217,7 @@ export default function KnowledgeSourceAttachments({
           type="button"
           disabled={busy}
           onClick={onRetry}
-          className="bg-brand-600 rounded-lg px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="bg-brand-600 h-9 rounded-lg px-4 text-sm text-white disabled:opacity-50"
         >
           {t("attachments.retry")}
         </button>

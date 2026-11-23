@@ -131,7 +131,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
             tabIndex={disabled ? -1 : 0}
           >
             <div
-              className={`shadow-theme-xs focus:border-brand-300 focus:shadow-focus-ring dark:focus:border-brand-300 mb-2 flex min-h-11 rounded-lg border border-gray-300 px-3 py-1.5 outline-hidden transition dark:border-gray-700 dark:bg-gray-900 ${
+              className={`shadow-theme-xs focus:border-brand-300 focus:shadow-focus-ring dark:focus:border-brand-300 mb-2 flex min-h-9 rounded-lg border border-gray-300 px-3 py-1 outline-hidden transition dark:border-gray-700 dark:bg-gray-900 ${
                 disabled
                   ? "cursor-not-allowed bg-gray-50 opacity-50 dark:bg-gray-800"
                   : "cursor-pointer"
@@ -145,7 +145,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                     return (
                       <div
                         key={value}
-                        className="group flex items-center justify-center rounded-full border-[0.7px] border-transparent bg-gray-100 py-1 ps-2.5 pe-2 text-sm text-gray-800 hover:border-gray-200 dark:bg-gray-800 dark:text-white/90 dark:hover:border-gray-800"
+                        className="group flex items-center justify-center rounded-full border-[0.7px] border-transparent bg-gray-100 py-0.5 ps-2.5 pe-2 text-sm text-gray-800 hover:border-gray-200 dark:bg-gray-800 dark:text-white/90 dark:hover:border-gray-800"
                       >
                         <span className="max-w-full flex-initial">{text}</span>
                         <button

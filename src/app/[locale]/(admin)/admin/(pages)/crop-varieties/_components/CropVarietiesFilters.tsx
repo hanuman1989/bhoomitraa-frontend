@@ -102,7 +102,7 @@ export default function CropVarietiesFilters({
                       : "",
               }))
             }
-            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+            className="h-9 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
           >
             <option value="">{t("filters.allStatus")}</option>
             <option value="1">{t("active")}</option>
@@ -126,7 +126,7 @@ export default function CropVarietiesFilters({
           <button
             type="submit"
             disabled={pending}
-            className="bg-brand-600 hover:bg-brand-700 h-11 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
+            className="bg-brand-600 hover:bg-brand-700 h-9 rounded-lg px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {t("filters.apply")}
           </button>
@@ -134,7 +134,7 @@ export default function CropVarietiesFilters({
             type="button"
             disabled={pending}
             onClick={() => navigate(true)}
-            className="h-11 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+            className="h-9 rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
           >
             {t("filters.reset")}
           </button>

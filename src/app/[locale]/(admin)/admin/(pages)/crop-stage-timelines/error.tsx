@@ -13,7 +13,7 @@ export default function Error({ reset }: { reset: () => void }) {
       <button
         type="button"
         onClick={reset}
-        className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 rounded-lg px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-2"
+        className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-medium text-white focus-visible:outline-2"
       >
         {t("retry")}
       </button>

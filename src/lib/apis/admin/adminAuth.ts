@@ -3,11 +3,11 @@ import "server-only";
 import { apiRequest } from "@/lib/api/request";
 import type { ApiResponse } from "@/types/api";
 import type { AdminUser } from "@/types/admin/adminUser";
-import type { AdminLoginPayload, AdminLoginResponse } from "@/types/auth";
+import type { AdminLoginRequest, AdminLoginResponse } from "@/types/auth";
 
 /** Laravel authentication endpoints. Only call this service on the Next.js server. */
 const adminAuthAPI = {
-  login: (credentials: AdminLoginPayload): Promise<AdminLoginResponse> =>
+  login: (credentials: AdminLoginRequest): Promise<AdminLoginResponse> =>
     apiRequest<AdminLoginResponse>("/admin/login", {
       method: "POST",
       audience: "public",

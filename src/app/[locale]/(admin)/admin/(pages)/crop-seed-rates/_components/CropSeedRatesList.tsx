@@ -47,7 +47,7 @@ export default function CropSeedRatesList({
         </div>
         <Link
           href="/admin/crop-seed-rates/create"
-          className="bg-brand-500 hover:bg-brand-600 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white"
+          className="bg-brand-500 hover:bg-brand-600 inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-semibold text-white"
         >
           <PlusIcon aria-hidden="true" className="size-4" />
           {t("add")}

@@ -294,14 +294,14 @@ export default function SeasonForm({ season }: { season: Season | null }) {
           onClick={() => {
             if (!saving.current) router.push("/admin/seasons");
           }}
-          className="focus-visible:outline-brand-500 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          className="focus-visible:outline-brand-500 h-9 rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50 focus-visible:outline-2 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
         >
           {t("cancel")}
         </button>
         <button
           type="submit"
           disabled={busy}
-          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 rounded-lg px-6 py-3 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+          className="bg-brand-600 hover:bg-brand-700 focus-visible:outline-brand-500 h-9 rounded-lg px-4 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
         >
           {busy ? t("saving") : season ? t("form.update") : t("form.save")}
         </button>
