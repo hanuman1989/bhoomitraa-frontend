@@ -80,6 +80,8 @@ export interface CropCycle {
   boundary_source: "farm_boundary" | "manual" | "gps" | "manual_area" | null;
   latitude: string | null;
   longitude: string | null;
+  /** True once the crop timeline has been generated. */
+  has_timeline: boolean;
 }
 export interface CropSummary {
   total_crops: number;
@@ -145,7 +147,7 @@ export interface CropDetail extends CropCycle {
   validation_issues: ApiValidationErrors;
   can_finalize: boolean;
   has_pending_edit: boolean;
-  timeline_generated: false;
+  timeline_generated: boolean;
   estimates_are_historical: boolean;
   saved_step_data: {
     crop_selection: Omit<CropSelection, "sowing_date"> & {

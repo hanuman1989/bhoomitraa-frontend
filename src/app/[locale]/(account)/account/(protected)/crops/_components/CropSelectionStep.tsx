@@ -52,6 +52,8 @@ export default function CropSelectionStep({
   const locale = useLocale();
   const units = useAreaUnits();
   const workspace = useAccountFarms();
+  // A saved crop keeps its farm, season, crop and variety; only the sowing date can change.
+  const locked = crop?.status === "active";
   const {
     control,
     register,
@@ -201,6 +203,7 @@ export default function CropSelectionStep({
         className="grid min-w-0 gap-4 lg:grid-cols-3"
       >
         <div className="space-y-4 lg:col-span-2">
+          {locked && <CropNotice>{t("lockedSelection")}</CropNotice>}
           <CropSection number={1} title={t("selectFarm")}>
             <div className="grid items-end gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
@@ -212,6 +215,7 @@ export default function CropSelectionStep({
                 >
                   <select
                     id="crop-farm"
+                    disabled={locked}
                     aria-invalid={!!errors.farm_id}
                     aria-describedby={
                       errors.farm_id ? "crop-farm-error" : undefined
@@ -254,6 +258,7 @@ export default function CropSelectionStep({
                     <CropChoice
                       key={s.id}
                       selected={field.value === s.id}
+                      disabled={locked}
                       onClick={() => field.onChange(s.id)}
                       className="flex min-h-14 items-center justify-center gap-2.5 pe-7"
                     >
@@ -283,6 +288,7 @@ export default function CropSelectionStep({
                   {seasons.length > 3 && (
                     <CropChoice
                       selected={otherSeasons.some((s) => s.id === field.value)}
+                      disabled={locked}
                       onClick={() => setDialog("seasons")}
                       className="flex min-h-14 items-center justify-center gap-2.5 pe-7"
                     >
@@ -338,6 +344,7 @@ export default function CropSelectionStep({
                     <CropChoice
                       key={c.id}
                       selected={values.crop_id === c.id}
+                      disabled={locked}
                       onClick={() => selectCrop(c)}
                       className="flex flex-col items-center gap-2 text-center"
                     >
@@ -347,6 +354,7 @@ export default function CropSelectionStep({
                   ))}
                   <button
                     type="button"
+                    disabled={locked}
                     onClick={() => setDialog("crops")}
                     className="border-success-400 text-success-700 dark:text-success-300 flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed"
                   >
@@ -370,7 +378,7 @@ export default function CropSelectionStep({
             >
               <select
                 id="crop-variety"
-                disabled={!values.crop_id || varietiesLoading}
+                disabled={locked || !values.crop_id || varietiesLoading}
                 {...register("crop_variety_id", {
                   setValueAs: (value) => (value === "" ? null : Number(value)),
                   validate: (value) =>
@@ -421,6 +429,11 @@ export default function CropSelectionStep({
                   })}
                 />
               </CropField>
+              {locked && crop?.timeline_generated && (
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  {t("sowingShiftNote")}
+                </p>
+              )}
             </CropSection>
             <CropSection title={t("cropTimeline")}>
               <CropMaturityDetails

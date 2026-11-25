@@ -34,6 +34,8 @@ function load(file, dependencies = {}, globals = {}) {
       if (name === "../crops/_components/CropWizardDialog") return "CropDialog";
       if (name === "../crops/_components/CropDetailsDialog")
         return "CropDetails";
+      if (name === "../crop-timeline/_components/CropTimelineDialog")
+        return "CropTimelineDialog";
       if (name === "../crops/_components/CropDeleteConfirm")
         return "CropDelete";
       if (Object.hasOwn(areaFixture.dependencies, name))
@@ -61,6 +63,30 @@ const googleMaps = load(base + "googleMaps.ts");
 const viewport = load(base + "mapViewport.ts", {
   "./farmGeometry": geometry,
   "./googleMaps": googleMaps,
+});
+const drawState = load(base + "boundaryDraw/boundaryDrawState.ts", {
+  "../farmGeometry": geometry,
+});
+// The real reducer behind the test hook runtime (no useSyncExternalStore here).
+const drawDependencies = (react) => ({
+  "./boundaryDraw/useBoundaryDraw": {
+    __esModule: true,
+    default() {
+      const [value, dispatch] = react.useReducer(
+        drawState.boundaryDrawReducer,
+        drawState.initialBoundaryDrawState,
+      );
+      return {
+        ...value,
+        area: drawState.boundaryDrawArea(value.points),
+        dispatch,
+      };
+    },
+  },
+  "./boundaryDraw/useBoundaryDrawShortcuts": () => {},
+  "./boundaryDraw/BoundaryDrawHint": "DrawHint",
+  "./boundaryDraw/BoundaryDrawToolbar": "DrawToolbar",
+  "@/components/common/maps/BoundaryConfirmDialog": "Confirm",
 });
 const ring = [
   [77, 26],
@@ -636,6 +662,7 @@ function mapHarness({
       "./farmGeometry": geometry,
       "@/components/common/maps/farmMapStyle": mapStyle,
       "@/components/common/maps/FarmInfoOverlay": "FarmPopup",
+      "./boundaryDraw/BoundaryDrawLayer": "BoundaryDrawLayer",
       "./mapViewport": viewport,
       "./googleMaps": {
         ...googleMaps,
@@ -1678,7 +1705,7 @@ function shellHarness({ farmState, loadWorkspace, loadSummary } = {}) {
         AccountFarmContext: { Provider: "FarmWorkspace" },
       },
       "../farms/_components/AddFarmDialog": "FarmDialog",
-      "@/components/common/maps/FarmBoundaryDialog": "BoundaryDialog",
+      ...drawDependencies(runtime.react),
       "@/icons": icons,
       "./DashboardMap": "Map",
       "./AccountSidebar": "Sidebar",
@@ -1964,15 +1991,24 @@ test("sidebar padding measures its actual panel and all farm/boundary dialogs bl
     .find((node) => node.type === "Fab")
     .props.onDrawFarm();
   tree = h.render();
+  // Drawing happens on the map itself, so Fit All and My Location stay usable.
   assert.equal(
     nodes(tree).find((node) => node.type === "Map").props
       .automaticViewportBlocked,
-    true,
+    false,
+  );
+  assert.equal(
+    nodes(tree).find((node) => node.type === "Map").props.boundaryDraw.mode,
+    "drawing",
   );
   nodes(tree)
-    .find((node) => node.type === "BoundaryDialog")
-    .props.onClose();
+    .find((node) => node.type === "Fab")
+    .props.drawToolbar.props.onClear();
   tree = h.render();
+  assert.equal(
+    nodes(tree).find((node) => node.type === "Map").props.boundaryDraw,
+    undefined,
+  );
   nodes(tree)
     .find((node) => node.type === "FarmWorkspace")
     .props.value.openFarm();
@@ -2170,43 +2206,81 @@ test("nested full-page workflows bypass the panel without unmounting the persist
   );
 });
 
-test("dashboard boundary entry transfers the confirmed draft into Add Farm without replacing the map or saving", () => {
+test("dashboard map drawing opens Add Farm with the closed draft, keeps it on cancel and clears it after saving", () => {
   const h = shellHarness();
   let tree = h.render();
-  const originalMap = nodes(tree).find((n) => n.type === "Map");
-  nodes(tree)
-    .find((n) => n.type === "Fab")
-    .props.onDrawFarm();
+  const find = (type) => nodes(tree).find((n) => n.type === type);
+  const originalMap = find("Map");
+  find("Fab").props.onDrawFarm();
   tree = h.render();
-  const editor = nodes(tree).find((n) => n.type === "BoundaryDialog");
-  assert.ok(editor);
-  assert.equal(
-    nodes(tree).some((n) => n.type === "FarmDialog"),
-    false,
+  assert.equal(find("Map").props.boundaryDraw.mode, "drawing");
+  assert.equal(find("Fab").props.drawMode, "drawing");
+  assert.equal(find("Fab").props.canCompleteDraw, false);
+  assert.equal(find("DrawHint").props.count, 0);
+  const points = ring.slice(0, -1).map(([lng, lat]) => ({ lat, lng }));
+  for (const point of points) {
+    find("Map").props.boundaryDraw.onAdd(point);
+    tree = h.render();
+  }
+  assert.equal(find("Fab").props.canCompleteDraw, true);
+  assert.equal(find("DrawHint").props.count, 4);
+  // Same calculation and display as Add Farm step 3, in the resolved unit.
+  const hectares = areaFixture.utils.fromSquareMeters(
+    geometry.boundaryArea(points),
+    "hectare",
+    areaFixture.config,
   );
-  const draft = {
-    boundary: { type: "MultiPolygon", coordinates: [[ring]] },
+  assert.equal(
+    find("DrawHint").props.areaLabel,
+    `${areaFixture.utils.formatArea(hectares, "en")} Hectare`,
+  );
+  find("Fab").props.onDrawFarm();
+  tree = h.render();
+  assert.equal(find("Map").props.boundaryDraw.mode, "drawn");
+  assert.equal(find("Fab").props.drawMode, "drawn");
+  assert.equal(find("FarmDialog"), undefined);
+
+  // The Add Farm FAB still opens an empty wizard and never takes the draft.
+  find("Fab").props.onAddFarm();
+  tree = h.render();
+  assert.equal(find("FarmDialog").props.initialBoundary, undefined);
+  find("FarmDialog").props.onClose();
+  tree = h.render();
+
+  find("Map").props.boundaryDraw.onOpen();
+  tree = h.render();
+  const dialog = find("FarmDialog");
+  assert.deepEqual(clone(dialog.props.initialBoundary), {
+    boundary: clone(geometry.pointsToBoundary(points)),
     boundary_source: "manual",
     gps_accuracy_m: null,
-  };
-  editor.props.onConfirm(draft);
+  });
+  assert.equal(dialog.props.farm, undefined);
+  assert.equal(Object.hasOwn(dialog.props, "initialStep"), false);
+  dialog.props.onClose();
   tree = h.render();
-  assert.equal(
-    nodes(tree).find((n) => n.type === "FarmDialog").props.initialBoundary,
-    draft,
-  );
-  assert.equal(
-    nodes(tree).some((n) => n.type === "BoundaryDialog"),
-    false,
-  );
-  assert.equal(
-    nodes(tree).find((n) => n.type === "Map").type,
-    originalMap.type,
-  );
-  assert.equal(
-    nodes(tree).find((n) => n.type === "Map").props.mapType,
-    originalMap.props.mapType,
-  );
+  assert.equal(find("FarmDialog"), undefined);
+  assert.equal(find("Map").props.boundaryDraw.mode, "drawn");
+  assert.equal(find("Map").props.boundaryDraw.points.length, 4);
+
+  find("Fab").props.drawToolbar.props.onComplete();
+  tree = h.render();
+  find("FarmDialog").props.onSaved({
+    id: 9,
+    name: "Drawn farm",
+    area: "4.940",
+    area_unit: "acre",
+    boundary: geometry.pointsToBoundary(points),
+    latitude: null,
+    longitude: null,
+    is_active: true,
+  });
+  tree = h.render();
+  assert.equal(find("FarmDialog"), undefined);
+  assert.equal(find("Map").props.boundaryDraw, undefined);
+  assert.equal(find("DrawHint"), undefined);
+  assert.equal(find("Map").type, originalMap.type);
+  assert.equal(find("Map").props.mapType, originalMap.props.mapType);
   assert.equal(h.routes.at(-1), "/account/farms");
   h.runtime.cleanup();
 });
@@ -2678,7 +2752,8 @@ test("protected route children render on the server without a browser-only paren
     },
     "./AccountFarmContext": { AccountFarmContext: React.createContext(null) },
     "../farms/_components/AddFarmDialog": () => null,
-    "@/components/common/maps/FarmBoundaryDialog": () => null,
+    ...drawDependencies(React),
+    "@/components/common/maps/BoundaryConfirmDialog": () => null,
     "@/icons": icons,
     "./DashboardMap": () => {
       throw new Error("Map must wait for browser state restoration");

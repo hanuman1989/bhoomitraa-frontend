@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   startTransition,
+  type ComponentProps,
   type Ref,
 } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -41,6 +42,7 @@ import {
   type MapViewport,
 } from "./mapViewport";
 import type { FarmerProfile } from "@/lib/userAuth/types";
+import BoundaryDrawLayer from "./boundaryDraw/BoundaryDrawLayer";
 import {
   loadGoogleMaps,
   type MapsSDK,
@@ -76,6 +78,8 @@ interface Props {
   onSelectCrop?: (id: number) => void;
   onCropAction?: (action: CropInfoAction, id: number) => void;
   onFarmAction?: (action: FarmInfoAction, id: number) => void;
+  /** Dashboard boundary drawing; existing parcels become non-interactive. */
+  boundaryDraw?: Omit<ComponentProps<typeof BoundaryDrawLayer>, "sdk" | "map">;
 }
 interface Resources {
   sdk: MapsSDK;
@@ -106,6 +110,7 @@ export default function DashboardMap({
   onSelectCrop,
   onCropAction,
   onFarmAction,
+  boundaryDraw,
 }: Props) {
   const t = useTranslations("farmerDashboard.map");
   const locale = useLocale();
@@ -165,6 +170,7 @@ export default function DashboardMap({
   const [generation, setGeneration] = useState<Resources | null>(null);
   const [popupDismissed, setPopupDismissed] = useState(false);
   const [popupRequest, setPopupRequest] = useState(0);
+  const drawing = Boolean(boundaryDraw);
   const selectedFarm = farms.find((farm) => farm.id === selectedFarmId) ?? null;
   const cropAnchor = selectedCrop
     ? farmAnchor({
@@ -326,13 +332,14 @@ export default function DashboardMap({
       const selected = id === selectedCrop?.id;
       return {
         fillColor: record?.crop_color || farmMapColor(id + 1),
-        fillOpacity: selected ? 0.6 : 0.35,
+        fillOpacity: drawing ? 0.12 : selected ? 0.6 : 0.35,
         strokeColor: selected
           ? "#ffffff"
           : record?.crop_color || farmMapColor(id + 1),
+        ...(drawing ? { strokeOpacity: 0.5 } : {}),
         strokeWeight: selected ? 5 : 3,
         zIndex: selected ? 20 : 10,
-        clickable: true,
+        clickable: !drawing,
         editable: false,
         draggable: false,
         title: record?.crop_name ?? "",
@@ -345,7 +352,7 @@ export default function DashboardMap({
       }
     });
     return () => listener.remove();
-  }, [crops, generation, selectedCrop?.id, onSelectCrop]);
+  }, [crops, generation, selectedCrop?.id, onSelectCrop, drawing]);
 
   function stopAutomaticViewport() {
     lifecycle.current.manual = true;
@@ -468,18 +475,19 @@ export default function DashboardMap({
       const name = feature.getProperty("name");
       return {
         fillColor: selected ? DEFAULT_FARM_COLOR : farmMapColor(id),
-        fillOpacity: selected ? 0.55 : 0.25,
+        fillOpacity: drawing ? 0.1 : selected ? 0.55 : 0.25,
         strokeColor: farmMapColor(id, selected),
+        ...(drawing ? { strokeOpacity: 0.5 } : {}),
         strokeWeight: selected ? 4 : 2,
         zIndex: selected ? 2 : 1,
-        clickable: true,
+        clickable: !drawing,
         editable: false,
         draggable: false,
         title: typeof name === "string" ? name : undefined,
         label: typeof name === "string" ? name : undefined,
       };
     });
-  }, [selectedFarmId, farms, generation]);
+  }, [selectedFarmId, farms, generation, drawing]);
 
   function focusRecords(records: readonly DashboardFarm[]) {
     const current = resources.current;
@@ -653,6 +661,7 @@ export default function DashboardMap({
           anchor={anchor}
           open={
             !selectedCrop &&
+            !drawing &&
             !popupDismissed &&
             authReady &&
             Boolean(selectedFarm && anchor)
@@ -671,7 +680,7 @@ export default function DashboardMap({
           map={generation.map}
           farm={{ id: selectedCrop.id, name: selectedCrop.crop_name ?? "" }}
           anchor={cropAnchor}
-          open={!popupDismissed && authReady && Boolean(cropAnchor)}
+          open={!drawing && !popupDismissed && authReady && Boolean(cropAnchor)}
           blocked={automaticViewportBlocked}
           request={popupRequest}
           viewport={{ ...viewport, sidebarWidth }}
@@ -684,6 +693,13 @@ export default function DashboardMap({
             onAction={onCropAction}
           />
         </FarmInfoOverlay>
+      )}
+      {generation && status === "ready" && boundaryDraw && (
+        <BoundaryDrawLayer
+          sdk={generation.sdk}
+          map={generation.map}
+          {...boundaryDraw}
+        />
       )}
       {status !== "ready" && (
         <div className="from-success-50 to-success-100 dark:to-success-950 absolute inset-0 flex items-center justify-center bg-linear-to-br via-gray-50 p-6 dark:from-gray-900 dark:via-gray-950">

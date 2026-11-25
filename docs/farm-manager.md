@@ -243,7 +243,6 @@ Other created files:
 
 - `src/app/[locale]/(account)/account/(protected)/_components/AccountFarmContext.tsx`
 - `src/components/common/maps/FarmBoundaryEditor.tsx`
-- `src/components/common/maps/FarmBoundaryDialog.tsx`
 - `src/components/common/maps/BoundaryConfirmDialog.tsx`
 - `src/hooks/useFarmBoundary.ts`
 - `src/icons/farm-wizard-landscape.svg`

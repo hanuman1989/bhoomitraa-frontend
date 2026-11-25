@@ -55,6 +55,7 @@ export default function CropWizardDialog({
   onClose,
   onChanged,
   onSaved,
+  onGenerateTimeline,
 }: {
   id?: number;
   farmId?: number;
@@ -62,6 +63,8 @@ export default function CropWizardDialog({
   onClose: () => void;
   onChanged: () => void;
   onSaved: (crop: CropDetail) => void;
+  /** Add mode only: called after a successful save to prepare and show the timeline. */
+  onGenerateTimeline?: (id: number) => void;
 }) {
   const t = useTranslations("farmerCrops");
   const [crop, setCrop] = useState<CropDetail | null>(null);
@@ -81,6 +84,8 @@ export default function CropWizardDialog({
   const creation = useRef<{ payload: string; key: string } | null>(null);
   const body = useRef<HTMLDivElement>(null);
   const markDirty = useCallback((value: boolean) => setDirty(value), []);
+  // Add mode: a new crop or a draft being finished. Editing an active crop never touches its timeline.
+  const addMode = crop?.status !== "active";
   useEffect(() => {
     if (!id) return;
     let active = true;
@@ -221,11 +226,14 @@ export default function CropWizardDialog({
     pending.current = true;
     setBusy(true);
     try {
+      const generate = addMode;
       const result = await finalizeFarmerCrop(crop.id, revision);
       if (result.success && result.data) {
         toast.success(t("saved"));
         onChanged();
         onSaved(result.data);
+        // The crop is saved first; a failed generation never undoes it.
+        if (generate) onGenerateTimeline?.(result.data.id);
       } else {
         toast.error(result.message);
         if (result.conflict) {
@@ -395,7 +403,7 @@ export default function CropWizardDialog({
                 {busy
                   ? t("saving")
                   : step === REVIEW_STEP
-                    ? t("saveCrop")
+                    ? t(addMode ? "saveCrop" : "updateCrop")
                     : t("nextStep", { step: t(`steps.${cropSteps[step]}`) })}
                 <ArrowRightIcon className="size-5 rtl:rotate-180" />
               </button>
@@ -423,6 +431,7 @@ export default function CropWizardDialog({
                 ? "deleteDraft"
                 : "discard",
           )}
+          danger={crop?.status === "draft"}
           alternativeLabel={crop ? t("closeKeepDraft") : undefined}
           onAlternative={crop ? onClose : undefined}
           cancelLabel={t("continueEditing")}

@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
+  CheckLineIcon,
   PencilIcon,
   PlusIcon,
   MapLayersIcon,
@@ -9,6 +10,7 @@ import {
   FitMapIcon,
 } from "@/icons";
 import type { MapType } from "./dashboardTypes";
+import type { BoundaryDrawMode } from "./boundaryDraw/boundaryDrawState";
 
 export default function AccountFloatingActions({
   open,
@@ -23,6 +25,9 @@ export default function AccountFloatingActions({
   onLocate,
   onFit,
   onReset,
+  drawMode = "idle",
+  canCompleteDraw = false,
+  drawToolbar,
 }: {
   open: boolean;
   mapType: MapType;
@@ -36,8 +41,13 @@ export default function AccountFloatingActions({
   onLocate: () => void;
   onFit: () => void;
   onReset: () => void;
+  /** Outside idle, the Draw FAB is pinned and completes the boundary. */
+  drawMode?: BoundaryDrawMode;
+  canCompleteDraw?: boolean;
+  drawToolbar?: ReactNode;
 }) {
   const t = useTranslations("farmerDashboard.actions");
+  const tb = useTranslations("farmerDashboard.boundaryDraw");
   const container = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -59,6 +69,8 @@ export default function AccountFloatingActions({
     };
   }, [open, onToggle]);
   if (availableHeight < 160) return null;
+  const drawing = drawMode !== "idle";
+  const drawLabel = tb(drawMode === "drawn" ? "saveAsFarm" : "confirm");
   const actions = [
     {
       id: "drawFarm",
@@ -102,7 +114,7 @@ export default function AccountFloatingActions({
       run: onReset,
       disabled: !mapReady,
     },
-  ];
+  ].filter((action) => !drawing || action.id !== "drawFarm");
   return (
     <div
       ref={container}
@@ -139,6 +151,31 @@ export default function AccountFloatingActions({
               </span>
             </button>
           ))}
+        </div>
+      )}
+      {drawing && (
+        <div className="flex items-center gap-2">
+          {drawToolbar}
+          <button
+            type="button"
+            aria-disabled={!canCompleteDraw}
+            aria-label={drawLabel}
+            title={canCompleteDraw ? drawLabel : tb("minPoints")}
+            onClick={() => {
+              if (canCompleteDraw) onDrawFarm();
+            }}
+            className="group focus-visible:outline-success-700 flex min-h-11 shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:min-h-0"
+          >
+            <span className="shadow-theme-md group-hover:bg-success-50 max-xsm:sr-only rounded-xl bg-white/95 px-2.5 py-1.5 text-xs font-medium text-gray-950 dark:bg-gray-900 dark:text-gray-100">
+              {drawLabel}
+            </span>
+            <span className="bg-success-700 shadow-theme-lg flex size-8 shrink-0 items-center justify-center rounded-full text-white">
+              <CheckLineIcon
+                aria-hidden="true"
+                className="block size-4 shrink-0"
+              />
+            </span>
+          </button>
         </div>
       )}
       <button

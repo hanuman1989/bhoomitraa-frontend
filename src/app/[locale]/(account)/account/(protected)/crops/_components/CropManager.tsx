@@ -198,36 +198,38 @@ export default function CropManager({
             </button>
           ))}
         </nav>
-        <div className="relative min-w-52 flex-1 sm:max-w-xs">
-          <SearchIcon
-            aria-hidden
-            className="text-success-600 absolute start-3 top-3 size-4"
-          />
-          <input
-            aria-label={t("search")}
-            value={search}
-            maxLength={150}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("search")}
-            className={`${cropControl} !h-10 !rounded-lg ps-9 text-xs`}
-          />
+        <div className="flex min-w-52 flex-1 flex-wrap items-center justify-end gap-2 sm:max-w-xl">
+          {tab === "history" && (
+            <select
+              aria-label={t("historyStatus")}
+              value={filters.status}
+              onChange={(e) =>
+                update({ history_status: e.target.value, page: "1" })
+              }
+              className={`${cropControl} !h-10 !w-auto !rounded-lg text-xs`}
+            >
+              <option value="completed">{t("statuses.completed")}</option>
+              <option value="cancelled">{t("statuses.cancelled")}</option>
+            </select>
+          )}
+          <div className="relative min-w-52 flex-1 sm:max-w-xs">
+            <SearchIcon
+              aria-hidden
+              className="text-success-600 absolute start-3 top-3 size-4"
+            />
+            <input
+              aria-label={t("search")}
+              value={search}
+              maxLength={150}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("search")}
+              className={`${cropControl} !h-10 !rounded-lg ps-9 text-xs`}
+            />
+          </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-3">
-        {tab === "history" && (
-          <select
-            aria-label={t("historyStatus")}
-            value={filters.status}
-            onChange={(e) =>
-              update({ history_status: e.target.value, page: "1" })
-            }
-            className={`${cropControl} !h-10 w-auto !rounded-lg text-xs`}
-          >
-            <option value="completed">{t("statuses.completed")}</option>
-            <option value="cancelled">{t("statuses.cancelled")}</option>
-          </select>
-        )}
-        {filters.farm_id && (
+      {filters.farm_id && (
+        <div className="flex flex-wrap gap-3">
           <div className="bg-success-50 dark:bg-success-950 flex items-center gap-2 rounded-xl px-3 py-2 text-sm">
             <span>
               {workspace.farms.find((f) => f.id === filters.farm_id)?.name ??
@@ -241,8 +243,8 @@ export default function CropManager({
               {t("clearFilter")}
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       {workspace.crops.status === "error" && (
         <CropNotice error>
           {t("mapLoadFailed")}{" "}
@@ -311,7 +313,6 @@ export default function CropManager({
           />
         </div>
       )}
-      <p className="text-xs text-gray-500">{t("timelineUnavailable")}</p>
     </div>
   );
 }

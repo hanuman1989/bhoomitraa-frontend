@@ -30,6 +30,7 @@ export interface MapsStyle {
   fillColor?: string;
   fillOpacity?: number;
   strokeColor?: string;
+  strokeOpacity?: number;
   strokeWeight?: number;
   clickable?: boolean;
   editable?: boolean;
@@ -60,10 +61,14 @@ export interface MapsData {
 export interface MapsInstance {
   setMapTypeId(type: MapType | "terrain"): void;
   addListener(
-    event: "click",
-    callback: (event: { latLng: MapsLatLng | null }) => void,
+    event: "click" | "mousemove",
+    callback: (event: { latLng: MapsLatLng | null; domEvent?: Event }) => void,
   ): MapsListener;
-  addListener(event: "idle", callback: () => void): MapsListener;
+  addListener(event: "idle" | "mouseout", callback: () => void): MapsListener;
+  setOptions(options: {
+    draggableCursor?: string | null;
+    disableDoubleClickZoom?: boolean;
+  }): void;
   setZoom(zoom: number): void;
   getZoom(): number | undefined;
   getCenter(): MapsLatLng | undefined;
@@ -124,6 +129,7 @@ export interface MapsSDK {
     fillColor: string;
     fillOpacity: number;
     strokeColor: string;
+    strokeOpacity?: number;
     strokeWeight: number;
     editable: boolean;
     clickable: boolean;
@@ -137,6 +143,7 @@ export interface MapsSDK {
     strokeOpacity: number;
     strokeWeight: number;
     geodesic: boolean;
+    clickable?: boolean;
     zIndex?: number;
     icons?: {
       icon: { path: string; strokeOpacity: number; scale: number };
@@ -184,9 +191,11 @@ export interface MapsPolygon {
   setMap(map: MapsInstance | null): void;
   setEditable(editable: boolean): void;
   setOptions(options: { fillOpacity: number; strokeColor: string }): void;
+  addListener(event: "click", callback: () => void): MapsListener;
 }
 export interface MapsPolyline {
   setMap(map: MapsInstance | null): void;
+  setPath(path: MapPosition[]): void;
 }
 declare global {
   interface Window {

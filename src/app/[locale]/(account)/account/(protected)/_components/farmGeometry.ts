@@ -171,6 +171,38 @@ export function pointDistance(a: MapPosition, b: MapPosition): number {
   return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(Math.min(1, h)));
 }
 
+/** Shared per-click guard for every manual boundary editor. */
+export const MIN_VERTEX_SPACING_M = 0.05;
+export function boundaryPointRejection(
+  points: readonly MapPosition[],
+  point: MapPosition,
+): "pointLimit" | "duplicate" | null {
+  if (!isMapPosition(point) || points.length >= MAX_BOUNDARY_VERTICES)
+    return "pointLimit";
+  return points.some((p) => pointDistance(p, point) < MIN_VERTEX_SPACING_M)
+    ? "duplicate"
+    : null;
+}
+
+/** Snap distance in screen pixels, so closing works the same at every zoom. */
+export const SNAP_TOLERANCE_PX = { mouse: 12, touch: 20 } as const;
+export interface PixelPoint {
+  x: number;
+  y: number;
+}
+export function isNearFirstPoint(
+  points: readonly MapPosition[],
+  cursor: PixelPoint | null | undefined,
+  project: (point: MapPosition) => PixelPoint | null | undefined,
+  tolerance: number,
+): boolean {
+  if (points.length < 3 || !cursor) return false;
+  const first = project(points[0]);
+  return Boolean(
+    first && Math.hypot(first.x - cursor.x, first.y - cursor.y) <= tolerance,
+  );
+}
+
 export function boundaryError(
   points: readonly MapPosition[],
 ): "vertices" | "coordinates" | "intersection" | "area" | null {

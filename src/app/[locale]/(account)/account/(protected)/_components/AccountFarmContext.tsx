@@ -32,6 +32,8 @@ export interface AccountFarmWorkspace {
       startStep?: number;
     }) => void;
     details: (id: number, section?: "soil" | "fertilizer") => void;
+    /** Opens the Crop Timeline dialog; `generate` prepares the timeline first. */
+    timeline: (id: number, options?: { generate?: boolean }) => void;
     remove: (crop: { id: number; name: string; status: CropStatus }) => void;
   };
 }

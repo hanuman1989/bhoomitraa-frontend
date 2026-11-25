@@ -5,6 +5,29 @@ import toast from "react-hot-toast";
 import { deleteFarmerCrop } from "@/actions/account/farm-crops";
 import type { CropStatus } from "@/types/account/farmCrop";
 import CropConfirmDialog from "./CropConfirmDialog";
+
+/**
+ * Drafts are deleted, active crops are cancelled (history is kept) and
+ * cancelled crops are deleted permanently together with their timeline.
+ */
+const copy = {
+  draft: {
+    action: "deleteDraft",
+    description: "deleteDraftDescription",
+    success: null,
+  },
+  cancelled: {
+    action: "deleteCrop",
+    description: "deleteCropDescription",
+    success: "cropDeleted",
+  },
+  active: {
+    action: "cancelCrop",
+    description: "cancelCropDescription",
+    success: null,
+  },
+} as const;
+
 export default function CropDeleteConfirm({
   crop,
   onClose,
@@ -17,18 +40,18 @@ export default function CropDeleteConfirm({
   const t = useTranslations("farmerCrops");
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
+  const text =
+    crop.status === "draft" || crop.status === "cancelled"
+      ? copy[crop.status]
+      : copy.active;
   return (
     <CropConfirmDialog
-      title={t(crop.status === "draft" ? "deleteDraft" : "cancelCrop")}
-      description={t(
-        crop.status === "draft"
-          ? "deleteDraftDescription"
-          : "cancelCropDescription",
-        { name: crop.name },
-      )}
+      title={t(text.action)}
+      description={t(text.description, { name: crop.name })}
       busy={busy}
       onClose={onClose}
-      confirmLabel={t(crop.status === "draft" ? "deleteDraft" : "cancelCrop")}
+      confirmLabel={t(text.action)}
+      danger={crop.status === "draft" || crop.status === "cancelled"}
       onConfirm={async () => {
         if (pending.current) return;
         pending.current = true;
@@ -36,7 +59,7 @@ export default function CropDeleteConfirm({
         try {
           const result = await deleteFarmerCrop(crop.id);
           if (result.success) {
-            toast.success(result.message);
+            toast.success(text.success ? t(text.success) : result.message);
             onRemoved();
           } else toast.error(result.message);
         } catch {

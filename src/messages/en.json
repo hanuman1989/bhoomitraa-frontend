@@ -141,6 +141,23 @@
       "currentMapType": "Current map type: {type}",
       "drawFarm": "Draw Farm Boundary"
     },
+    "boundaryDraw": {
+      "confirm": "Confirm Boundary",
+      "saveAsFarm": "Save as Farm",
+      "minPoints": "Add at least 3 points",
+      "toolbar": "Boundary drawing tools",
+      "undo": "Undo last point",
+      "reopen": "Reopen boundary",
+      "clear": "Clear boundary",
+      "complete": "Complete boundary",
+      "addFarm": "Add farm with this boundary",
+      "hint": "Tap on the map to add corners. Tap the first point to finish.",
+      "drawnHint": "Boundary closed. Tap it to add your farm.",
+      "progress": "{count, plural, =0 {No points yet} one {# point} other {# points}}",
+      "progressWithArea": "{count, plural, one {# point} other {# points}} · Area {area}",
+      "shortcuts": "Enter: complete · Backspace: undo · Esc: clear",
+      "draftLabel": "Unsaved boundary · {area} · Tap to add farm"
+    },
     "farms": {
       "selected": "Selected",
       "search": "Search farms by name or location",
@@ -403,7 +420,6 @@
     "distance": "Distance: {distance} m",
     "gpsResumeGap": "Your position changed while paused. Review the joining segment before confirming the boundary.",
     "pointLimit": "The boundary has reached its 499-vertex limit. Finish the drawing or remove points.",
-    "continueToFarm": "Continue to Farm Information",
     "gpsStates": {
       "idle": "Not started",
       "requesting_permission": "Requesting location",
@@ -4310,7 +4326,7 @@
     },
     "sowingDate": "Sowing Date",
     "cropTimeline": "Crop Duration & Harvest",
-    "maturityNote": "This is a maturity estimate. Activity timelines are not yet available.",
+    "maturityNote": "This is a maturity estimate. Your activity timeline is prepared when you save the crop.",
     "duration": "Crop Duration",
     "daysRange": "{min}–{max} days",
     "applicationGuidelines": "Application Guidelines",
@@ -4318,7 +4334,6 @@
     "cropInformation": "Crop Information",
     "cropBoundaryArea": "Crop Boundary & Area",
     "pendingEditDetails": "These details include saved pending edits. The live crop map changes only after final confirmation.",
-    "timelineUnavailable": "Saving activates the crop. Activity timeline generation is not yet available.",
     "continueEditing": "Continue Editing",
     "keepDraftTitle": "Keep this crop plan?",
     "keepDraftDescription": "Completed steps are saved. Keep the draft to resume later, or permanently discard it.",
@@ -4342,7 +4357,16 @@
     "saveCrop": "Save & Generate Crop Timeline",
     "maturityUnavailable": "Maturity estimate unavailable.",
     "daysSingle": "{days} days",
-    "farmLocation": "Farm location"
+    "farmLocation": "Farm location",
+    "updateCrop": "Update Crop",
+    "viewTimeline": "View Timeline",
+    "timelineNotGenerated": "Timeline not generated",
+    "generateTimeline": "Generate Timeline",
+    "lockedSelection": "Farm, crop, variety and season can't be changed after the crop is saved. You can still change the sowing date.",
+    "sowingShiftNote": "Changing the sowing date moves your crop timeline dates.",
+    "deleteCrop": "Delete Crop",
+    "deleteCropDescription": "Permanently delete {name}? Its crop timeline, activities, notes and other saved records will be removed. This cannot be undone.",
+    "cropDeleted": "Crop deleted permanently."
   },
   "timelineBuilder": {
     "title": "Crop Activity Timeline Builder",
@@ -4640,6 +4664,170 @@
       "deleteFailed": "Unable to delete the activity. Please try again.",
       "configSaved": "Timeline configuration saved.",
       "storageUnavailable": "Browser storage is unavailable. Preferences will not be remembered."
+    }
+  },
+  "farmerCropTimeline": {
+    "title": "Crop Timeline",
+    "pageDescription": "Your activities for this crop, stage by stage, with dates from your sowing date.",
+    "close": "Close",
+    "back": "Back to crops",
+    "breadcrumbCrops": "Crops",
+    "breadcrumb": "Breadcrumb",
+    "openFullPage": "Open full page",
+    "loading": "Loading crop timeline…",
+    "loadFailed": "Unable to load the crop timeline. Please try again.",
+    "saveFailed": "Unable to save this change. Please try again.",
+    "generateFailed": "We couldn't prepare the crop timeline. Your crop is saved, so you can try again.",
+    "retry": "Retry",
+    "generating": {
+      "title": "Loading...",
+      "description": "Please wait while we prepare your experience"
+    },
+    "empty": {
+      "notGeneratedTitle": "Timeline not generated",
+      "notGeneratedDescription": "This crop does not have an activity timeline yet.",
+      "generate": "Generate timeline",
+      "draftTitle": "Finish crop setup first",
+      "draftDescription": "Complete and save this crop to prepare its activity timeline.",
+      "continueSetup": "Continue Setup",
+      "historicalDescription": "No activity timeline was prepared for this crop.",
+      "noActivities": "No activities are configured for this crop yet."
+    },
+    "alert": {
+      "title": "Your crop timeline is ready",
+      "description": "{activities, plural, one {# activity} other {# activities}} across {stages, plural, one {# growth stage} other {# growth stages}}, planned from your sowing date of {date}.",
+      "dismiss": "Dismiss"
+    },
+    "summary": {
+      "label": "Crop summary",
+      "sowingDate": "Sowing date",
+      "expectedHarvest": "Expected harvest",
+      "growthStages": "Growth stages",
+      "activities": "Activities",
+      "dueNow": "Due now",
+      "dueNowLate": "Due now · {late} late",
+      "completed": "Completed",
+      "completedValue": "{completed} / {total}"
+    },
+    "toolbar": {
+      "label": "Filter activities",
+      "search": "Search activities or stages…",
+      "searchLabel": "Search activities",
+      "status": "Status",
+      "category": "Category",
+      "allStatuses": "All statuses",
+      "statuses": {
+        "due": "Due now",
+        "upcoming": "Upcoming",
+        "late": "Late or window passed",
+        "in_progress": "In progress",
+        "completed": "Completed"
+      },
+      "allCategories": "All categories",
+      "view": "View",
+      "views": {
+        "stages": "Growth stages",
+        "calendar": "Calendar list"
+      },
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "noMatches": "No activities match these filters.",
+      "clearFilters": "Clear filters"
+    },
+    "stage": {
+      "youAreHere": "You are here",
+      "activities": "{count, plural, one {# activity} other {# activities}}",
+      "done": "{done}/{total} done",
+      "progress": "{done} of {total} done",
+      "expand": "Expand {name}",
+      "collapse": "Collapse {name}",
+      "markerLabel": "{name}: {categories}",
+      "noActivities": "No activities in this stage."
+    },
+    "activity": {
+      "expand": "Expand {title}",
+      "collapse": "Collapse {title}",
+      "markDone": "Mark {title} as done",
+      "reopenTick": "Completed. Reopen {title}",
+      "informationOnly": "Information only",
+      "moved": "Moved",
+      "details": "Activity details",
+      "schedule": "Schedule",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "whatToDo": "What to do",
+      "goodToKnow": "Good to know",
+      "noInstructions": "No instructions have been added for this activity.",
+      "infoFooter": "Information only · no status to update."
+    },
+    "records": {
+      "title": "Record for this activity",
+      "count": "{count, plural, one {# record} other {# records}}",
+      "remaining": "{count, plural, one {# type remaining} other {# types remaining}}",
+      "allDone": "All done",
+      "addNote": "Add Note",
+      "addExpense": "Add Expense",
+      "addLabour": "Add Labour",
+      "addPhoto": "Add Photo",
+      "recorded": "{count} recorded",
+      "notes": "Notes",
+      "deleteNote": "Delete note from {date}",
+      "nothingYet": "Nothing recorded yet.",
+      "firstRecordHint": "Your first record moves this activity to In progress."
+    },
+    "smartActions": {
+      "title": "Smart Actions",
+      "tools": "{count, plural, one {# tool} other {# tools}}",
+      "remaining": "{count, plural, one {# tool remaining} other {# tools remaining}}",
+      "used": "Used · {date}",
+      "dialogSubtitle": "For {activity} · {crop} · {farm}"
+    },
+    "footer": {
+      "reschedule": "Reschedule",
+      "markDone": "Mark as done",
+      "reopen": "Reopen"
+    },
+    "noteDialog": {
+      "title": "Add Note",
+      "linked": "Linked to: {activity}",
+      "note": "Note",
+      "placeholder": "What did you do or notice?",
+      "counter": "{count} / 1000",
+      "date": "Date",
+      "save": "Save Note",
+      "required": "Write a note first.",
+      "tooLong": "Notes can be up to 1000 characters.",
+      "dateRequired": "Choose a date.",
+      "futureDate": "The date cannot be in the future.",
+      "saved": "Note saved."
+    },
+    "rescheduleDialog": {
+      "title": "Reschedule",
+      "startDate": "New start date",
+      "endDate": "New end date",
+      "planned": "Only this activity moves. Planned dates: {dates}.",
+      "backToPlanned": "Back to planned dates",
+      "save": "Save dates",
+      "required": "Choose both dates.",
+      "endBeforeStart": "End date must be on or after the start date.",
+      "saved": "Activity rescheduled."
+    },
+    "underProgress": "Under progress",
+    "confirm": {
+      "reopenTitle": "Reopen this activity?",
+      "reopenWithRecords": "{title} will go back to In progress. Your records stay saved.",
+      "reopenWithoutRecords": "{title} will go back to Pending.",
+      "reopen": "Reopen",
+      "deleteNoteTitle": "Delete this note?",
+      "deleteNoteDescription": "The note from {date} will be removed from this activity.",
+      "delete": "Delete",
+      "cancel": "Cancel"
+    },
+    "toasts": {
+      "completed": "Marked as done.",
+      "reopened": "Activity reopened.",
+      "noteDeleted": "Note deleted.",
+      "updated": "Activity updated."
     }
   }
 }
