@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import Tooltip from "@/components/common/Tooltip";
 import { CheckLineIcon, ChevronDownIcon, InfoIcon } from "@/icons";
 import type { TimelineActivity } from "@/types/account/cropTimeline";
 import { useTimelineActions } from "./TimelineActions";
@@ -31,13 +32,12 @@ function StatusTick({ activity }: { activity: TimelineActivity }) {
   const title = activity.title ?? "";
   if (!activity.flags.allow_status_update || !activity.status)
     return (
-      <span
-        title={t("informationOnly")}
-        className="flex size-11 shrink-0 items-center justify-center text-gray-400"
-      >
-        <InfoIcon aria-hidden="true" className="size-5" />
-        <span className="sr-only">{t("informationOnly")}</span>
-      </span>
+      <Tooltip content={t("informationOnly")} className="shrink-0">
+        <span className="flex size-11 items-center justify-center text-gray-400">
+          <InfoIcon aria-hidden="true" className="size-5" />
+          <span className="sr-only">{t("informationOnly")}</span>
+        </span>
+      </Tooltip>
     );
   const completed = activity.status === "completed";
   return (
@@ -80,7 +80,7 @@ export default function ActivityCard({
     <article
       id={`timeline-activity-${activity.id}`}
       aria-labelledby={`timeline-activity-${activity.id}-title`}
-      className={`scroll-mt-24 rounded-2xl border bg-white transition-colors dark:bg-gray-900 ${open ? "border-success-600 dark:border-success-500 border-2 p-3 sm:p-4" : "border-gray-200 p-2.5 sm:p-3 dark:border-gray-700"} ${done && !open ? "bg-gray-50/60 dark:bg-gray-900" : ""}`}
+      className={`scroll-mt-24 rounded-2xl border bg-white transition dark:bg-gray-900 ${open ? "border-success-600 dark:border-success-500 border-2 p-3 sm:p-4" : "border-gray-200 p-2.5 sm:p-3 dark:border-gray-700"} ${done && !open ? "bg-gray-50/60 dark:bg-gray-900" : ""} ${actions.isHighlighted(activity.id) ? "ring-success-500/40 dark:ring-success-400/40 ring-4" : ""}`}
     >
       <div className="flex items-center gap-2 sm:gap-3">
         <StatusTick activity={activity} />

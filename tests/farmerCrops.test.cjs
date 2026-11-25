@@ -808,6 +808,12 @@ function boundaryStepHarness({ crop = {}, overview = {}, response } = {}) {
     get editor() {
       return nodes(render()).find((n) => n.type === "Editor").props;
     },
+    /** "Use Farm Boundary" is now a floating map action on the editor. */
+    get farmAction() {
+      return nodes(render())
+        .find((n) => n.type === "Editor")
+        .props.extraActions?.find((action) => action.id === "farm");
+    },
     get confirm() {
       return nodes(render()).find((n) => n.type === "Confirm").props;
     },
@@ -934,14 +940,17 @@ test("clear and redraw never recreate the default or remove reference layers; Us
   assert.equal(h.editor.session.phase, "drawing");
   assert.ok(h.editor.session.area > 0);
   assert.equal(h.valid, false);
-  h.button("useFarmBoundary").onClick();
+  assert.equal(h.farmAction.label, "useFarmBoundary");
+  assert.equal(h.farmAction.disabled, false);
+  h.farmAction.run();
   h.confirm.onClose();
   assert.equal(h.form.values.boundary_source, "manual");
-  h.button("useFarmBoundary").onClick();
+  h.farmAction.run();
   h.confirm.onConfirm();
   assert.equal(h.editor.session.phase, "confirmed");
   assert.equal(h.form.values.boundary_source, "farm_boundary");
   assert.equal(h.valid, true);
+  assert.equal(h.farmAction, undefined, "hidden once the farm is selected");
   assert.notEqual(h.editor.displayGeometry, h.occupancy.farm_boundary);
   h.runtime.cleanup();
 });
@@ -966,7 +975,7 @@ test("occupied farms keep read-only layers, disable full-farm selection and reje
   await h.mount();
   assert.equal(h.form.values.boundary_source, "manual");
   assert.equal(h.editor.displayGeometry, null);
-  assert.equal(h.button("useFarmBoundary").disabled, true);
+  assert.equal(h.farmAction, undefined, "an occupied farm cannot be reused");
   assert.deepEqual(
     clone(h.editor.referenceLayers.map((r) => [r.id, r.zIndex])),
     [
@@ -1766,4 +1775,392 @@ test("English/Hindi crop messages match, interpolation is preserved and every li
     assert.match(t("tabs.drafts", { count: 3 }), /3/);
     assert.ok(t("timelineUnavailable"));
   }
+});
+
+test("boundary step has no heading, choice buttons or unit picker and keeps a supported crop unit", async () => {
+  const h = boundaryStepHarness({ crop: { area_unit: "bigha" } });
+  let tree = await h.mount();
+  for (const removed of ["h2", "AreaUnitSelect"])
+    assert.equal(
+      nodes(tree).some((n) => n.type === removed),
+      false,
+      removed,
+    );
+  for (const label of ["useFarmBoundary", "drawCustom", "boundaryDescription"])
+    assert.equal(
+      nodes(tree).some((n) => n.props?.children === label),
+      false,
+      label,
+    );
+  assert.equal(h.form.values.area_unit, "acre", "falls back to the farm unit");
+  assert.equal(h.editor.collapsibleTools, undefined);
+  assert.equal(h.editor.toolbar, undefined);
+
+  const kept = boundaryStepHarness({ crop: { area_unit: "hectare" } });
+  await kept.mount();
+  assert.equal(kept.form.values.area_unit, "hectare", "a valid unit is kept");
+  kept.runtime.cleanup();
+
+  const manual = boundaryStepHarness({ overview: { farm_boundary: null } });
+  tree = await manual.mount();
+  const field = nodes(tree).find(
+    (n) => n.type === "CropField" && n.props.id === "crop-manual-area",
+  );
+  assert.equal(field.props.label, 'areaInUnit:{"unit":"Acre"}');
+  manual.setSaveResult({
+    success: false,
+    errors: { area_unit: ["The selected area unit is invalid."] },
+  });
+  manual.form.values.cultivated_area = "2";
+  tree = manual.render();
+  await manual.submit();
+  tree = manual.render();
+  assert.ok(
+    nodes(tree).some(
+      (n) =>
+        n.type === "CropNotice" &&
+        n.props.children === "The selected area unit is invalid.",
+    ),
+    "backend unit errors stay visible without the picker",
+  );
+  manual.runtime.cleanup();
+  h.runtime.cleanup();
+});
+
+const toPoints = (coordinates) =>
+  coordinates.map(([lng, lat]) => ({ lat, lng }));
+test("live conflict preview marks corners and edges outside the farm (first) or over another crop, matching crop allocation", () => {
+  const farm = box(0, 0, 10, 10);
+  const crop = box(6, 0, 10, 4);
+  const limits = { inside: farm, avoid: [crop] };
+  const check = (coordinates, closed = true) =>
+    clone(geometry.boundaryConflicts(toPoints(coordinates), limits, closed));
+  assert.deepEqual(
+    check([
+      [0, 0],
+      [6, 0],
+      [6, 4],
+      [0, 4],
+    ]),
+    {
+      vertices: [null, null, null, null],
+      edges: [null, null, null, null],
+      enclosed: null,
+    },
+    "following the farm edge and sharing a crop edge are allowed",
+  );
+  const leaving = [
+    [2, 6],
+    [12, 6],
+    [8, 9],
+  ];
+  assert.deepEqual(check(leaving), {
+    vertices: [null, "outside", null],
+    edges: ["outside", "outside", null],
+    enclosed: null,
+  });
+  assert.deepEqual(
+    check(leaving, false).edges,
+    ["outside", "outside"],
+    "an open drawing has no closing edge yet",
+  );
+  const overlapping = [
+    [2, 2],
+    [8, 2],
+    [8, 6],
+    [2, 6],
+  ];
+  assert.deepEqual(check(overlapping), {
+    vertices: [null, "overlap", null, null],
+    edges: ["overlap", "overlap", null, null],
+    enclosed: null,
+  });
+  assert.equal(
+    geometry.cropAllocationError(
+      geometry.pointsToBoundary(toPoints(overlapping)),
+      farm,
+      [crop],
+    ),
+    "overlap",
+  );
+  assert.deepEqual(
+    check([
+      [4, 2],
+      [12, 2],
+      [12, 3],
+      [4, 3],
+    ]).edges,
+    ["outside", "outside", "outside", null],
+    "outside wins over overlap on the same edge",
+  );
+  const surrounding = clone(
+    geometry.boundaryConflicts(
+      toPoints([
+        [1, 1],
+        [9, 1],
+        [9, 9],
+        [1, 9],
+      ]),
+      { inside: farm, avoid: [box(4, 4, 5, 5)] },
+      true,
+    ),
+  );
+  assert.deepEqual(surrounding.edges, [null, null, null, null]);
+  assert.equal(surrounding.enclosed, 0, "a surrounded crop is reported");
+  const notched = {
+    type: "MultiPolygon",
+    coordinates: [
+      [
+        [
+          [0, 0],
+          [10, 0],
+          [10, 10],
+          [6, 10],
+          [6, 4],
+          [4, 4],
+          [4, 10],
+          [0, 10],
+          [0, 0],
+        ],
+      ],
+    ],
+  };
+  assert.deepEqual(
+    clone(
+      geometry.boundaryConflicts(
+        toPoints([
+          [2, 8],
+          [8, 8],
+        ]),
+        { inside: notched, avoid: [] },
+        false,
+      ),
+    ),
+    { vertices: [null, null], edges: ["outside"], enclosed: null },
+    "both corners inside, but the edge crosses the notch",
+  );
+});
+
+function conflictLayerHarness(props) {
+  const runtime = hooks();
+  const created = [],
+    overlays = [],
+    shielded = [];
+  class OverlayView {
+    constructor() {
+      overlays.push(this);
+    }
+    setMap(map) {
+      const previous = this.map;
+      this.map = map;
+      if (map && !previous) this.onAdd?.();
+      if (!map && previous) this.onRemove?.();
+    }
+    getPanes() {
+      return { floatPane: { appendChild() {} } };
+    }
+    getProjection() {
+      return { fromLatLngToDivPixel: ({ lat, lng }) => ({ x: lng, y: lat }) };
+    }
+    static preventMapHitsAndGesturesFrom(element) {
+      shielded.push(element);
+    }
+  }
+  const shape = (kind) =>
+    function (options) {
+      const item = {
+        kind,
+        options,
+        map: options?.map,
+        setMap: (map) => (item.map = map),
+        addGeoJson: (value) => (item.geojson = value),
+        setStyle: (value) => (item.style = value),
+      };
+      created.push(item);
+      return item;
+    };
+  const sdk = {
+    OverlayView,
+    Polyline: shape("line"),
+    Data: shape("data"),
+    SymbolPath: { CIRCLE: 0 },
+    event: { clearInstanceListeners() {} },
+  };
+  const Layer = load(
+    "src/components/common/maps/BoundaryConflictLayer.tsx",
+    {
+      react: runtime.react,
+      "react-dom": {
+        createPortal: (child) => ({
+          type: "Portal",
+          props: { children: child },
+        }),
+      },
+      "next-intl": { useTranslations: () => (key) => key },
+      "@/icons": new Proxy({}, { get: (_, name) => name }),
+      "@/app/[locale]/(account)/account/(protected)/_components/farmGeometry":
+        geometry,
+      "@/components/common/Tooltip": "Tooltip",
+    },
+    { document: { createElement: () => ({ style: {}, remove() {} }) } },
+  ).default;
+  const current = {
+    sdk,
+    map: {},
+    closed: true,
+    limits: {
+      inside: box(0, 0, 10, 10),
+      avoid: [box(6, 0, 10, 4)],
+      messages: { outside: "outsideFarm", overlap: "overlap" },
+    },
+    ...props,
+  };
+  const render = (next = {}) => {
+    Object.assign(current, next);
+    runtime.render(Layer, current);
+    return runtime.render(Layer, current);
+  };
+  const live = () => created.filter((item) => item.map);
+  const alert = (tree) => nodes(tree).find((n) => n.props?.role === "alert");
+  return { render, runtime, live, alert, overlays, shielded };
+}
+
+test("conflict layer paints outside edges red, overlaps orange, and shows a wide alert with Undo while drawing", () => {
+  let undone = 0;
+  const h = conflictLayerHarness({
+    points: toPoints([
+      [2, 6],
+      [12, 6],
+      [8, 9],
+    ]),
+    onUndo: () => undone++,
+  });
+  let tree = h.render();
+  const lines = h.live().filter((item) => item.kind === "line");
+  assert.deepEqual(
+    lines.map((line) => line.options.strokeColor),
+    ["#f04438", "#f04438"],
+  );
+  assert.equal(
+    lines.every((line) => line.options.clickable === false),
+    true,
+  );
+  const corners = h.live().find((item) => item.kind === "data");
+  assert.deepEqual(
+    clone(corners.geojson.features.map((feature) => feature.id)),
+    [1],
+  );
+  assert.equal(
+    corners.style({ getProperty: () => "outside" }).icon.fillColor,
+    "#f04438",
+  );
+  let alert = h.alert(tree);
+  assert.match(alert.props.className, /bg-error-600/);
+  assert.match(alert.props.className, /w-max/, "sized to its text");
+  assert.doesNotMatch(alert.props.className, /max-w-56/);
+  assert.equal(
+    nodes(alert).some((n) => n.props?.children === "outsideFarm"),
+    true,
+  );
+  const undo = nodes(alert).find((n) => n.type === "button");
+  assert.equal(undo.props["aria-label"], "wizard.undoPoint");
+  assert.equal(undo.props.type, "button");
+  undo.props.onClick();
+  assert.equal(undone, 1);
+  assert.equal(h.shielded.length, 1, "taps on the alert never add points");
+
+  tree = h.render({
+    points: toPoints([
+      [2, 2],
+      [8, 2],
+      [8, 6],
+      [2, 6],
+    ]),
+    onUndo: undefined,
+  });
+  assert.deepEqual(
+    h
+      .live()
+      .filter((item) => item.kind === "line")
+      .map((line) => line.options.strokeColor),
+    ["#fb6514", "#fb6514"],
+  );
+  alert = h.alert(tree);
+  assert.match(alert.props.className, /bg-orange-600/);
+  assert.equal(
+    nodes(alert).some((n) => n.props?.children === "overlap"),
+    true,
+  );
+  assert.equal(
+    nodes(alert).some((n) => n.type === "button"),
+    false,
+    "no Undo once the shape is closed or being edited",
+  );
+
+  tree = h.render({
+    points: toPoints([
+      [1, 5],
+      [5, 5],
+      [5, 9],
+      [1, 9],
+    ]),
+  });
+  assert.equal(h.live().length, 0, "nothing coloured once the shape is clear");
+  assert.equal(h.alert(tree), undefined);
+  h.runtime.cleanup();
+  assert.equal(
+    h.overlays.every((overlay) => !overlay.map),
+    true,
+  );
+});
+
+test("conflict layer outlines a crop the closed shape surrounds in orange", () => {
+  const h = conflictLayerHarness({
+    points: toPoints([
+      [1, 1],
+      [9, 1],
+      [9, 9],
+      [1, 9],
+    ]),
+    limits: {
+      inside: box(0, 0, 10, 10),
+      avoid: [box(4, 4, 5, 5)],
+      messages: { outside: "outsideFarm", overlap: "overlap" },
+    },
+  });
+  const tree = h.render();
+  const lines = h.live().filter((item) => item.kind === "line");
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].options.strokeColor, "#fb6514");
+  assert.equal(lines[0].options.path.length, 5);
+  assert.ok(h.alert(tree));
+  h.runtime.cleanup();
+});
+
+test("crop step limits drawing to the farm and away from existing crop boundaries", async () => {
+  const occupied = box(75, 26, 75.0005, 26.001);
+  const h = boundaryStepHarness({
+    overview: {
+      can_use_full_farm_boundary: false,
+      existing_active_crops: [
+        {
+          id: 99,
+          boundary: occupied,
+          crop_name: "Wheat",
+          crop_color: "gold",
+          cultivated_area: "1",
+          area_unit: "acre",
+        },
+      ],
+    },
+  });
+  await h.mount();
+  const limits = h.editor.limits;
+  assert.deepEqual(clone(limits), {
+    inside: h.occupancy.farm_boundary,
+    avoid: [occupied],
+    messages: { outside: "outsideFarm", overlap: "overlap" },
+  });
+  assert.equal(h.editor.limits, limits, "stable between renders");
+  h.runtime.cleanup();
 });

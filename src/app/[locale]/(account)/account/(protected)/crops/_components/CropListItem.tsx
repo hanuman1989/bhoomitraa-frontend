@@ -1,6 +1,7 @@
 "use client";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
 import { useTranslations, useLocale } from "next-intl";
+import Tooltip from "@/components/common/Tooltip";
 import useAreaUnits from "@/hooks/useAreaUnits";
 import { formatArea } from "@/lib/areaUnits";
 import {
@@ -127,8 +128,8 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
               {t("generateTimeline")}
             </button>
           ) : (
-            // A disabled button fires no pointer events, so the tooltip sits on its wrapper.
-            <span title={t("timelineNotGenerated")} className="inline-flex">
+            // The tooltip is a sighted cue; screen readers get the reason from the description.
+            <Tooltip content={t("timelineNotGenerated")}>
               <button
                 type="button"
                 disabled
@@ -141,7 +142,7 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
               <span id={`crop-${crop.id}-no-timeline`} className="sr-only">
                 {t("timelineNotGenerated")}
               </span>
-            </span>
+            </Tooltip>
           )}
           <Menu>
             <MenuButton

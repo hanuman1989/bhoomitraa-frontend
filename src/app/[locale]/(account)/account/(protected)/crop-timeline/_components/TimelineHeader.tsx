@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import Tooltip from "@/components/common/Tooltip";
 import { Link } from "@/i18n/navigation";
 import {
   ChevronLeftIcon,
@@ -66,16 +67,18 @@ export default function TimelineHeader({
       </div>
       {variant === "dialog" && (
         <div className="flex shrink-0 items-center gap-1">
-          <Link
-            href={`/account/crop-timeline/${cycleId}`}
-            // The dialog lives in the persistent shell, so close it when moving to the page.
-            onClick={onClose}
-            aria-label={t("openFullPage")}
-            title={t("openFullPage")}
-            className="text-success-700 dark:text-success-300 focus-visible:outline-success-600 flex size-11 items-center justify-center rounded-lg hover:bg-gray-100 focus-visible:outline-2 dark:hover:bg-gray-800"
-          >
-            <ExternalLinkIcon aria-hidden="true" className="size-5" />
-          </Link>
+          {/* Below, since the dialog clips anything above its header. */}
+          <Tooltip content={t("openFullPage")} side="bottom">
+            <Link
+              href={`/account/crop-timeline/${cycleId}`}
+              // The dialog lives in the persistent shell, so close it when moving to the page.
+              onClick={onClose}
+              aria-label={t("openFullPage")}
+              className="text-success-700 dark:text-success-300 focus-visible:outline-success-600 flex size-11 items-center justify-center rounded-lg hover:bg-gray-100 focus-visible:outline-2 dark:hover:bg-gray-800"
+            >
+              <ExternalLinkIcon aria-hidden="true" className="size-5" />
+            </Link>
+          </Tooltip>
           <button
             type="button"
             onClick={onClose}

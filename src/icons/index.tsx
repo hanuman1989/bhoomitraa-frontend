@@ -123,3 +123,7 @@ export { default as CameraIcon } from "./camera.svg";
 export { default as RupeeIcon } from "./rupee.svg";
 export { default as ReopenIcon } from "./reopen.svg";
 export { default as ExternalLinkIcon } from "./external-link.svg";
+export { default as CrosshairIcon } from "./crosshair.svg";
+export { default as ChevronsUpDownIcon } from "./chevrons-up-down.svg";
+export { default as ChevronsDownUpIcon } from "./chevrons-down-up.svg";
+export { default as ArrowUpToLineIcon } from "./arrow-up-to-line.svg";

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import {
@@ -42,6 +42,9 @@ import AddNoteDialog from "./AddNoteDialog";
 import RescheduleDialog from "./RescheduleDialog";
 import UnderProgressDialog from "./UnderProgressDialog";
 import SmartActionDialog from "./SmartActionDialog";
+import TimelineScrollButtons from "./TimelineScrollButtons";
+import useScrollbarCursor from "./useScrollbarCursor";
+import { scrollBehavior, scrollParent } from "./timelineScroll";
 
 type DialogState =
   | { kind: "note" | "reschedule" | "reopen"; activity: TimelineActivity }
@@ -69,30 +72,45 @@ const noFilters: TimelineFilters = {
   category: "all",
 };
 
+interface TimelineEntry {
+  section: TimelineSection;
+  activity: TimelineActivity;
+}
+
+function timelineEntries(sections: TimelineSection[]): TimelineEntry[] {
+  return sections.flatMap((section) =>
+    section.activities.map((activity) => ({ section, activity })),
+  );
+}
+
+/** The farmer's current work: the earliest In progress activity, else the first due one. */
+function currentEntry(entries: TimelineEntry[]): TimelineEntry | undefined {
+  const byStart = (a: TimelineEntry, b: TimelineEntry) =>
+    a.activity.start_date.localeCompare(b.activity.start_date) ||
+    a.activity.id - b.activity.id;
+  return (
+    entries
+      .filter(({ activity }) => activity.status === "in_progress")
+      .sort(byStart)[0] ??
+    entries
+      .filter(({ activity }) => activity.time_state === "due")
+      .sort(byStart)[0]
+  );
+}
+
 /**
  * Default open state: every In progress activity and its section are open, plus
  * the current stage. The scroll target is the requested activity, else the
- * earliest In progress one, else the first due one.
+ * current one (see currentEntry).
  */
 function initialOpenState(timeline: CropTimelineData, focusId?: number) {
-  const entries = timeline.sections.flatMap((section) =>
-    section.activities.map((activity) => ({ section, activity })),
+  const entries = timelineEntries(timeline.sections);
+  const inProgress = entries.filter(
+    ({ activity }) => activity.status === "in_progress",
   );
-  const byStart = (
-    a: { activity: TimelineActivity },
-    b: { activity: TimelineActivity },
-  ) =>
-    a.activity.start_date.localeCompare(b.activity.start_date) ||
-    a.activity.id - b.activity.id;
-  const inProgress = entries
-    .filter(({ activity }) => activity.status === "in_progress")
-    .sort(byStart);
   const target =
     entries.find(({ activity }) => activity.id === focusId) ??
-    inProgress[0] ??
-    entries
-      .filter(({ activity }) => activity.time_state === "due")
-      .sort(byStart)[0];
+    currentEntry(entries);
   const opened = [...inProgress, ...(target ? [target] : [])];
   return {
     target: target?.activity.id ?? null,
@@ -174,9 +192,21 @@ export default function CropTimeline({
   const [generating, setGenerating] = useState(false);
   const [alertVisible, setAlertVisible] = useState(timeline.alert.show);
   const [dialog, setDialog] = useState<DialogState | null>(null);
-  const [scrollTarget, setScrollTarget] = useState<number | null>(
-    initial.target,
-  );
+  // `smooth` scrolls are farmer-initiated; the on-load scroll jumps.
+  const [scrollTarget, setScrollTarget] = useState<{
+    id: number;
+    smooth?: boolean;
+  } | null>(initial.target === null ? null : { id: initial.target });
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  // The element that scrolls: the dialog body, or the page's scrolling parent;
+  // and the timeline content inside it, whose height the scroll buttons follow.
+  const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  const [content, setContent] = useState<HTMLElement | null>(null);
+  const pageRef = useCallback((node: HTMLDivElement | null) => {
+    setContent(node);
+    setScroller(node && scrollParent(node));
+  }, []);
+  useScrollbarCursor(scroller);
   const pending = useRef(false);
   const alertShown = useRef(alertVisible);
   const mounted = useRef(false);
@@ -200,12 +230,21 @@ export default function CropTimeline({
     if (scrollTarget === null) return;
     const frame = requestAnimationFrame(() => {
       document
-        .getElementById(`timeline-activity-${scrollTarget}`)
-        ?.scrollIntoView({ block: "start" });
+        .getElementById(`timeline-activity-${scrollTarget.id}`)
+        ?.scrollIntoView({
+          block: "start",
+          behavior: scrollTarget.smooth ? scrollBehavior() : "auto",
+        });
       setScrollTarget(null);
     });
     return () => cancelAnimationFrame(frame);
   }, [scrollTarget]);
+
+  useEffect(() => {
+    if (highlightId === null) return;
+    const timer = setTimeout(() => setHighlightId(null), 1500);
+    return () => clearTimeout(timer);
+  }, [highlightId]);
 
   function dismissAlert() {
     setAlertVisible(false);
@@ -280,7 +319,7 @@ export default function CropTimeline({
         alertShown.current = result.data.alert.show;
         setOpenActivities(next.activities);
         setOpenSections(next.sections);
-        setScrollTarget(next.target);
+        setScrollTarget(next.target === null ? null : { id: next.target });
         workspace.crops.refresh();
       } else toast.error(result.message || t("generateFailed"));
     } catch {
@@ -304,6 +343,7 @@ export default function CropTimeline({
     isOpen: (activityId) => openActivities.has(activityId),
     toggle: (activityId) =>
       setOpenActivities((current) => toggleIn(current, activityId)),
+    isHighlighted: (activityId) => highlightId === activityId,
     isPanelOpen: (activityId, panel) =>
       !closedPanels.has(`${activityId}:${panel}`),
     togglePanel: (activityId, panel) =>
@@ -333,6 +373,22 @@ export default function CropTimeline({
           found.set(activity.category.id, activity.category.name);
     return [...found].map(([categoryId, name]) => ({ id: categoryId, name }));
   }, [data.sections]);
+
+  const current = useMemo(
+    () => currentEntry(timelineEntries(data.sections)),
+    [data.sections],
+  );
+
+  /** Shows the current activity: clears filters that hide it, opens it, scrolls and highlights it. */
+  function goToCurrent() {
+    if (!current) return;
+    const { section, activity } = current;
+    if (!matches(filters, section, activity)) setFilters(noFilters);
+    setOpenSections((open) => new Set(open).add(section.key));
+    setOpenActivities((open) => new Set(open).add(activity.id));
+    setScrollTarget({ id: activity.id, smooth: true });
+    setHighlightId(activity.id);
+  }
 
   const filtered =
     filters.search.trim() !== "" ||
@@ -378,6 +434,7 @@ export default function CropTimeline({
             filters={filters}
             categories={categories}
             view={view}
+            hasCurrent={Boolean(current)}
             onFilters={setFilters}
             onView={setView}
             onExpandAll={() =>
@@ -387,6 +444,7 @@ export default function CropTimeline({
               setOpenSections(new Set());
               setOpenActivities(new Set());
             }}
+            onGoToCurrent={goToCurrent}
           />
           {visible.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-700">
@@ -431,20 +489,38 @@ export default function CropTimeline({
 
   return (
     <TimelineActionsContext.Provider value={actions}>
+      {/* Bottom padding at least as tall as the scroll buttons' column lets the last activity scroll clear of it. */}
       {variant === "dialog" ? (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="relative flex min-h-0 flex-1 flex-col">
           <div className="shrink-0 border-b border-gray-200 px-4 py-3 sm:px-6 dark:border-gray-800">
             {header}
           </div>
-          <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-gray-50 p-3 sm:p-5 dark:bg-gray-950">
-            {body}
+          <div
+            ref={setScroller}
+            className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain bg-gray-50 p-3 pb-60 sm:p-5 sm:pb-52 dark:bg-gray-950"
+          >
+            <div ref={setContent} className="space-y-4">
+              {body}
+            </div>
           </div>
+          <TimelineScrollButtons
+            scroller={scroller}
+            content={content}
+            className="absolute end-4 bottom-8 sm:end-6 sm:bottom-6"
+          />
         </div>
       ) : (
-        <div className="space-y-4">
-          {header}
-          {body}
-        </div>
+        <>
+          <div ref={pageRef} className="space-y-4 pb-52 sm:pb-44">
+            {header}
+            {body}
+          </div>
+          <TimelineScrollButtons
+            scroller={scroller}
+            content={content}
+            className="fixed end-4 bottom-8 sm:end-6 sm:bottom-6"
+          />
+        </>
       )}
       {dialog?.kind === "note" && (
         <AddNoteDialog

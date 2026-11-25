@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import Tooltip from "@/components/common/Tooltip";
 import { CheckLineIcon, ReopenIcon, TrashBinIcon } from "@/icons";
 import type { BoundaryDrawMode } from "./boundaryDrawState";
 
@@ -30,37 +31,40 @@ export default function BoundaryDrawToolbar({
       aria-label={t("toolbar")}
       className="flex items-center gap-1.5"
     >
-      <button
-        type="button"
-        disabled={!drawn && count === 0}
-        onClick={onUndo}
-        aria-label={undo}
-        title={undo}
-        className={`${button} bg-gray-600`}
-      >
-        <ReopenIcon aria-hidden="true" className="block size-4 shrink-0" />
-      </button>
-      <button
-        type="button"
-        onClick={onClear}
-        aria-label={t("clear")}
-        title={t("clear")}
-        className={`${button} bg-error-600`}
-      >
-        <TrashBinIcon aria-hidden="true" className="block size-4 shrink-0" />
-      </button>
-      <button
-        type="button"
-        aria-disabled={blocked}
-        onClick={() => {
-          if (!blocked) onComplete();
-        }}
-        aria-label={complete}
-        title={complete}
-        className={`${button} bg-success-700`}
-      >
-        <CheckLineIcon aria-hidden="true" className="block size-4 shrink-0" />
-      </button>
+      <Tooltip content={undo} className="shrink-0">
+        <button
+          type="button"
+          disabled={!drawn && count === 0}
+          onClick={onUndo}
+          aria-label={undo}
+          className={`${button} bg-gray-600`}
+        >
+          <ReopenIcon aria-hidden="true" className="block size-4 shrink-0" />
+        </button>
+      </Tooltip>
+      <Tooltip content={t("clear")} className="shrink-0">
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label={t("clear")}
+          className={`${button} bg-error-600`}
+        >
+          <TrashBinIcon aria-hidden="true" className="block size-4 shrink-0" />
+        </button>
+      </Tooltip>
+      <Tooltip content={complete} className="shrink-0">
+        <button
+          type="button"
+          aria-disabled={blocked}
+          onClick={() => {
+            if (!blocked) onComplete();
+          }}
+          aria-label={complete}
+          className={`${button} bg-success-700`}
+        >
+          <CheckLineIcon aria-hidden="true" className="block size-4 shrink-0" />
+        </button>
+      </Tooltip>
     </div>
   );
 }

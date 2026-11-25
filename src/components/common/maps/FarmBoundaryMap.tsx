@@ -24,9 +24,14 @@ import type {
   FarmGeometry,
 } from "@/app/[locale]/(account)/account/(protected)/_components/dashboardTypes";
 import { farmPositions } from "@/app/[locale]/(account)/account/(protected)/_components/farmGeometry";
+import BoundaryDrawLayer from "@/app/[locale]/(account)/account/(protected)/_components/boundaryDraw/BoundaryDrawLayer";
+import BoundaryConflictLayer, {
+  type BoundaryLimits,
+} from "./BoundaryConflictLayer";
 import { PlusIcon, MinusIcon, LocationPinIcon } from "@/icons";
 import { cn } from "@/utils";
 
+const noop = () => {};
 interface PolygonResources {
   polygon: MapsPolygon;
   path?: MapsPath;
@@ -42,6 +47,9 @@ export default function FarmBoundaryMap({
   location,
   onAdd,
   onEdit,
+  onComplete,
+  onUndo,
+  limits,
   children,
   className,
   referenceLayers = [],
@@ -55,6 +63,12 @@ export default function FarmBoundaryMap({
   location?: string;
   onAdd?: (point: MapPosition) => void;
   onEdit?: (points: MapPosition[]) => void;
+  /** Opt-in guided drawing: tapping the first point closes the boundary. */
+  onComplete?: () => void;
+  /** Offered from the conflict alert while drawing. */
+  onUndo?: () => void;
+  /** Edges that leave `inside` turn red and edges entering `avoid` orange. */
+  limits?: BoundaryLimits | null;
   children?: ReactNode;
   className?: string;
   referenceLayers?: {
@@ -71,13 +85,19 @@ export default function FarmBoundaryMap({
   const locale = useLocale();
   const host = useRef<HTMLDivElement>(null);
   const resources = useRef<{ sdk: MapsSDK; map: MapsInstance } | null>(null);
-  const callbacks = useRef({ onAdd, onEdit, drawing });
+  // Guided drawing shares the dashboard layer (rubber band, snap-to-close).
+  const guided = drawing && Boolean(onAdd && onComplete);
+  const callbacks = useRef({ onAdd, onEdit, drawing, guided });
   const initial = useRef({ points, location, locale, referenceLayers });
   const polygonRef = useRef<PolygonResources | null>(null);
   const showPolygon = !drawing && !gps && points.length >= 3;
   const hasDisplayGeometry = Boolean(displayGeometry);
   const [attempt, setAttempt] = useState(0);
   const [generation, setGeneration] = useState(0);
+  const [instance, setInstance] = useState<{
+    sdk: MapsSDK;
+    map: MapsInstance;
+  } | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [notice, setNotice] = useState("");
   const [type, setType] = useState<"satellite" | "roadmap" | "terrain">(
@@ -85,8 +105,8 @@ export default function FarmBoundaryMap({
   );
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   useEffect(() => {
-    callbacks.current = { onAdd, onEdit, drawing };
-  }, [onAdd, onEdit, drawing]);
+    callbacks.current = { onAdd, onEdit, drawing, guided };
+  }, [onAdd, onEdit, drawing, guided]);
   const observePath = useCallback((resource: PolygonResources) => {
     resource.listeners.forEach((listener) => listener.remove());
     const path = resource.polygon.getPath();
@@ -124,7 +144,7 @@ export default function FarmBoundaryMap({
         });
         resources.current = { sdk, map };
         map.addListener("click", ({ latLng }) => {
-          if (latLng && callbacks.current.drawing)
+          if (latLng && callbacks.current.drawing && !callbacks.current.guided)
             callbacks.current.onAdd?.({ lat: latLng.lat(), lng: latLng.lng() });
         });
         if (initial.current.referenceLayers.length)
@@ -163,6 +183,7 @@ export default function FarmBoundaryMap({
         if (!active) return;
         resize = new ResizeObserver(() => sdk.event.trigger(map, "resize"));
         resize.observe(host.current);
+        setInstance({ sdk, map });
         setGeneration((value) => value + 1);
         setState("ready");
       } catch {
@@ -285,7 +306,7 @@ export default function FarmBoundaryMap({
         observePath(resource);
       }
     }
-    if ((drawing || gps) && points.length) {
+    if ((drawing || gps) && points.length && !guided) {
       line = new sdk.Polyline({
         map,
         path: points,
@@ -320,8 +341,8 @@ export default function FarmBoundaryMap({
       map.panTo(points[points.length - 1]);
       if ((map.getZoom() ?? 0) < 16) map.setZoom(18);
     }
-    const vertices = new sdk.Data({ map });
-    vertices.addGeoJson({
+    const vertices = guided ? null : new sdk.Data({ map });
+    vertices?.addGeoJson({
       type: "FeatureCollection",
       features: points.map((point, id) => ({
         type: "Feature",
@@ -330,7 +351,7 @@ export default function FarmBoundaryMap({
         properties: {},
       })),
     });
-    vertices.setStyle({
+    vertices?.setStyle({
       clickable: false,
       zIndex: 5,
       icon: {
@@ -345,9 +366,18 @@ export default function FarmBoundaryMap({
     return () => {
       line?.setMap(null);
       circle?.setMap(null);
-      vertices.setMap(null);
+      vertices?.setMap(null);
     };
-  }, [points, drawing, editable, gps, accuracy, generation, observePath]);
+  }, [
+    points,
+    drawing,
+    editable,
+    gps,
+    accuracy,
+    generation,
+    observePath,
+    guided,
+  ]);
   useEffect(() => {
     resources.current?.map.setMapTypeId(type);
   }, [type, generation]);
@@ -453,6 +483,28 @@ export default function FarmBoundaryMap({
             </button>
           </div>
         </>
+      )}
+      {state === "ready" && instance && guided && onAdd && onComplete && (
+        <BoundaryDrawLayer
+          sdk={instance.sdk}
+          map={instance.map}
+          mode="drawing"
+          points={points}
+          label=""
+          onAdd={onAdd}
+          onComplete={onComplete}
+          onOpen={noop}
+        />
+      )}
+      {state === "ready" && instance && limits && points.length > 0 && (
+        <BoundaryConflictLayer
+          sdk={instance.sdk}
+          map={instance.map}
+          points={points}
+          closed={showPolygon}
+          limits={limits}
+          onUndo={drawing ? onUndo : undefined}
+        />
       )}
       {notice && (
         <p

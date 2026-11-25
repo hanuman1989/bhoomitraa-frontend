@@ -13,6 +13,8 @@ export interface TimelineActionsValue {
   busyId: number | null;
   isOpen: (activityId: number) => boolean;
   toggle: (activityId: number) => void;
+  /** Briefly true for the card that "Go to current" just scrolled to. */
+  isHighlighted: (activityId: number) => boolean;
   isPanelOpen: (activityId: number, panel: "records" | "actions") => boolean;
   togglePanel: (activityId: number, panel: "records" | "actions") => void;
   complete: (activity: TimelineActivity) => void;

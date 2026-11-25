@@ -1,14 +1,12 @@
 "use client";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import FarmBoundaryMap from "./FarmBoundaryMap";
 import BoundaryConfirmDialog from "./BoundaryConfirmDialog";
+import BoundaryDrawingActions, {
+  type BoundaryDrawingAction,
+} from "./BoundaryDrawingActions";
+import BoundaryDrawHelp from "./BoundaryDrawHelp";
 import type { FarmBoundarySession } from "@/hooks/useFarmBoundary";
 import type { AreaUnit } from "@/types/account/farm";
 import useAreaUnits from "@/hooks/useAreaUnits";
@@ -16,12 +14,8 @@ import { formatArea, fromSquareMeters } from "@/lib/areaUnits";
 import {
   PencilIcon,
   FitMapIcon,
-  TrashBinIcon,
-  ChevronLeftIcon,
-  CheckLineIcon,
   LocationPinIcon,
   FarmFieldIcon,
-  InfoIcon,
   UserIcon,
 } from "@/icons";
 
@@ -31,27 +25,30 @@ export default function FarmBoundaryEditor({
   location,
   referenceLayers,
   displayGeometry,
-  toolbar,
   boundaryStatus,
-  collapsibleTools = false,
+  extraActions,
+  limits,
+  helpFor = "farm",
 }: {
   session: FarmBoundarySession;
   areaUnit: AreaUnit;
   location: string;
   referenceLayers?: ComponentProps<typeof FarmBoundaryMap>["referenceLayers"];
   displayGeometry?: ComponentProps<typeof FarmBoundaryMap>["displayGeometry"];
-  toolbar?: ReactNode;
   boundaryStatus?: string;
-  collapsibleTools?: boolean;
+  /** Feature-specific floating map actions, shown before the drawing actions. */
+  extraActions?: readonly BoundaryDrawingAction[];
+  limits?: ComponentProps<typeof FarmBoundaryMap>["limits"];
+  /** Which "How to Draw" instructions the popover shows. */
+  helpFor?: ComponentProps<typeof BoundaryDrawHelp>["kind"];
 }) {
   const t = useTranslations("farmerFarms");
+  const tb = useTranslations("farmerDashboard.boundaryDraw");
   const locale = useLocale();
   const ta = useTranslations("areaUnits");
   const metadata = useAreaUnits();
   const [fullscreen, setFullscreen] = useState(false);
   const [confirm, setConfirm] = useState<null | (() => void)>(null);
-  const [help, setHelp] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
   const expandButton = useRef<HTMLButtonElement>(null);
   const exitButton = useRef<HTMLButtonElement>(null);
   const wasFullscreen = useRef(false);
@@ -63,7 +60,9 @@ export default function FarmBoundaryEditor({
   useEffect(() => {
     if (!fullscreen || confirm) return;
     function escape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      // An open "How to Draw" popover closes first; the next Escape exits.
+      const target = event.target as Element | null;
+      if (event.key === "Escape" && !target?.closest?.("[data-open]")) {
         event.preventDefault();
         event.stopPropagation();
         setFullscreen(false);
@@ -78,6 +77,7 @@ export default function FarmBoundaryEditor({
     measured !== null
       ? `${formatArea(measured, locale)} ${metadata.label(converted === null ? "sqm" : areaUnit)}`
       : t("wizard.notCalculated");
+  const drawing = s.mode === "manual" && s.phase === "drawing";
   function discard(action: () => void) {
     if (s.points.length)
       setConfirm(() => () => {
@@ -268,6 +268,9 @@ export default function FarmBoundaryEditor({
             location={location}
             onAdd={s.add}
             onEdit={s.update}
+            onComplete={s.confirm}
+            onUndo={s.undo}
+            limits={limits}
             className={fullscreen ? "min-h-0" : undefined}
           >
             {!fullscreen && (
@@ -285,85 +288,22 @@ export default function FarmBoundaryEditor({
               </button>
             )}
             {s.mode === "manual" && (
-              <>
-                {collapsibleTools && (
-                  <button
-                    type="button"
-                    aria-expanded={toolsOpen}
-                    onClick={() => setToolsOpen((open) => !open)}
-                    className="shadow-theme-sm absolute start-3 top-16 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-gray-800 sm:hidden"
-                  >
-                    {t("drawingTools")}
-                  </button>
-                )}
-                <div
-                  className={`shadow-theme-lg custom-scrollbar absolute start-3 bottom-3 w-44 flex-col overflow-y-auto overscroll-contain rounded-xl bg-white/95 p-2 text-gray-700 sm:top-16 sm:flex sm:w-48 ${collapsibleTools ? (toolsOpen ? "top-28 flex" : "top-28 hidden") : "top-16 flex"}`}
-                >
-                  <h4 className="shrink-0 px-3 py-2 text-base font-bold text-gray-950">
-                    {t("drawingTools")}
-                  </h4>
-                  {toolbar}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      discard(() => {
-                        s.clear();
-                        s.draw();
-                      })
-                    }
-                    className={`${button} ${s.phase === "drawing" ? "bg-success-100 text-success-800" : ""}`}
-                  >
-                    <FarmFieldIcon className="size-5" />
-                    {t("drawPolygon")}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!s.points.length || s.phase === "drawing"}
-                    onClick={s.edit}
-                    className={button}
-                  >
-                    <PencilIcon className="size-4" />
-                    {t("editBoundary")}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={s.phase !== "drawing" || !s.points.length}
-                    onClick={s.undo}
-                    className={button}
-                  >
-                    <ChevronLeftIcon className="size-4 rtl:rotate-180" />
-                    {t("wizard.undoPoint")}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!s.points.length}
-                    onClick={() => discard(s.clear)}
-                    className={button}
-                  >
-                    <TrashBinIcon className="size-4" />
-                    {t("wizard.clearBoundary")}
-                  </button>
-                  {s.phase !== "confirmed" && (
-                    <button
-                      type="button"
-                      disabled={s.points.length < 3}
-                      onClick={s.confirm}
-                      className={`${button} text-success-700`}
-                    >
-                      <CheckLineIcon className="size-4" />
-                      {t("confirmBoundary")}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setHelp((value) => !value)}
-                    className={`${button} text-xs`}
-                  >
-                    <InfoIcon className="size-4" />
-                    {t("howToDraw")}
-                  </button>
-                </div>
-              </>
+              <BoundaryDrawingActions
+                phase={s.phase}
+                count={s.points.length}
+                help={<BoundaryDrawHelp kind={helpFor} />}
+                onDraw={() =>
+                  discard(() => {
+                    s.clear();
+                    s.draw();
+                  })
+                }
+                onEdit={s.edit}
+                onUndo={s.undo}
+                onClear={() => discard(s.clear)}
+                onConfirm={s.confirm}
+                extraActions={extraActions}
+              />
             )}
             {s.mode === "gps" && (
               <div className="shadow-theme-sm absolute end-16 top-16 max-w-64 rounded-xl bg-white/95 p-3 text-xs break-words text-gray-800">
@@ -414,12 +354,20 @@ export default function FarmBoundaryEditor({
               )}
             </div>
           )}
-        {help && (
+        {drawing && (
           <p
             role="status"
-            className="bg-blue-light-50 text-blue-light-800 dark:text-blue-light-200 rounded-xl p-3 text-sm dark:bg-gray-800"
+            className="bg-success-50/70 text-success-800 dark:bg-success-950/40 dark:text-success-200 rounded-xl p-3 text-sm"
           >
-            {t("wizard.manualInstructions")}
+            {tb("hint")}{" "}
+            <span className="font-semibold">
+              {s.area !== null
+                ? tb("progressWithArea", {
+                    count: s.points.length,
+                    area: areaLabel,
+                  })
+                : tb("progress", { count: s.points.length })}
+            </span>
           </p>
         )}
         {s.notice && (

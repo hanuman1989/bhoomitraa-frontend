@@ -87,6 +87,7 @@ function card(locale = "en", react = { useId: () => "farm-info" }) {
     "@/lib/areaUnits": utils,
     "@/i18n/languages": { getLanguage: () => ({ dir: "ltr" }) },
     "@/icons": icons,
+    "@/components/common/Tooltip": "Tooltip",
   }).default;
 }
 const farm = {
@@ -158,13 +159,25 @@ test("only the custom close action is active; all five menu rows communicate una
   let closed = 0,
     prevented = 0;
   const before = JSON.stringify(farm);
-  const buttons = nodes(card()({ farm, onClose: () => closed++ })).filter(
-    (node) => node.type === "button",
+  const tree = card()({ farm, onClose: () => closed++ });
+  const buttons = nodes(tree).filter((node) => node.type === "button");
+  // Shared tooltips: the full farm name, then "Coming soon" on each menu row;
+  // the first row's tip opens downwards to stay inside the scrolling menu.
+  const [name, ...rows] = nodes(tree).filter((node) => node.type === "Tooltip");
+  assert.equal(name.props.content, farm.name);
+  assert.equal(name.props.as, "div");
+  assert.deepEqual(
+    rows.map((tip) => tip.props.content),
+    Array(5).fill("Coming soon"),
+  );
+  assert.deepEqual(
+    rows.map((tip) => tip.props.side),
+    ["bottom", "top", "top", "top", "top"],
   );
   for (const button of buttons.slice(1)) {
     assert.equal(button.props["aria-disabled"], "true");
     assert.ok(button.props["aria-describedby"]);
-    assert.equal(button.props.title, "Coming soon");
+    assert.equal(button.props.title, undefined);
     button.props.onClick({ preventDefault: () => prevented++ });
   }
   assert.equal(prevented, 5);

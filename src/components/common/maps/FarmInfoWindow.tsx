@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import useAreaUnits from "@/hooks/useAreaUnits";
 import { formatArea } from "@/lib/areaUnits";
 import { getLanguage } from "@/i18n/languages";
+import Tooltip from "@/components/common/Tooltip";
 import type { Farm } from "@/types/account/farm";
 import {
   ChevronLeftIcon,
@@ -85,13 +86,15 @@ export default function FarmInfoWindow({
           <FarmLandscapeIcon className="text-success-700 h-full w-22 max-w-none" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3
-            id={`${id}-name`}
-            title={farm.name}
-            className="line-clamp-2 text-xl leading-6 font-bold break-words"
-          >
-            {farm.name}
-          </h3>
+          {/* Shows the full name when it is cut to two lines; below stays inside the card. */}
+          <Tooltip as="div" content={farm.name} side="bottom" className="block">
+            <h3
+              id={`${id}-name`}
+              className="line-clamp-2 text-xl leading-6 font-bold break-words"
+            >
+              {farm.name}
+            </h3>
+          </Tooltip>
           <p className="mt-1 text-sm leading-5 font-medium break-words text-gray-600 dark:text-gray-300">
             {area}
           </p>
@@ -111,40 +114,46 @@ export default function FarmInfoWindow({
         className="custom-scrollbar min-h-0 overflow-y-auto overscroll-contain px-5 py-2"
       >
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-          {items.map(({ key, label, Icon }) => (
+          {items.map(({ key, label, Icon }, index) => (
             <li key={key}>
-              <button
-                type="button"
-                aria-disabled={
-                  !onAction || key === "delete-farm" ? "true" : undefined
-                }
-                aria-describedby={
-                  !onAction || key === "delete-farm"
-                    ? `${id}-unavailable`
-                    : undefined
-                }
-                title={
+              {/* The menu scrolls, so the first row's tip opens downwards. */}
+              <Tooltip
+                content={
                   !onAction || key === "delete-farm"
                     ? t("farmerDashboard.comingSoonTitle")
-                    : undefined
+                    : null
                 }
-                onClick={(event) => {
-                  if (!onAction || key === "delete-farm")
-                    event.preventDefault();
-                  else onAction(key, farm.id);
-                }}
-                className={`focus-visible:outline-success-600 flex h-12 w-full items-center gap-6 rounded-sm px-3 text-start text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-2 ${key === "delete-farm" ? "text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950" : "hover:bg-success-50 dark:hover:bg-success-950"}`}
+                side={index === 0 ? "bottom" : "top"}
+                className="flex w-full"
               >
-                <Icon
-                  aria-hidden="true"
-                  className={`size-6 shrink-0 ${key === "delete-farm" ? "text-error-600 dark:text-error-400" : "text-success-700 dark:text-success-400"}`}
-                />
-                <span className="min-w-0 flex-1">{t(label)}</span>
-                <ChevronLeftIcon
-                  aria-hidden="true"
-                  className="size-4 shrink-0 rotate-180 text-gray-950 rtl:rotate-0 dark:text-gray-100"
-                />
-              </button>
+                <button
+                  type="button"
+                  aria-disabled={
+                    !onAction || key === "delete-farm" ? "true" : undefined
+                  }
+                  aria-describedby={
+                    !onAction || key === "delete-farm"
+                      ? `${id}-unavailable`
+                      : undefined
+                  }
+                  onClick={(event) => {
+                    if (!onAction || key === "delete-farm")
+                      event.preventDefault();
+                    else onAction(key, farm.id);
+                  }}
+                  className={`focus-visible:outline-success-600 flex h-12 w-full items-center gap-6 rounded-sm px-3 text-start text-base font-medium focus-visible:outline-2 focus-visible:outline-offset-2 ${key === "delete-farm" ? "text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950" : "hover:bg-success-50 dark:hover:bg-success-950"}`}
+                >
+                  <Icon
+                    aria-hidden="true"
+                    className={`size-6 shrink-0 ${key === "delete-farm" ? "text-error-600 dark:text-error-400" : "text-success-700 dark:text-success-400"}`}
+                  />
+                  <span className="min-w-0 flex-1">{t(label)}</span>
+                  <ChevronLeftIcon
+                    aria-hidden="true"
+                    className="size-4 shrink-0 rotate-180 text-gray-950 rtl:rotate-0 dark:text-gray-100"
+                  />
+                </button>
+              </Tooltip>
             </li>
           ))}
         </ul>

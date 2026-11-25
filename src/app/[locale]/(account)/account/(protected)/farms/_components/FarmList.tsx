@@ -1,5 +1,6 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
+import Tooltip from "@/components/common/Tooltip";
 import useAreaUnits from "@/hooks/useAreaUnits";
 import { formatArea } from "@/lib/areaUnits";
 import { Menu, MenuButton, MenuItems, MenuItem } from "@headlessui/react";
@@ -127,19 +128,20 @@ export default function FarmList({
               {t(farm.is_active ? "active" : "inactive")}
             </span>
             <div className="col-span-2 flex items-center justify-end gap-2 lg:col-span-3">
-              <button
-                type="button"
-                disabled={
-                  !farm.has_boundary &&
-                  (farm.latitude === null || farm.longitude === null)
-                }
-                title={t("locateFarm", { name: farm.name })}
-                aria-label={t("locateFarm", { name: farm.name })}
-                onClick={() => onSelect(farm.id)}
-                className={action}
-              >
-                <LocationPinIcon className="size-5" />
-              </button>
+              <Tooltip content={t("locateFarm", { name: farm.name })}>
+                <button
+                  type="button"
+                  disabled={
+                    !farm.has_boundary &&
+                    (farm.latitude === null || farm.longitude === null)
+                  }
+                  aria-label={t("locateFarm", { name: farm.name })}
+                  onClick={() => onSelect(farm.id)}
+                  className={action}
+                >
+                  <LocationPinIcon className="size-5" />
+                </button>
+              </Tooltip>
               <button
                 type="button"
                 disabled={busyId !== null}
