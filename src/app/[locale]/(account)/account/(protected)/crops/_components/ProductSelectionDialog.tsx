@@ -10,7 +10,7 @@ import {
 import { useTranslations } from "next-intl";
 import { getCropCatalog, getCropOptions } from "@/actions/account/farm-crops";
 import type { ApiParams, PaginatedResponse } from "@/types/api";
-import type { CropCatalog, CropCategory } from "@/types/account/farmCrop";
+import type { CatalogueCrop, CropCategory } from "@/types/account/farmCrop";
 import { CloseLineIcon, SearchIcon } from "@/icons";
 import {
   CropChoice,
@@ -23,38 +23,26 @@ import {
 
 const CATALOG_PAGE_SIZE = 12;
 
-export default function ProductSelectionDialog<
-  K extends "crops" | "seeds" | "fertilizers",
->({
-  kind,
+/** "More Crops" catalogue dialog: search, category filter and pagination. */
+export default function ProductSelectionDialog({
   initial,
   filters = {},
-  multiple = false,
-  compatibleVarietyId,
   onClose,
   onConfirm,
 }: {
-  kind: K;
-  initial: CropCatalog[K][];
+  initial: CatalogueCrop[];
   filters?: ApiParams;
-  multiple?: boolean;
-  compatibleVarietyId?: number | null;
   onClose: () => void;
-  onConfirm: (records: CropCatalog[K][]) => void;
+  onConfirm: (records: CatalogueCrop[]) => void;
 }) {
   const t = useTranslations("farmerCrops");
-  const title =
-    kind === "crops"
-      ? t("select.crops")
-      : kind === "seeds"
-        ? t("select.seeds")
-        : t("select.fertilizers");
+  const title = t("select.crops");
   const [selected, setSelected] = useState(initial);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
   const [categories, setCategories] = useState<CropCategory[]>([]);
-  const [data, setData] = useState<PaginatedResponse<CropCatalog[K]> | null>(
+  const [data, setData] = useState<PaginatedResponse<CatalogueCrop> | null>(
     null,
   );
   const [loading, setLoading] = useState(true);
@@ -62,7 +50,6 @@ export default function ProductSelectionDialog<
   const [attempt, setAttempt] = useState(0);
   const filterKey = JSON.stringify(filters);
   useEffect(() => {
-    if (kind !== "crops") return;
     let active = true;
     void getCropOptions("categories").then((result) => {
       if (active && result.success && result.data) setCategories(result.data);
@@ -70,7 +57,7 @@ export default function ProductSelectionDialog<
     return () => {
       active = false;
     };
-  }, [kind]);
+  }, []);
   useEffect(() => {
     let active = true;
     const timer = setTimeout(
@@ -78,17 +65,12 @@ export default function ProductSelectionDialog<
         startTransition(async () => {
           setLoading(true);
           setError("");
-          const result = await getCropCatalog(kind, {
+          const result = await getCropCatalog("crops", {
             ...JSON.parse(filterKey),
             search,
             page,
             per_page: CATALOG_PAGE_SIZE,
-            ...(kind === "crops" && category
-              ? { category_id: Number(category) }
-              : {}),
-            ...(kind === "fertilizers" && category
-              ? { fertilizer_type: category }
-              : {}),
+            ...(category ? { category_id: Number(category) } : {}),
           });
           if (!active) return;
           setLoading(false);
@@ -101,7 +83,7 @@ export default function ProductSelectionDialog<
       active = false;
       clearTimeout(timer);
     };
-  }, [kind, filterKey, search, category, page, attempt]);
+  }, [filterKey, search, category, page, attempt]);
   return (
     <Dialog open onClose={onClose} className="relative z-99999">
       <DialogBackdrop className="fixed inset-0 bg-gray-950/45 backdrop-blur-sm" />
@@ -141,69 +123,37 @@ export default function ProductSelectionDialog<
                 className={`${cropControl} ps-10`}
               />
             </div>
-            <div
-              className={`grid gap-5 ${kind === "crops" ? "md:grid-cols-4" : ""}`}
-            >
-              {kind === "crops" && (
-                <aside className="bg-success-50/40 rounded-xl border border-gray-200 p-3 dark:border-gray-700">
-                  <h3 className="mb-3 font-bold">{t("category")}</h3>
+            <div className="grid gap-5 md:grid-cols-4">
+              <aside className="bg-success-50/40 rounded-xl border border-gray-200 p-3 dark:border-gray-700">
+                <h3 className="mb-3 font-bold">{t("category")}</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCategory("");
+                    setPage(1);
+                  }}
+                  className={`mb-2 w-full rounded-lg p-2 text-start ${!category ? "bg-success-100 text-success-800" : ""}`}
+                >
+                  {t("allCrops")}
+                </button>
+                {categories.map((item) => (
                   <button
                     type="button"
+                    key={item.id}
                     onClick={() => {
-                      setCategory("");
+                      setCategory(String(item.id));
                       setPage(1);
                     }}
-                    className={`mb-2 w-full rounded-lg p-2 text-start ${!category ? "bg-success-100 text-success-800" : ""}`}
+                    className={`w-full rounded-lg p-2 text-start ${category === String(item.id) ? "bg-success-100 text-success-800" : ""}`}
                   >
-                    {t("allCrops")}
+                    {item.name}
+                    {item.crops_count !== undefined && (
+                      <span className="ms-2">({item.crops_count})</span>
+                    )}
                   </button>
-                  {categories.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      onClick={() => {
-                        setCategory(String(item.id));
-                        setPage(1);
-                      }}
-                      className={`w-full rounded-lg p-2 text-start ${category === String(item.id) ? "bg-success-100 text-success-800" : ""}`}
-                    >
-                      {item.name}
-                      {item.crops_count !== undefined && (
-                        <span className="ms-2">({item.crops_count})</span>
-                      )}
-                    </button>
-                  ))}
-                </aside>
-              )}
-              <div className={kind === "crops" ? "md:col-span-3" : ""}>
-                {kind === "fertilizers" && (
-                  <select
-                    aria-label={t("fertilizerType")}
-                    value={category}
-                    onChange={(e) => {
-                      setCategory(e.target.value);
-                      setPage(1);
-                    }}
-                    className={`${cropControl} mb-4`}
-                  >
-                    <option value="">{t("allTypes")}</option>
-                    {[
-                      "straight",
-                      "complex",
-                      "mixed",
-                      "water_soluble",
-                      "organic",
-                      "biofertilizer",
-                      "micronutrient",
-                      "soil_amendment",
-                      "other",
-                    ].map((code) => (
-                      <option key={code} value={code}>
-                        {t(`fertilizerTypes.${code}`)}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                ))}
+              </aside>
+              <div className="md:col-span-3">
                 {loading ? (
                   <p role="status" className="py-12 text-center">
                     {t("loading")}
@@ -224,35 +174,14 @@ export default function ProductSelectionDialog<
                     <p className="mb-3 font-semibold">
                       {t("results", { count: data?.pagination.total ?? 0 })}
                     </p>
-                    <div
-                      className={`grid grid-cols-2 gap-3 ${kind === "crops" ? "lg:grid-cols-4" : "sm:grid-cols-3"}`}
-                    >
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                       {data?.data.map((item) => (
                         <CropChoice
-                          disabled={
-                            kind === "seeds" &&
-                            compatibleVarietyId !== undefined &&
-                            "crop_variety_id" in item &&
-                            item.crop_variety_id !== null &&
-                            item.crop_variety_id !== compatibleVarietyId
-                          }
                           key={item.id}
                           selected={selected.some(
                             (record) => record.id === item.id,
                           )}
-                          onClick={() =>
-                            setSelected((current) =>
-                              multiple
-                                ? current.some(
-                                    (record) => record.id === item.id,
-                                  )
-                                  ? current.filter(
-                                      (record) => record.id !== item.id,
-                                    )
-                                  : [...current, item]
-                                : [item],
-                            )
-                          }
+                          onClick={() => setSelected([item])}
                           className="flex min-h-36 flex-col items-center justify-center gap-2 text-center"
                         >
                           <CropImage
@@ -261,11 +190,6 @@ export default function ProductSelectionDialog<
                             className="size-20"
                           />
                           <strong>{item.name ?? t("unavailable")}</strong>
-                          {"brand_name" in item && item.brand_name && (
-                            <span className="text-xs text-gray-500">
-                              {item.brand_name}
-                            </span>
-                          )}
                         </CropChoice>
                       ))}
                     </div>
@@ -309,7 +233,7 @@ export default function ProductSelectionDialog<
             </button>
             <button
               type="button"
-              disabled={!multiple && !selected.length}
+              disabled={!selected.length}
               className={cropPrimary}
               onClick={() => onConfirm(selected)}
             >

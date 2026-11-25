@@ -19,9 +19,6 @@ import {
   createFarmerCrop,
   saveCropSelection,
   saveCropBoundary,
-  saveCropSeed,
-  saveCropSoil,
-  saveCropFertilizers,
   getFarmerCrop,
   getCropReview,
   finalizeFarmerCrop,
@@ -34,8 +31,6 @@ import type {
   CropSaveResult,
   CropSelection,
   CropStepProps,
-  FertilizerStepPayload,
-  SeedStepPayload,
 } from "@/types/account/farmCrop";
 import {
   ArrowRightIcon,
@@ -45,13 +40,13 @@ import {
 } from "@/icons";
 import CropSelectionStep from "./CropSelectionStep";
 import CropBoundaryStep from "./CropBoundaryStep";
-import SeedSowingStep from "./SeedSowingStep";
-import SoilAssessmentStep from "./SoilAssessmentStep";
-import FertilizerPlanningStep from "./FertilizerPlanningStep";
 import CropReviewStep from "./CropReviewStep";
 import CropWizardStepper, { cropSteps } from "./CropWizardStepper";
 import CropConfirmDialog from "./CropConfirmDialog";
 import { CropNotice, cropButton, cropPrimary } from "./CropUi";
+
+/** Review & Save is the last of the three wizard steps. */
+const REVIEW_STEP = cropSteps.length;
 
 export default function CropWizardDialog({
   id,
@@ -78,7 +73,7 @@ export default function CropWizardDialog({
   const [attempt, setAttempt] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [confirm, setConfirm] = useState<
-    "close" | "navigate" | "skip" | "reload" | null
+    "close" | "navigate" | "reload" | null
   >(null);
   const [target, setTarget] = useState(1);
   const [latest, setLatest] = useState<CropDetail | null>(null);
@@ -106,7 +101,7 @@ export default function CropWizardDialog({
   }, [id, startStep, attempt]);
   const cropId = crop?.id;
   useEffect(() => {
-    if (step !== 6 || !cropId) return;
+    if (step !== REVIEW_STEP || !cropId) return;
     let active = true;
     startTransition(async () => {
       setLoading(true);
@@ -129,7 +124,7 @@ export default function CropWizardDialog({
     if (result.success && result.data) {
       setCrop(result.data);
       setDirty(false);
-      setStep(Math.min(next, result.data.next_step ?? 6));
+      setStep(Math.min(next, result.data.next_step ?? REVIEW_STEP));
       onChanged();
     } else {
       toast.error(result.message);
@@ -161,7 +156,7 @@ export default function CropWizardDialog({
         } else
           result = await saveCropSelection(crop.id, crop.revision, selection);
       } else if (!crop) return { success: false, message: t("saveFailed") };
-      else if (number === 2) {
+      else {
         result = await saveCropBoundary(
           crop.id,
           crop.revision,
@@ -169,20 +164,7 @@ export default function CropWizardDialog({
         );
         if (result.success && result.data)
           toast.success(result.message || t("saved"));
-      } else if (number === 3)
-        result = await saveCropSeed(
-          crop.id,
-          crop.revision,
-          values as SeedStepPayload,
-        );
-      else if (number === 4)
-        result = await saveCropSoil(crop.id, crop.revision, values as FormData);
-      else
-        result = await saveCropFertilizers(
-          crop.id,
-          crop.revision,
-          values as FertilizerStepPayload,
-        );
+      }
       return await saved(result, number + 1);
     } catch {
       const result = { success: false, message: t("saveFailed") };
@@ -206,14 +188,6 @@ export default function CropWizardDialog({
       setDirty(false);
       setStep(next);
     }
-  }
-  async function skip() {
-    setConfirm(null);
-    if (step === 4) {
-      const data = new FormData();
-      data.set("assessment_mode", "skipped");
-      await save(4, data);
-    } else if (step === 5) await save(5, { skipped: true, fertilizers: [] });
   }
   async function discard() {
     if (pending.current) return;
@@ -268,7 +242,7 @@ export default function CropWizardDialog({
           const current = await getFarmerCrop(crop.id);
           if (current.success && current.data) {
             setCrop(current.data);
-            setStep(current.data.next_step ?? 6);
+            setStep(current.data.next_step ?? REVIEW_STEP);
           }
         }
       }
@@ -289,14 +263,14 @@ export default function CropWizardDialog({
           className="shadow-theme-xl flex max-h-full w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white text-gray-950 dark:bg-gray-900 dark:text-white"
           aria-busy={busy}
         >
-          <header className="flex shrink-0 items-start gap-4 px-5 py-4 sm:px-8">
-            <SproutIcon className="text-success-700 dark:text-success-300 mt-1 size-11 shrink-0" />
+          <header className="flex shrink-0 items-start gap-3 px-5 py-3 sm:px-6">
+            <SproutIcon className="text-success-700 dark:text-success-300 mt-0.5 size-9 shrink-0" />
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-2xl font-bold">
+              <DialogTitle className="text-xl font-bold">
                 {t(id ? "editCrop" : "addCrop")}
               </DialogTitle>
-              <Description className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {t("wizardDescription")}
+              <Description className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                {t(id ? "editWizardDescription" : "wizardDescription")}
               </Description>
             </div>
             <button
@@ -317,7 +291,7 @@ export default function CropWizardDialog({
           />
           <div
             ref={body}
-            className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain border-t border-gray-100 p-4 sm:p-6 dark:border-gray-800"
+            className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain border-t border-gray-100 p-4 sm:p-5 dark:border-gray-800"
           >
             {latest && (
               <CropNotice error>
@@ -371,34 +345,7 @@ export default function CropWizardDialog({
                       onDirty={markDirty}
                     />
                   )}{" "}
-                  {crop && step === 3 && (
-                    <SeedSowingStep
-                      key={`${crop.id}-${crop.revision}-3`}
-                      crop={crop}
-                      busy={busy}
-                      onSave={save}
-                      onDirty={markDirty}
-                    />
-                  )}{" "}
-                  {crop && step === 4 && (
-                    <SoilAssessmentStep
-                      key={`${crop.id}-${crop.revision}-4`}
-                      crop={crop}
-                      busy={busy}
-                      onSave={save}
-                      onDirty={markDirty}
-                    />
-                  )}{" "}
-                  {crop && step === 5 && (
-                    <FertilizerPlanningStep
-                      key={`${crop.id}-${crop.revision}-5`}
-                      crop={crop}
-                      busy={busy}
-                      onSave={save}
-                      onDirty={markDirty}
-                    />
-                  )}{" "}
-                  {crop && step === 6 && (
+                  {crop && step === REVIEW_STEP && (
                     <CropReviewStep
                       key={crop.revision}
                       crop={crop}
@@ -422,16 +369,6 @@ export default function CropWizardDialog({
               {t(step > 1 ? "previous" : "cancel")}
             </button>
             <div className="flex flex-wrap justify-end gap-3">
-              {(step === 4 || step === 5) && (
-                <button
-                  type="button"
-                  disabled={busy || loading}
-                  className={cropButton}
-                  onClick={() => setConfirm("skip")}
-                >
-                  {t("skip")}
-                </button>
-              )}
               {step > 1 && (
                 <button
                   type="button"
@@ -451,24 +388,19 @@ export default function CropWizardDialog({
                   Boolean(loadError) ||
                   Boolean(latest) ||
                   (step === 2 && !boundaryReady) ||
-                  (step === 6 && !crop?.can_finalize)
+                  (step === REVIEW_STEP && !crop?.can_finalize)
                 }
                 className={cropPrimary}
               >
                 {busy
                   ? t("saving")
-                  : step === 6
-                    ? t("saveTimeline")
+                  : step === REVIEW_STEP
+                    ? t("saveCrop")
                     : t("nextStep", { step: t(`steps.${cropSteps[step]}`) })}
                 <ArrowRightIcon className="size-5 rtl:rotate-180" />
               </button>
             </div>
           </footer>
-          {step === 6 && (
-            <p className="shrink-0 px-6 pb-3 text-xs text-gray-500">
-              {t("timelineUnavailable")}
-            </p>
-          )}
         </DialogPanel>
       </div>
       {confirm === "close" && (
@@ -507,15 +439,6 @@ export default function CropWizardDialog({
             setConfirm(null);
           }}
           confirmLabel={t("discardAndContinue")}
-        />
-      )}
-      {confirm === "skip" && (
-        <CropConfirmDialog
-          title={t("skipTitle")}
-          description={t("skipDescription")}
-          onClose={() => setConfirm(null)}
-          onConfirm={skip}
-          confirmLabel={t("skip")}
         />
       )}
       {confirm === "reload" && (

@@ -303,7 +303,7 @@ export default function CropBoundaryStep({
   return (
     <form
       id="crop-step-form"
-      className="space-y-5"
+      className="space-y-4"
       onSubmit={handleSubmit(async (values) => {
         if (s.active) {
           setError("boundary", { message: t("finishRecording") });
@@ -343,7 +343,7 @@ export default function CropBoundaryStep({
       })}
     >
       <div>
-        <h2 className="text-2xl font-bold">{t("steps.boundary")}</h2>
+        <h2 className="text-xl font-bold">{t("steps.boundary")}</h2>
         <p className="mt-1 text-sm text-gray-500">{t("boundaryDescription")}</p>
       </div>
       {error && (
@@ -562,7 +562,7 @@ export default function CropBoundaryStep({
                   </span>
                 ))}
               </div>
-              <dl className="bg-success-50 dark:bg-success-950 grid grid-cols-2 gap-3 rounded-2xl p-4 text-sm lg:grid-cols-5">
+              <dl className="bg-success-50 dark:bg-success-950 grid grid-cols-2 gap-3 rounded-xl p-3 text-sm lg:grid-cols-5">
                 {[
                   [
                     t("recordedArea"),

@@ -21,8 +21,6 @@ import type {
   CropFilters,
   CropSaveResult,
   CropSelection,
-  FertilizerStepPayload,
-  SeedStepPayload,
 } from "@/types/account/farmCrop";
 
 async function read<T>(
@@ -59,8 +57,7 @@ export async function getCropCatalog<K extends keyof CropCatalog>(
   }
 }
 export async function getCropOptions<
-  K extends
-    "seasons" | "categories" | "varieties" | "seedPrices" | "fertilizerPrices",
+  K extends "seasons" | "categories" | "varieties",
 >(kind: K, params: ApiParams = {}): Promise<ActionResult<CropCatalog[K][]>> {
   const t = await getTranslations("farmerCrops");
   try {
@@ -116,12 +113,6 @@ export async function getCropReview(id: number) {
 export async function getCropOccupancy(farmId: number, excludeCropId?: number) {
   return read(() => accountFarmCropsAPI.occupancy(farmId, excludeCropId));
 }
-export async function getCropSeedRecommendation(id: number, seedId?: number) {
-  return read(() => accountFarmCropsAPI.seedRecommendation(id, seedId));
-}
-export async function getCropFertilizerRecommendation(id: number) {
-  return read(() => accountFarmCropsAPI.fertilizerRecommendation(id));
-}
 
 async function mutate(
   request: () => Promise<ApiResponse<CropDetail>>,
@@ -159,27 +150,6 @@ export async function saveCropBoundary(
 ) {
   return mutate(() => accountFarmCropsAPI.boundary(id, revision, data));
 }
-export async function saveCropSeed(
-  id: number,
-  revision: number,
-  data: SeedStepPayload,
-) {
-  return mutate(() => accountFarmCropsAPI.seed(id, revision, data));
-}
-export async function saveCropSoil(
-  id: number,
-  revision: number,
-  data: FormData,
-) {
-  return mutate(() => accountFarmCropsAPI.soil(id, revision, data));
-}
-export async function saveCropFertilizers(
-  id: number,
-  revision: number,
-  data: FertilizerStepPayload,
-) {
-  return mutate(() => accountFarmCropsAPI.fertilizer(id, revision, data));
-}
 export async function finalizeFarmerCrop(id: number, revision: number) {
   const result = await mutate(() => accountFarmCropsAPI.finalize(id, revision));
   if (result.success) revalidatePath("/account/crops");
@@ -200,21 +170,5 @@ export async function deleteFarmerCrop(id: number): Promise<ActionResult> {
     };
   } catch (error) {
     return handleActionError(error, t("saveFailed"));
-  }
-}
-export async function downloadCropSoilReport(
-  id: number,
-): Promise<ActionResult<{ buffer: ArrayBuffer; type: string }>> {
-  const t = await getTranslations("farmerCrops");
-  try {
-    await requireUser();
-    const blob = await accountFarmCropsAPI.soilReport(id);
-    return {
-      success: true,
-      message: "",
-      data: { buffer: await blob.arrayBuffer(), type: blob.type },
-    };
-  } catch (error) {
-    return handleActionError(error, t("loadFailed"));
   }
 }

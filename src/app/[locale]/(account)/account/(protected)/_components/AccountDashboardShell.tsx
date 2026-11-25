@@ -173,10 +173,7 @@ export default function AccountDashboardShell({
     farmId?: number;
     startStep?: number;
   } | null>(null);
-  const [cropDetails, setCropDetails] = useState<{
-    id: number;
-    section?: "soil" | "fertilizer";
-  } | null>(null);
+  const [cropDetails, setCropDetails] = useState<{ id: number } | null>(null);
   const [cropDelete, setCropDelete] = useState<{
     id: number;
     name: string;
@@ -188,8 +185,7 @@ export default function AccountDashboardShell({
     [],
   );
   const showCropDetails = useCallback(
-    (id: number, section?: "soil" | "fertilizer") =>
-      setCropDetails({ id, section }),
+    (id: number) => setCropDetails({ id }),
     [],
   );
   useEffect(() => {
@@ -478,11 +474,7 @@ export default function AccountDashboardShell({
       else if (action === "farm") selectFarm(crop.farm_id);
       else if (action === "delete")
         setCropDelete({ id, name: crop.crop_name ?? "", status: crop.status });
-      else
-        showCropDetails(
-          id,
-          action === "soil" || action === "fertilizer" ? action : undefined,
-        );
+      else showCropDetails(id);
     },
     [cropMap.records, selectedCrop, openCrop, selectFarm, showCropDetails],
   );

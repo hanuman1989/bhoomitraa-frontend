@@ -14,12 +14,10 @@ import CropReviewStep from "./CropReviewStep";
 import { CropNotice, cropButton } from "./CropUi";
 export default function CropDetailsDialog({
   id,
-  section,
   onClose,
   onEdit,
 }: {
   id: number;
-  section?: "soil" | "fertilizer";
   onClose: () => void;
   onEdit: (step: number) => void;
 }) {
@@ -73,7 +71,6 @@ export default function CropDetailsDialog({
             ) : crop ? (
               <CropReviewStep
                 crop={crop}
-                section={section}
                 onEdit={
                   crop.status === "active" || crop.status === "draft"
                     ? onEdit

@@ -8,18 +8,7 @@ import useAreaUnits from "@/hooks/useAreaUnits";
 import { formatArea } from "@/lib/areaUnits";
 import { formatSeasonPeriod } from "@/lib/seasons/presentation";
 import SeasonIcon from "@/components/common/SeasonIcon";
-import {
-  BroadcastIcon,
-  DibblingIcon,
-  DrillingIcon,
-  FarmFieldIcon,
-  GridIcon,
-  LeafIcon,
-  LineSowingIcon,
-  HorizontaLDots,
-  InfoIcon,
-  TransplantingIcon,
-} from "@/icons";
+import { GridIcon, HorizontaLDots, InfoIcon } from "@/icons";
 import type {
   CatalogueCrop,
   CropDetail,
@@ -27,31 +16,30 @@ import type {
   CropSelection,
   CropStepProps,
   CropVariety,
-  SowingMethod,
 } from "@/types/account/farmCrop";
 import {
   CropChoice,
   CropField,
   CropImage,
+  CropMaturityDetails,
   CropNotice,
   CropSection,
   cropControl,
   cropFieldErrors,
+  estimateMaturity,
+  formatCropDate,
 } from "./CropUi";
+import CropDateInput from "./CropDateInput";
 import ProductSelectionDialog from "./ProductSelectionDialog";
 import SeasonSelectionDialog from "./SeasonSelectionDialog";
 
-const sowingMethodIcons: Record<
-  SowingMethod,
-  typeof BroadcastIcon
-> = {
-  broadcasting: BroadcastIcon,
-  line_sowing: LineSowingIcon,
-  transplanting: TransplantingIcon,
-  drilling: DrillingIcon,
-  dibbling: DibblingIcon,
-};
 const DEFAULT_CROP_IMAGE = "/images/farm/default-crop.png";
+
+/** Today's date from the farmer's local calendar (no UTC conversion). */
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export default function CropSelectionStep({
   crop,
@@ -73,13 +61,20 @@ export default function CropSelectionStep({
     setError,
     formState: { errors, isDirty },
   } = useForm<CropSelection>({
-    defaultValues: crop?.saved_step_data.crop_selection ?? {
-      farm_id: farmId ?? 0,
-      season_id: 0,
-      crop_id: 0,
-      crop_variety_id: null,
-      sowing_method: null,
-    },
+    // New crops start on today's local date; saved crops keep their date
+    // (a missing date on an older draft stays empty so it is chosen explicitly).
+    defaultValues: crop
+      ? {
+          ...crop.saved_step_data.crop_selection,
+          sowing_date: crop.saved_step_data.crop_selection.sowing_date ?? "",
+        }
+      : {
+          farm_id: farmId ?? 0,
+          season_id: 0,
+          crop_id: 0,
+          crop_variety_id: null,
+          sowing_date: localToday(),
+        },
   });
   const values = useWatch({ control });
   const [seasons, setSeasons] = useState<CropSeason[]>([]);
@@ -154,6 +149,8 @@ export default function CropSelectionStep({
       ? chosen
       : crops.find((c) => c.id === values.crop_id);
   const variety = varieties.find((v) => v.id === values.crop_variety_id);
+  // Recalculated whenever the crop, variety or sowing date changes.
+  const maturity = estimateMaturity(variety, values.sowing_date);
   const visibleCrops =
     chosen && !crops.some((c) => c.id === chosen.id)
       ? [...crops, chosen]
@@ -178,10 +175,10 @@ export default function CropSelectionStep({
         const result = await onSave(1, data);
         if (!result.success) cropFieldErrors(result, setError);
       })}
-      className="space-y-5"
+      className="space-y-4"
     >
       <div>
-        <h2 className="text-2xl font-bold">{t("steps.crop_selection")}</h2>
+        <h2 className="text-xl font-bold">{t("steps.crop_selection")}</h2>
         <p className="mt-1 text-sm text-gray-500">
           {t("selectionDescription")}
         </p>
@@ -201,7 +198,7 @@ export default function CropSelectionStep({
       {loading && <p role="status">{t("loading")}</p>}
       <fieldset
         disabled={busy || loading}
-        className="grid min-w-0 gap-5 lg:grid-cols-3"
+        className="grid min-w-0 gap-4 lg:grid-cols-3"
       >
         <div className="space-y-4 lg:col-span-2">
           <CropSection number={1} title={t("selectFarm")}>
@@ -258,9 +255,9 @@ export default function CropSelectionStep({
                       key={s.id}
                       selected={field.value === s.id}
                       onClick={() => field.onChange(s.id)}
-                      className="flex min-h-18 items-center justify-center gap-3 pe-8"
+                      className="flex min-h-14 items-center justify-center gap-2.5 pe-7"
                     >
-                      <SeasonIcon icon={s.icon} size={34} />
+                      <SeasonIcon icon={s.icon} size={28} />
                       <span className="min-w-0">
                         <strong className="block truncate">
                           {s.name ?? t("unavailable")}
@@ -287,11 +284,11 @@ export default function CropSelectionStep({
                     <CropChoice
                       selected={otherSeasons.some((s) => s.id === field.value)}
                       onClick={() => setDialog("seasons")}
-                      className="flex min-h-18 items-center justify-center gap-3 pe-8"
+                      className="flex min-h-14 items-center justify-center gap-2.5 pe-7"
                     >
                       {season &&
                       otherSeasons.some((s) => s.id === field.value) ? (
-                        <SeasonIcon icon={season.icon} size={34} />
+                        <SeasonIcon icon={season.icon} size={28} />
                       ) : (
                         <HorizontaLDots className="size-8 text-gray-700 dark:text-gray-200" />
                       )}
@@ -351,9 +348,9 @@ export default function CropSelectionStep({
                   <button
                     type="button"
                     onClick={() => setDialog("crops")}
-                    className="border-success-400 text-success-700 dark:text-success-300 flex min-h-28 flex-col items-center justify-center gap-2 rounded-xl border border-dashed"
+                    className="border-success-400 text-success-700 dark:text-success-300 flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed"
                   >
-                    <GridIcon className="size-7" />
+                    <GridIcon className="size-6" />
                     {t("moreCrops")}
                   </button>
                 </div>
@@ -401,46 +398,40 @@ export default function CropSelectionStep({
               </p>
             )}
           </CropSection>
-          <CropSection number={5} title={t("selectMethod")}>
-            <Controller
-              name="sowing_method"
-              control={control}
-              render={({ field }) => (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {(
-                    [
-                      "broadcasting",
-                      "line_sowing",
-                      "transplanting",
-                      "drilling",
-                      "dibbling",
-                    ] as SowingMethod[]
-                  ).map((method) => {
-                    const MethodIcon = sowingMethodIcons[method];
-                    return (
-                      <CropChoice
-                        key={method}
-                        selected={field.value === method}
-                        onClick={() => field.onChange(method)}
-                        className="flex min-h-18 items-center justify-center gap-4 pe-9"
-                      >
-                        <MethodIcon
-                          aria-hidden
-                          className="size-10 shrink-0"
-                        />
-                        <strong className="text-start text-sm leading-5">
-                          {t(`methods.${method}`)}
-                        </strong>
-                      </CropChoice>
-                    );
+          <div className="grid gap-4 md:grid-cols-2">
+            <CropSection number={5} title={t("sowingDate")}>
+              <CropField
+                id="crop-sowing-date"
+                label={t("sowingDate")}
+                required
+                error={errors.sowing_date?.message}
+              >
+                <CropDateInput
+                  id="crop-sowing-date"
+                  aria-invalid={!!errors.sowing_date}
+                  aria-describedby={
+                    errors.sowing_date ? "crop-sowing-date-error" : undefined
+                  }
+                  {...register("sowing_date", {
+                    required: t("required"),
+                    pattern: {
+                      value: /^\d{4}-\d{2}-\d{2}$/,
+                      message: t("validDate"),
+                    },
                   })}
-                </div>
-              )}
-            />
-          </CropSection>
+                />
+              </CropField>
+            </CropSection>
+            <CropSection title={t("cropTimeline")}>
+              <CropMaturityDetails
+                maturity={maturity}
+                timelineGenerated={crop?.timeline_generated}
+              />
+            </CropSection>
+          </div>
         </div>
         <aside className="space-y-4">
-          <div className="bg-success-50 dark:bg-success-950 flex h-40 items-center justify-center overflow-hidden rounded-2xl">
+          <div className="bg-success-50 dark:bg-success-950 flex h-32 items-center justify-center overflow-hidden rounded-xl">
             <CropImage
               src={selectedCrop?.image || DEFAULT_CROP_IMAGE}
               name={selectedCrop?.name}
@@ -448,18 +439,40 @@ export default function CropSelectionStep({
             />
           </div>
           <CropSection title={t("selectedPlan")}>
-            <dl className="space-y-3">
+            <dl className="space-y-2">
               {[
                 [t("farm"), farm?.name],
                 [t("season"), season?.name],
                 [t("crop"), selectedCrop?.name],
                 [t("variety"), variety?.name],
                 [
-                  t("sowingMethod"),
-                  values.sowing_method
-                    ? t(`methods.${values.sowing_method}`)
+                  t("sowingDate"),
+                  values.sowing_date
+                    ? formatCropDate(values.sowing_date, locale)
                     : null,
                 ],
+                ...(maturity.maturity_status === "available"
+                  ? [
+                      [
+                        t("duration"),
+                        maturity.maturity_days_min ===
+                        maturity.maturity_days_max
+                          ? t("daysSingle", {
+                              days: maturity.maturity_days_min ?? 0,
+                            })
+                          : t("daysRange", {
+                              min:
+                                maturity.maturity_days_min ??
+                                maturity.maturity_days_max ??
+                                0,
+                              max:
+                                maturity.maturity_days_max ??
+                                maturity.maturity_days_min ??
+                                0,
+                            }),
+                      ],
+                    ]
+                  : []),
               ].map(([label, value]) => (
                 <div
                   key={label}
@@ -497,7 +510,6 @@ export default function CropSelectionStep({
       )}
       {dialog === "crops" && (
         <ProductSelectionDialog
-          kind="crops"
           initial={selectedCrop ? [selectedCrop] : []}
           onClose={() => setDialog(null)}
           onConfirm={(records) => {

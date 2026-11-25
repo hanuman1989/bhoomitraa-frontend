@@ -8,16 +8,13 @@ import {
   CloseLineIcon,
   InfoIcon,
   PencilIcon,
-  FlaskConicalIcon,
-  LeafIcon,
   FarmFieldIcon,
   TrashBinIcon,
   ChevronLeftIcon,
   SproutIcon,
 } from "@/icons";
 import type { CropMapRecord } from "@/types/account/farmCrop";
-export type CropInfoAction =
-  "details" | "edit" | "soil" | "fertilizer" | "farm" | "delete";
+export type CropInfoAction = "details" | "edit" | "farm" | "delete";
 export default function CropInfoWindow({
   crop,
   onClose,
@@ -34,8 +31,6 @@ export default function CropInfoWindow({
   const actions = [
     { key: "details", Icon: InfoIcon, label: "cropDetails" },
     { key: "edit", Icon: PencilIcon, label: "editCrop" },
-    { key: "soil", Icon: FlaskConicalIcon, label: "steps.soil_assessment" },
-    { key: "fertilizer", Icon: LeafIcon, label: "fertilizerPlan" },
     { key: "farm", Icon: FarmFieldIcon, label: "farmDetails" },
     { key: "delete", Icon: TrashBinIcon, label: "cancelCrop" },
   ] as const;
