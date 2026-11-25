@@ -125,6 +125,7 @@ function formHarness() {
           return { name };
         },
         setValue,
+        getValues: (name) => (name ? values[name] : values),
         setError(name, error) {
           errors[name] = error;
         },
@@ -145,6 +146,19 @@ function formHarness() {
     },
   };
 }
+// Real date and maturity helpers from CropUi (rendered components stay mocked).
+const cropUi = load(feature + "CropUi.tsx", {
+  react: { useState: (value) => [value, () => {}] },
+  "next-intl": {
+    useTranslations: () => (key, params) =>
+      params ? `${key}:${JSON.stringify(params)}` : key,
+    useLocale: () => "en",
+  },
+  "next/image": "Image",
+  "@/hooks/useAreaUnits": () => ({ label: (unit) => unit }),
+  "@/lib/areaUnits": { formatArea: (value) => value },
+  "@/icons": new Proxy({}, { get: (_, name) => name }),
+});
 function formDeps(runtime, form) {
   return {
     react: runtime.react,
@@ -173,12 +187,14 @@ function formDeps(runtime, form) {
           "CropChoice",
           "CropField",
           "CropImage",
-          "CropMoney",
+          "CropMaturityDetails",
           "CropNotice",
           "CropSection",
           "CropSummaryStrip",
         ].map((name) => [name, name]),
       ),
+      estimateMaturity: cropUi.estimateMaturity,
+      formatCropDate: cropUi.formatCropDate,
       cropControl: "control",
       cropFieldErrors: (result, setError) => {
         for (const [name, messages] of Object.entries(result.errors ?? {}))
@@ -187,6 +203,7 @@ function formDeps(runtime, form) {
     },
     "./ProductSelectionDialog": "Products",
     "./SeasonSelectionDialog": "Seasons",
+    "./CropDateInput": "CropDateInput",
     "@/components/common/maps/BoundaryConfirmDialog": "Confirm",
   };
 }
@@ -390,43 +407,29 @@ test("selection renders backend season presentation and hides Other when only th
       nodes(card).some((node) => node.type === "HorizontaLDots"),
     ),
   );
-  const methodSelector = nodes(tree).find(
-    (node) => node.type === "Controller" && node.props.name === "sowing_method",
-  );
-  const methodCards = nodes(
-    methodSelector.props.render({
-      field: { value: "broadcasting", onChange() {} },
-    }),
-  ).filter((node) => node.type === "CropChoice");
-  assert.deepEqual(
-    methodCards.map(
-      (card) =>
-        nodes(card).find((node) =>
-          [
-            "BroadcastIcon",
-            "LineSowingIcon",
-            "TransplantingIcon",
-            "DrillingIcon",
-            "DibblingIcon",
-          ].includes(node.type),
-        ).type,
+  // Sowing Date replaces the removed Select Sowing Method section.
+  assert.ok(
+    !nodes(tree).some(
+      (node) =>
+        node.type === "Controller" && node.props.name === "sowing_method",
     ),
-    [
-      "BroadcastIcon",
-      "LineSowingIcon",
-      "TransplantingIcon",
-      "DrillingIcon",
-      "DibblingIcon",
-    ],
   );
-  assert.equal(methodCards[0].props.selected, true);
-  assert.match(methodCards[0].props.className, /items-center/);
+  assert.ok(!("sowing_method" in form.values));
+  assert.equal(form.rules.sowing_date.required, "required");
+  assert.ok(form.rules.sowing_date.pattern.value.test("2026-11-01"));
+  assert.ok(!form.rules.sowing_date.pattern.value.test("01-11-2026"));
+  assert.equal(
+    nodes(tree).find((node) => node.type === "CropDateInput").props.id,
+    "crop-sowing-date",
+  );
+  assert.equal(
+    nodes(tree).find((node) => node.type === "CropMaturityDetails").props
+      .maturity.maturity_status,
+    "unavailable",
+  );
   runtime.cleanup();
 });
-test("seed cards disable incompatible varieties and default the date from the local calendar without UTC conversion", async () => {
-  const runtime = hooks(),
-    form = formHarness();
-  const deps = formDeps(runtime, form);
+test("sowing date defaults from the local calendar and the harvest estimate uses only verified variety maturity", async () => {
   class LocalDate {
     getFullYear() {
       return 2026;
@@ -441,98 +444,137 @@ test("seed cards disable incompatible varieties and default the date from the lo
       throw Error("UTC conversion must not be used");
     }
   }
-  const products = [
-    { id: 1, crop_variety_id: null, name: "General" },
-    { id: 2, crop_variety_id: 9, name: "Different variety" },
-  ];
-  const Component = load(
-    feature + "SeedSowingStep.tsx",
+  const varieties = [
     {
-      ...deps,
-      "@/actions/account/farm-crops": {
-        getCropCatalog: async () => ({
-          success: true,
-          data: { data: products },
-        }),
-        getCropOptions: async () => ({ success: true, data: [] }),
-        getCropSeedRecommendation: async () => ({ success: true, data: null }),
-      },
+      id: 5,
+      crop_id: 7,
+      name: "Verified",
+      maturity_days_min: 148,
+      maturity_days_max: 153,
+      maturity_verified: true,
     },
-    { Date: LocalDate },
-  ).default;
-  const props = {
-    crop: {
-      id: 4,
-      crop: { id: 3 },
-      farm: { id: 8 },
-      crop_variety: null,
-      seed_sowing_details: {
-        seed: null,
-        seed_source: null,
-        seed_quantity: null,
-        seed_quantity_unit: null,
-      },
-      sowing_date: null,
+    {
+      id: 6,
+      crop_id: 7,
+      name: "Unverified",
+      maturity_days_min: 90,
+      maturity_days_max: 95,
+      maturity_verified: false,
     },
-    onDirty() {},
-    onSave: async () => ({ success: true }),
+  ];
+  const mount = (crop) => {
+    const runtime = hooks(),
+      form = formHarness();
+    const Component = load(
+      feature + "CropSelectionStep.tsx",
+      {
+        ...formDeps(runtime, form),
+        "../../_components/AccountFarmContext": {
+          useAccountFarms: () => ({ farms: [] }),
+        },
+        "@/hooks/useAreaUnits": () => ({ label: (unit) => unit }),
+        "@/lib/areaUnits": { formatArea: (value) => value },
+        "@/actions/account/farm-crops": {
+          getCropOptions: async (kind) => ({
+            success: true,
+            data: kind === "varieties" ? varieties : [],
+          }),
+          getCropCatalog: async () => ({ success: true, data: { data: [] } }),
+        },
+      },
+      { Date: LocalDate },
+    ).default;
+    const props = {
+      crop,
+      onDirty() {},
+      onSave: async () => ({ success: true }),
+    };
+    return { runtime, form, render: () => runtime.render(Component, props) };
   };
-  runtime.render(Component, props);
+  const maturityOf = (tree) =>
+    nodes(tree).find((node) => node.type === "CropMaturityDetails").props
+      .maturity;
+
+  const created = mount(null);
+  created.render();
   await tick();
-  let tree = runtime.render(Component, props);
-  assert.equal(form.values.sowing_date, "2026-11-16");
-  const chooser = nodes(tree).find(
-    (n) => n.type === "Controller" && n.props.name === "seed_id",
-  );
-  const cards = nodes(chooser.props.render()).filter(
-    (n) => n.type === "CropChoice",
-  );
-  assert.equal(cards[0].props.disabled, false);
-  assert.equal(cards[1].props.disabled, true);
-  nodes(chooser.props.render())
-    .find((n) => n.type === "button")
-    .props.onClick();
-  tree = runtime.render(Component, props);
-  assert.equal(
-    nodes(tree).find((n) => n.type === "Products").props.compatibleVarietyId,
-    null,
-  );
-  runtime.cleanup();
-});
-test("soil report validation rejects empty, oversized and mismatched files while preserving a saved private report", () => {
-  const runtime = hooks(),
-    form = formHarness();
-  const Component = load(
-    feature + "SoilAssessmentStep.tsx",
-    formDeps(runtime, form),
-  ).default;
-  runtime.render(Component, {
-    crop: {
-      soil_assessment: {
-        assessment_mode: "soil_test",
-        soil_test: { report_available: true, test_date: "2026-11-16" },
-        estimated_soil_test_cost: null,
-      },
-    },
-    onDirty() {},
-    onSave: async () => ({ success: true }),
+  assert.equal(created.form.values.sowing_date, "2026-11-16");
+  created.form.values.crop_id = 7;
+  created.render();
+  await tick();
+  created.form.values.crop_variety_id = 5;
+  assert.deepEqual(clone(maturityOf(created.render())), {
+    maturity_status: "available",
+    maturity_days_min: 148,
+    maturity_days_max: 153,
+    expected_harvest_date: null,
+    expected_harvest_date_min: "2027-04-13",
+    expected_harvest_date_max: "2027-04-18",
   });
-  const validate = form.rules.report.validate;
+  created.form.values.sowing_date = "2026-12-01";
   assert.equal(
-    validate([{ name: "soil.pdf", type: "application/pdf", size: 1024 }]),
-    true,
+    maturityOf(created.render()).expected_harvest_date_min,
+    "2027-04-28",
   );
-  for (const file of [
-    { name: "soil.pdf", type: "application/pdf", size: 0 },
-    { name: "soil.pdf", type: "application/pdf", size: 10 * 1024 * 1024 + 1 },
-    { name: "soil.exe", type: "application/pdf", size: 10 },
-    { name: "soil.png", type: "application/octet-stream", size: 10 },
-  ])
-    assert.notEqual(validate([file]), true);
-  assert.equal(form.values.remove_report, false);
-  assert.equal(form.values.estimated_cost, "");
-  assert.equal(form.rules.test_date.required, "required");
-  runtime.cleanup();
+  created.form.values.crop_variety_id = 6;
+  assert.equal(maturityOf(created.render()).maturity_status, "unavailable");
+  created.runtime.cleanup();
+
+  // A saved crop keeps its date; an older draft without one must choose it explicitly.
+  for (const [saved, expected] of [
+    ["2026-10-05", "2026-10-05"],
+    [null, ""],
+  ]) {
+    const edited = mount({
+      crop: { id: 7, name: "Wheat" },
+      timeline_generated: false,
+      saved_step_data: {
+        crop_selection: {
+          farm_id: 8,
+          crop_id: 7,
+          season_id: 1,
+          crop_variety_id: null,
+          sowing_date: saved,
+        },
+      },
+    });
+    edited.render();
+    assert.equal(edited.form.values.sowing_date, expected);
+    edited.runtime.cleanup();
+  }
+});
+test("date helpers add whole days in UTC and format dates for each interface language", () => {
+  assert.equal(cropUi.addCropDays("2028-02-28", 1), "2028-02-29");
+  assert.equal(cropUi.addCropDays("2026-03-28", 2), "2026-03-30");
+  assert.equal(cropUi.addCropDays("28-02-2028", 1), null);
+  assert.equal(cropUi.formatCropDate("2027-04-25", "en"), "25 Apr 2027");
+  assert.match(cropUi.formatCropDate("2027-04-25", "hi"), /25 .+ 2027/);
+  assert.equal(
+    cropUi.estimateMaturity(undefined, "2026-11-01").maturity_status,
+    "unavailable",
+  );
+  assert.equal(
+    cropUi.estimateMaturity(
+      {
+        maturity_days_min: 120,
+        maturity_days_max: 100,
+        maturity_verified: true,
+      },
+      "2026-11-01",
+    ).maturity_status,
+    "unavailable",
+  );
+  assert.equal(
+    cropUi.estimateMaturity(
+      {
+        maturity_days_min: 100,
+        maturity_days_max: 100,
+        maturity_verified: true,
+      },
+      "2026-11-01",
+    ).expected_harvest_date,
+    "2027-02-09",
+  );
 });
 
 test("editing a different parcel or interior ring preserves every other crop ring and the parent farm", async () => {
@@ -1178,7 +1220,7 @@ test("crop URL filters preserve backend pagination, draft state and the two supp
   assert.equal(filters.farm_id, undefined);
   assert.equal(filters.season_id, undefined);
 });
-test("verified crop clients use web apiRequest, one draft ID, revisions, multipart POST and query-only edit discard", async () => {
+test("verified crop clients use web apiRequest, one draft ID, revisions and query-only edit discard for the three-step wizard", async () => {
   const calls = [];
   const { accountFarmCropsAPI: api, accountCropCatalogAPI: catalog } = load(
     "src/lib/apis/account/farm-crops.ts",
@@ -1197,7 +1239,7 @@ test("verified crop clients use web apiRequest, one draft ID, revisions, multipa
     crop_id: 7,
     crop_variety_id: null,
     season_id: 2,
-    sowing_method: "broadcasting",
+    sowing_date: "2026-11-16",
   };
   const key = "00000000-0000-4000-8000-000000000001";
   await api.create(selection, key);
@@ -1206,33 +1248,35 @@ test("verified crop clients use web apiRequest, one draft ID, revisions, multipa
     boundary_source: "farm_boundary",
     area_unit: "acre",
   });
-  await api.seed(41, 4, {
-    seed_source: "local",
-    sowing_date: "2026-11-16",
-    quantity_mode: "unknown",
-  });
-  const form = new FormData();
-  form.set("assessment_mode", "skipped");
-  await api.soil(41, 5, form);
-  await api.fertilizer(41, 6, { skipped: true, fertilizers: [] });
-  await api.discardEdit(41, 7);
-  await api.finalize(41, 8);
+  await api.discardEdit(41, 4);
+  await api.finalize(41, 5);
   await api.map();
   await catalog.list("crops", { is_recommendate: true, per_page: 5 });
   assert.ok(calls.every(([, options]) => options.audience === "web"));
   assert.equal(calls[0][1].idempotencyKey, key);
+  assert.equal(calls[0][1].data.sowing_date, "2026-11-16");
+  assert.ok(!("sowing_method" in calls[0][1].data));
   assert.equal(calls[1][0], "/account/farm-crops/41/step-1");
   assert.equal(calls[1][1].data.revision, 2);
-  assert.equal(calls[4][1].method, "POST");
-  assert.equal(calls[4][1].data.get("revision"), "5");
-  assert.equal(calls[4][1].data.get("assessment_mode"), "skipped");
-  assert.equal(calls[6][1].method, "DELETE");
-  assert.equal(calls[6][1].data, undefined);
-  assert.equal(calls[6][1].params.revision, 7);
-  assert.equal(calls[7][0], "/account/farm-crops/41/finalize");
-  assert.deepEqual(clone(calls[8][1].params), { status: "active" });
-  assert.equal(calls[9][1].params.is_recommendate, true);
-  assert.throws(() => catalog.list("arbitrary"), /Invalid catalogue/);
+  assert.equal(calls[2][0], "/account/farm-crops/41/step-2");
+  assert.equal(calls[3][1].method, "DELETE");
+  assert.equal(calls[3][1].data, undefined);
+  assert.equal(calls[3][1].params.revision, 4);
+  assert.equal(calls[4][0], "/account/farm-crops/41/finalize");
+  assert.deepEqual(clone(calls[5][1].params), { status: "active" });
+  assert.equal(calls[6][1].params.is_recommendate, true);
+  // The removed seed, soil and fertilizer wizard endpoints are gone.
+  for (const removed of [
+    "seed",
+    "soil",
+    "fertilizer",
+    "seedRecommendation",
+    "fertilizerRecommendation",
+    "soilReport",
+  ])
+    assert.equal(api[removed], undefined, removed);
+  for (const kind of ["arbitrary", "seeds", "fertilizers", "seedPrices"])
+    assert.throws(() => catalog.list(kind), /Invalid catalogue/);
 });
 test("crop actions authenticate each call, retain 422 errors, flag revision conflicts and revalidate only successful activation", async () => {
   class ApiError extends Error {
@@ -1245,9 +1289,9 @@ test("crop actions authenticate each call, retain 422 errors, flag revision conf
   let auth = 0,
     mode = "ok";
   const paths = [];
-  const errorMap = { seed_quantity: ["Correct the seed quantity."] };
+  const errorMap = { sowing_date: ["Enter a valid sowing date."] };
   const api = {
-    seed: async () => {
+    selection: async () => {
       if (mode === "invalid") throw new ApiError("invalid", 422, errorMap);
       if (mode === "conflict") throw new ApiError("changed", 409);
       return { status: true, data: { id: 8, revision: 4 } };
@@ -1278,11 +1322,23 @@ test("crop actions authenticate each call, retain 422 errors, flag revision conf
       accountCropCatalogAPI: {},
     },
   });
-  assert.equal((await actions.saveCropSeed(8, 3, {})).data.revision, 4);
+  assert.equal((await actions.saveCropSelection(8, 3, {})).data.revision, 4);
   mode = "invalid";
-  assert.deepEqual((await actions.saveCropSeed(8, 3, {})).errors, errorMap);
+  assert.deepEqual(
+    (await actions.saveCropSelection(8, 3, {})).errors,
+    errorMap,
+  );
   mode = "conflict";
-  assert.equal((await actions.saveCropSeed(8, 3, {})).conflict, true);
+  assert.equal((await actions.saveCropSelection(8, 3, {})).conflict, true);
+  for (const removed of [
+    "saveCropSeed",
+    "saveCropSoil",
+    "saveCropFertilizers",
+    "getCropSeedRecommendation",
+    "getCropFertilizerRecommendation",
+    "downloadCropSoilReport",
+  ])
+    assert.equal(actions[removed], undefined, removed);
   await actions.finalizeFarmerCrop(8, 3);
   assert.equal(paths.length, 0);
   mode = "ok";
@@ -1291,14 +1347,7 @@ test("crop actions authenticate each call, retain 422 errors, flag revision conf
   assert.equal(auth, 5);
 });
 
-const steps = [
-  "crop_selection",
-  "boundary",
-  "seed_sowing",
-  "soil_assessment",
-  "fertilizer_planning",
-  "review",
-];
+const steps = ["crop_selection", "boundary", "review_save"];
 function detail(next = 2, revision = 1, status = "draft") {
   return {
     id: 41,
@@ -1307,12 +1356,10 @@ function detail(next = 2, revision = 1, status = "draft") {
     status,
     next_step: next,
     completed_step: next - 1,
-    can_finalize: next === 6,
+    can_finalize: next === 3,
     has_pending_edit: status === "active",
     wizard_progress: Object.fromEntries(
-      steps
-        .slice(0, 5)
-        .map((s, i) => [s, i + 1 < next ? "completed" : "pending"]),
+      steps.map((s, i) => [s, i + 1 < next ? "completed" : "pending"]),
     ),
   };
 }
@@ -1342,9 +1389,6 @@ function wizardHarness({
         "createFarmerCrop",
         "saveCropSelection",
         "saveCropBoundary",
-        "saveCropSeed",
-        "saveCropSoil",
-        "saveCropFertilizers",
         "finalizeFarmerCrop",
         "deleteFarmerCrop",
         "discardCropEdit",
@@ -1387,9 +1431,6 @@ function wizardHarness({
   for (const name of [
     "CropSelectionStep",
     "CropBoundaryStep",
-    "SeedSowingStep",
-    "SoilAssessmentStep",
-    "FertilizerPlanningStep",
     "CropReviewStep",
     "CropConfirmDialog",
   ])
@@ -1441,8 +1482,8 @@ test("new crop creation blocks duplicate submits, reuses its idempotency key aft
     farm_id: 1,
     crop_id: 2,
     season_id: 3,
-    sowing_method: null,
     crop_variety_id: null,
+    sowing_date: "2026-11-16",
   };
   const pending = selection.props.onSave(1, input);
   const duplicate = await selection.props.onSave(1, input);
@@ -1461,7 +1502,7 @@ test("new crop creation blocks duplicate submits, reuses its idempotency key aft
   h.runtime.cleanup();
 });
 
-test("Step 2 waits for the boundary API and advances with authoritative geometry, area and revision after one success toast", async () => {
+test("Step 2 waits for the boundary API and advances directly to Review & Save with authoritative geometry, area and revision after one success toast", async () => {
   let resolve;
   const authoritative = {
     ...detail(3, 8),
@@ -1495,9 +1536,17 @@ test("Step 2 waits for the boundary API and advances with authoritative geometry
   );
   resolve({ success: true, data: authoritative, message: "Boundary saved" });
   await pending;
-  const next = nodes(h.render()).find((n) => n.type === "SeedSowingStep");
+  const tree = h.render();
+  const next = nodes(tree).find((n) => n.type === "CropReviewStep");
   assert.equal(next.props.crop, authoritative);
   assert.deepEqual(h.notices, ["Boundary saved"]);
+  // The primary action on Review & Save is "Save Crop"; no Skip action remains.
+  const primary = nodes(tree).find((n) => n.props?.className === "primary");
+  assert.ok(
+    nodes(primary.props.children).includes("saveCrop") ||
+      primary.props.children.includes("saveCrop"),
+  );
+  assert.ok(!JSON.stringify(tree).includes('"skip"'));
   h.runtime.cleanup();
 });
 
@@ -1517,77 +1566,95 @@ test("closing before draft creation never offers to keep a draft that has not be
   h.runtime.cleanup();
 });
 
-test("review keeps explicit zero, not applicable and skipped expenses distinct", () => {
+test("review shows only crop information, sowing date, maturity and the crop boundary with step edit links", () => {
   const runtime = hooks(),
     form = formHarness();
   const Component = load(feature + "CropReviewStep.tsx", {
     ...formDeps(runtime, form),
-    "react-hot-toast": { error() {} },
-    "@/actions/account/farm-crops": { downloadCropSoilReport() {} },
     "@/hooks/useAreaUnits": () => ({ label: (unit) => unit }),
     "@/lib/areaUnits": { formatArea: (value) => value },
     "@/components/common/maps/FarmBoundaryMap": "BoundaryMap",
   }).default;
+  const maturity = {
+    maturity_status: "available",
+    maturity_days_min: 148,
+    maturity_days_max: 153,
+    expected_harvest_date: null,
+    expected_harvest_date_min: "2027-04-13",
+    expected_harvest_date_max: "2027-04-18",
+  };
   const crop = {
     id: 4,
     revision: 2,
     status: "draft",
-    crop: { name: "Crop" },
-    farm: { name: "Farm" },
-    season: { name: "Season" },
-    crop_variety: null,
-    sowing_method: null,
-    boundary_details: { farm_boundary: null, boundary: null },
-    seed_sowing_details: { seed: null, purchase: null },
-    soil_assessment: { assessment_mode: "basic", basic_assessment: null },
-    fertilizer_plan: { skipped: true, selected_fertilizers: [] },
-    expenses: {
-      estimated_seed_cost: "0",
-      estimated_soil_test_cost: "0",
-      estimated_fertilizer_cost: null,
-      component_states: {
-        estimated_seed_cost: "explicit_zero",
-        estimated_soil_test_cost: "not_applicable",
-        estimated_fertilizer_cost: "skipped",
-      },
-      is_complete: false,
-      known_subtotal: "0",
-      currency_code: "INR",
+    crop: { name: "Wheat" },
+    farm: {
+      name: "Mall 9 Bigha",
+      village: "Bassi",
+      tehsil: null,
+      district: { name: "Jaipur" },
+      state: { name: "Rajasthan" },
     },
-    expected_yield: null,
+    season: { name: "Rabi" },
+    crop_variety: { name: "HD 2967" },
+    sowing_date: "2026-11-16",
+    cultivated_area: "2",
+    area_unit: "acre",
+    boundary_source: "manual_area",
+    boundary_details: { farm_boundary: null, boundary: null },
+    maturity,
+    timeline_generated: false,
     validation_issues: {},
   };
-  const tree = runtime.render(Component, { crop });
-  const text = nodes(tree)
-    .flatMap((node) => [node.props?.children])
-    .flat(Infinity)
-    .filter((v) => typeof v === "string")
-    .join(" ");
-  assert.match(text, /expenseStates.explicit_zero/);
-  assert.match(text, /expenseStates.not_applicable/);
-  assert.match(text, /expenseStates.skipped/);
+  const edits = [];
+  const tree = runtime.render(Component, {
+    crop,
+    onEdit: (step) => edits.push(step),
+    onFinalize: async () => ({ success: true }),
+  });
+  const text = JSON.stringify(tree);
+  assert.match(text, /16 Nov 2026/);
+  assert.match(text, /Bassi, Jaipur, Rajasthan/);
+  assert.match(text, /steps\.review_save/);
+  assert.equal(
+    nodes(tree).find((n) => n.type === "CropMaturityDetails").props.maturity,
+    maturity,
+  );
+  for (const removed of [
+    /expense/i,
+    /seed/i,
+    /soil/i,
+    /fertilizer/i,
+    /yield/i,
+    /sowingMethod/,
+  ])
+    assert.doesNotMatch(text, removed);
+  nodes(tree)
+    .filter((n) => n.type === "CropSection" && n.props.action)
+    .forEach((section) => section.props.action.props.onClick());
+  assert.deepEqual(edits, [1, 2]);
   runtime.cleanup();
 });
 test("resume restores backend next_step/revision; a failed save keeps the current step and original draft", async () => {
   const h = wizardHarness({
     id: 41,
-    server: detail(3, 8),
+    server: detail(2, 8),
     responses: {
-      saveCropSeed: () => ({
+      saveCropBoundary: () => ({
         success: false,
         message: "invalid",
-        errors: { sowing_date: ["date"] },
+        errors: { cultivated_area: ["area"] },
       }),
     },
   });
   h.render();
   await tick();
   let tree = h.render();
-  const seed = nodes(tree).find((n) => n.type === "SeedSowingStep");
-  assert.equal(seed.props.crop.revision, 8);
-  await seed.props.onSave(3, { seed_source: "local" });
+  const boundary = nodes(tree).find((n) => n.type === "CropBoundaryStep");
+  assert.equal(boundary.props.crop.revision, 8);
+  await boundary.props.onSave(2, { boundary_source: "manual_area" });
   tree = h.render();
-  assert.ok(nodes(tree).some((n) => n.type === "SeedSowingStep"));
+  assert.ok(nodes(tree).some((n) => n.type === "CropBoundaryStep"));
   assert.equal(
     h.calls.filter((call) => call[0] === "createFarmerCrop").length,
     0,
@@ -1595,35 +1662,25 @@ test("resume restores backend next_step/revision; a failed save keeps the curren
   assert.equal(h.calls.at(-1)[2], 8);
   h.runtime.cleanup();
 });
-test("optional steps save real skip payloads and active edit discard never cancels the live crop", async () => {
+test("editing an active crop advances from the boundary to review and discarding never cancels the live crop", async () => {
   const h = wizardHarness({
     id: 41,
-    server: detail(4, 10, "active"),
+    server: detail(2, 10, "active"),
     responses: {
-      saveCropSoil: () => ({ success: true, data: detail(5, 11, "active") }),
+      saveCropBoundary: () => ({
+        success: true,
+        data: detail(3, 11, "active"),
+      }),
     },
   });
   h.render();
   await tick();
   let tree = h.render();
   await nodes(tree)
-    .find((n) => n.type === "SoilAssessmentStep")
-    .props.onSave(
-      4,
-      (() => {
-        const data = new FormData();
-        data.set("assessment_mode", "skipped");
-        return data;
-      })(),
-    );
-  assert.equal(
-    h.calls
-      .find((call) => call[0] === "saveCropSoil")[3]
-      .get("assessment_mode"),
-    "skipped",
-  );
+    .find((n) => n.type === "CropBoundaryStep")
+    .props.onSave(2, { boundary_source: "farm_boundary", area_unit: "acre" });
   tree = h.render();
-  assert.ok(nodes(tree).some((n) => n.type === "FertilizerPlanningStep"));
+  assert.ok(nodes(tree).some((n) => n.type === "CropReviewStep"));
   tree.props.onClose();
   tree = h.render();
   const confirm = nodes(tree).find((n) => n.type === "CropConfirmDialog");
@@ -1638,7 +1695,7 @@ test("optional steps save real skip payloads and active edit discard never cance
 });
 test("review is refreshed from the server and final save calls activation once without generating a timeline", async () => {
   let resolve;
-  const server = detail(6, 12);
+  const server = detail(3, 12);
   const h = wizardHarness({
     id: 41,
     server,

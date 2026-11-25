@@ -1,16 +1,26 @@
 # Farmer Crop Manager implementation
 
-Implemented in the existing `/account/crops` route and persistent dashboard bottom panel. The attached screenshots guide the green selection cards, summary cards, listing, six-step dialog, supporting selection dialogs, and review layout. No dependencies, route groups, authentication systems, global styles, environment files, or shared HTTP-client behavior were changed.
+> **Revision (2026-11-23): three-step Add/Edit Crop wizard.** The dialog now has three steps:
+>
+> 1. Crop Selection — farm, season, crop, variety and a required **Sowing Date** with a Crop Duration & Harvest card (sowing date plus the variety's verified maturity days, or "Maturity estimate unavailable").
+> 2. Select Boundary — unchanged map, drawing, GPS and area tools; "Next: Review & Save".
+> 3. Review & Save — crop information, sowing date, maturity estimate, farm location, boundary and area, with Edit links to Steps 1 and 2 and a "Save Crop" button.
+>
+> Select Sowing Method and the Seed & Sowing, Soil Assessment and Fertilizer Planning steps were removed from the wizard
+> (with their components, actions, API methods, types and messages). They will be handled through Farmer Crop Timeline
+> activities. Seed, soil, fertilizer, expense and yield bullets below describe the former six-step implementation.
+
+Implemented in the existing `/account/crops` route and persistent dashboard bottom panel. The attached screenshots guide the green selection cards, summary cards, listing, three-step dialog, supporting selection dialogs, and review layout. No dependencies, route groups, authentication systems, global styles, environment files, or shared HTTP-client behavior were changed.
 
 ## Delivered functionality
 
 - Backend-paginated active, draft, and historical crop lists; search, season/farm filters, real summary counts, row selection, locate, details, and supported actions.
-- Six separate React Hook Form step components: crop selection, boundary, seed/sowing, soil assessment, fertilizer planning, and review.
+- Three separate React Hook Form step components: crop selection (including the sowing date), boundary, and review.
 - Persistent step saves using the returned cycle ID, revision, progress, and next step. Initial creation uses an idempotency key. Failed requests preserve editable inputs and report Laravel field errors.
 - Draft resume and close/keep/discard confirmation. Active edits use Laravel's pending edit state; discarding edits does not cancel the live crop. Explicit reload confirmation protects unsaved input after a revision conflict.
-- Other Season and paginated crop/seed/fertilizer catalogue dialogs, temporary selection, and cancellation without applying changes. Incompatible seed varieties are disabled.
+- Other Season and paginated crop catalogue ("More Crops") dialogs, temporary selection, and cancellation without applying changes.
 - Independent crop geometry from the map endpoint, above the existing farm layer; selected crop highlighting; a custom Crop InfoWindow sharing the existing overlay foundation.
-- Farm planting opens the wizard with its farm preselected. Farm history opens Crop Manager with farm/history filters. Crop InfoWindow links to details, editing, soil, fertilizer, parent farm, and confirmed cancellation.
+- Farm planting opens the wizard with its farm preselected. Farm history opens Crop Manager with farm/history filters. Crop InfoWindow links to details, editing, parent farm, and confirmed cancellation.
 - Shared manual/GPS boundary editor, read-only parent/occupied crop overlays, full-farm availability checks, manual-area fallback, containment/overlap previews, parcel/interior-ring selection, and server topology validation.
 - Seed suggestions and regional packages, custom/unknown quantities, local-calendar sowing date, saved maturity estimates, purchase previews, and optional declared costs.
 - Basic soil questions, laboratory values and units, additional nutrients, private report upload/download, staged report removal, optional expense, and persisted skipping.
@@ -48,27 +58,21 @@ Routes, controller logic, model behavior, resources, configuration, and the farm
 
 All paths below are relative to the configured API base:
 
-| Method | Path                                                                                                                                                                                             | Use                                              |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| GET    | `/account/farm-crops`                                                                                                                                                                            | Paginated listing/search/filters                 |
-| GET    | `/account/farm-crops/summary`                                                                                                                                                                    | Counts and active cultivated area                |
-| GET    | `/account/farm-crops/map`                                                                                                                                                                        | All applicable active crop geometries            |
-| POST   | `/account/farm-crops`                                                                                                                                                                            | Idempotent initial selection/draft               |
-| GET    | `/account/farm-crops/{id}`                                                                                                                                                                       | Saved working state/resume/details               |
-| PUT    | `/account/farm-crops/{id}/step-1`                                                                                                                                                                | Selection updates                                |
-| PUT    | `/account/farm-crops/{id}/step-2`                                                                                                                                                                | Boundary/area                                    |
-| PUT    | `/account/farm-crops/{id}/step-3`                                                                                                                                                                | Seed/sowing/purchase planning                    |
-| POST   | `/account/farm-crops/{id}/step-4`                                                                                                                                                                | Multipart soil assessment/report                 |
-| PUT    | `/account/farm-crops/{id}/step-5`                                                                                                                                                                | Fertilizer selection or skip                     |
-| GET    | `/account/farm-crops/{id}/seed-recommendation`                                                                                                                                                   | Seed requirement for the working cycle           |
-| GET    | `/account/farm-crops/{id}/fertilizer-recommendation`                                                                                                                                             | Nutrients and compatible products                |
-| GET    | `/account/farm-crops/{id}/review`                                                                                                                                                                | Current review, validation, expenses, yield      |
-| POST   | `/account/farm-crops/{id}/finalize`                                                                                                                                                              | Activate/finalize pending edits                  |
-| DELETE | `/account/farm-crops/{id}`                                                                                                                                                                       | Delete draft or cancel active crop               |
-| DELETE | `/account/farm-crops/{id}/edit-draft`                                                                                                                                                            | Discard pending active edits                     |
-| GET    | `/account/farm-crops/{id}/soil-report`                                                                                                                                                           | Authenticated private binary download            |
-| GET    | `/account/farms/{farmId}/crop-boundaries`                                                                                                                                                        | Farm occupancy and availability                  |
-| GET    | `/account/seasons`, `/account/crop-categories`, `/account/crops/list`, `/account/crop-varieties`, `/account/seeds`, `/account/fertilizers`, `/account/seed-prices`, `/account/fertilizer-prices` | Existing catalogues and regional package options |
+| Method | Path                                                                                             | Use                                                    |
+| ------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| GET    | `/account/farm-crops`                                                                            | Paginated listing/search/filters                       |
+| GET    | `/account/farm-crops/summary`                                                                    | Counts and active cultivated area                      |
+| GET    | `/account/farm-crops/map`                                                                        | All applicable active crop geometries                  |
+| POST   | `/account/farm-crops`                                                                            | Idempotent initial selection/draft                     |
+| GET    | `/account/farm-crops/{id}`                                                                       | Saved working state/resume/details                     |
+| PUT    | `/account/farm-crops/{id}/step-1`                                                                | Selection updates                                      |
+| PUT    | `/account/farm-crops/{id}/step-2`                                                                | Boundary/area                                          |
+| GET    | `/account/farm-crops/{id}/review`                                                                | Current review, validation, maturity estimate          |
+| POST   | `/account/farm-crops/{id}/finalize`                                                              | Activate/finalize pending edits                        |
+| DELETE | `/account/farm-crops/{id}`                                                                       | Delete draft or cancel active crop                     |
+| DELETE | `/account/farm-crops/{id}/edit-draft`                                                            | Discard pending active edits                           |
+| GET    | `/account/farms/{farmId}/crop-boundaries`                                                        | Farm occupancy and availability                        |
+| GET    | `/account/seasons`, `/account/crop-categories`, `/account/crops/list`, `/account/crop-varieties` | Existing catalogues (`maturity_verified` on varieties) |
 
 Each Server Action authenticates with `requireUser()`. Feature clients use only `apiRequest()` with the web audience. Shared error handling retains Next.js control-flow exceptions, safe messages, and validation errors. Successful activation/removal revalidates the crop route and refreshes the client workspace.
 

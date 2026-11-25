@@ -10,10 +10,6 @@ import type {
   CropOccupancy,
   CropSelection,
   CropSummary,
-  FertilizerRecommendation,
-  FertilizerStepPayload,
-  SeedRecommendation,
-  SeedStepPayload,
   CropCycle,
 } from "@/types/account/farmCrop";
 
@@ -22,10 +18,6 @@ const cataloguePaths = {
   categories: "crop-categories",
   crops: "crops/list",
   varieties: "crop-varieties",
-  seeds: "seeds",
-  fertilizers: "fertilizers",
-  seedPrices: "seed-prices",
-  fertilizerPrices: "fertilizer-prices",
 } as const;
 export const accountCropCatalogAPI = {
   list: <K extends keyof CropCatalog>(kind: K, params: ApiParams = {}) => {
@@ -76,39 +68,10 @@ export const accountFarmCropsAPI = {
       method: "PUT",
       data: { ...data, revision },
     }),
-  seed: (id: number, revision: number, data: SeedStepPayload) =>
-    apiRequest<ApiResponse<CropDetail>>(`/account/farm-crops/${id}/step-3`, {
-      audience: "web",
-      method: "PUT",
-      data: { ...data, revision },
-    }),
-  soil: (id: number, revision: number, data: FormData) => {
-    data.set("revision", String(revision));
-    return apiRequest<ApiResponse<CropDetail>>(
-      `/account/farm-crops/${id}/step-4`,
-      { audience: "web", method: "POST", data },
-    );
-  },
-  fertilizer: (id: number, revision: number, data: FertilizerStepPayload) =>
-    apiRequest<ApiResponse<CropDetail>>(`/account/farm-crops/${id}/step-5`, {
-      audience: "web",
-      method: "PUT",
-      data: { ...data, revision },
-    }),
   occupancy: (farmId: number, excludeCropId?: number) =>
     apiRequest<ApiResponse<CropOccupancy>>(
       `/account/farms/${farmId}/crop-boundaries`,
       { audience: "web", params: { exclude_crop_id: excludeCropId } },
-    ),
-  seedRecommendation: (id: number, seedId?: number) =>
-    apiRequest<ApiResponse<SeedRecommendation>>(
-      `/account/farm-crops/${id}/seed-recommendation`,
-      { audience: "web", params: { seed_id: seedId } },
-    ),
-  fertilizerRecommendation: (id: number) =>
-    apiRequest<ApiResponse<FertilizerRecommendation>>(
-      `/account/farm-crops/${id}/fertilizer-recommendation`,
-      { audience: "web" },
     ),
   review: (id: number) =>
     apiRequest<ApiResponse<CropDetail>>(`/account/farm-crops/${id}/review`, {
@@ -130,9 +93,4 @@ export const accountFarmCropsAPI = {
       `/account/farm-crops/${id}/edit-draft`,
       { audience: "web", method: "DELETE", params: { revision } },
     ),
-  soilReport: (id: number) =>
-    apiRequest(`/account/farm-crops/${id}/soil-report`, {
-      audience: "web",
-      responseType: "binary",
-    }),
 };

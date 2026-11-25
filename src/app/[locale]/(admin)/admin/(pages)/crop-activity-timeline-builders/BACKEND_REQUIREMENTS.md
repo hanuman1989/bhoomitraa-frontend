@@ -133,3 +133,36 @@ names in "Suggested request" are proposals, not existing routes.
 - **Frontend impact:** Import is shown disabled. Export downloads the template
   records returned by the API.
 - **Backend change:** New endpoint and validation; no new tables.
+
+### 11. Final Smart Action keys (36 → 39)
+
+- **Status: resolved 2026-11-23.** The three keys were appended to
+  `config/crop_activity_templates.php` (approved config-only change) and covered
+  by a backend feature test; the frontend now uses the 39-key grouping. The
+  notes below record the original finding.
+- **Behaviour before the change (verified 2026-11-23):** `config/crop_activity_templates.php`
+  lists exactly 36 keys. `StoreCropActivityTemplateRequest`,
+  `UpdateCropActivityTemplateRequest` and `BulkCropActivityTemplateRequest`
+  validate every key with `Rule::in(config('crop_activity_templates.smart_actions'))`,
+  and `CropActivityTemplate::validationErrors()` re-checks on save/activation.
+  `GET timeline-builder/metadata` returns the same 36 keys.
+- **Missing:** these keys are not accepted anywhere:
+  - `field_layout_spacing` (group: Crop & Planning)
+  - `sowing_planting_method` (group: Crop & Planning)
+  - `choose_seed` (group: Soil, Seeds & Sowing)
+- **Legacy keys:** `choose_crop_variety_seed` and `planting_method` do not exist
+  in the backend config, the frontend, or any stored template (all 33 templates
+  with Smart Actions were checked). No data migration or key mapping is needed.
+- **Frontend impact:** saving any of the three keys would fail with HTTP 422, so
+  the frontend keeps the 36 supported keys until the backend accepts them.
+  The frontend change is small: add the keys to `templateSmartActions`
+  (`src/types/admin/cropActivityTemplate.ts`), place them in the builder's
+  `smartActionGroups` (Crop & Planning: 5, Soil, Seeds & Sowing: 6, total 39),
+  and add English/Hindi labels. `templateSmartActions` is shared with the Crop
+  Activity Template Manager and its server action. The Manager renders only its
+  own fixed groups, so it will not show the new keys (and will keep them
+  unchanged on records that already have them) unless its groups are updated.
+- **Backend change:** append the three keys to
+  `config/crop_activity_templates.php` (no migration; `smart_actions` is a JSON
+  column). Run `php artisan config:clear` after deploying. Add feature tests for
+  create, update and bulk saves with the new keys.

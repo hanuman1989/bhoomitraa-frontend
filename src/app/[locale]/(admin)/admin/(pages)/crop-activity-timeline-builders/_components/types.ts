@@ -142,7 +142,13 @@ export const smartActionGroups: {
 }[] = [
   {
     name: "crop",
-    actions: ["crop_details", "crop_planning", "crop_completion"],
+    actions: [
+      "crop_details",
+      "crop_planning",
+      "crop_completion",
+      "field_layout_spacing",
+      "sowing_planting_method",
+    ],
   },
   {
     name: "inputs",
@@ -152,6 +158,7 @@ export const smartActionGroups: {
       "seed_calculator",
       "seed_record",
       "sowing_record",
+      "choose_seed",
     ],
   },
   {

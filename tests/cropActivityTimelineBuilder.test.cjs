@@ -294,11 +294,31 @@ test("section saves resend the saved record with only that section replaced", ()
   assert.deepEqual(record.crop_variety_ids, [11, 12], "record is not mutated");
 });
 
-test("the seven Smart Action groups cover all 36 supported keys exactly once", () => {
+test("the seven Smart Action groups cover all 39 supported keys exactly once", () => {
   const types = load(`${route}_components/types.ts`, shared);
   const grouped = types.smartActionGroups.flatMap(({ actions }) => actions);
+  const group = (name) =>
+    clone(types.smartActionGroups.find((entry) => entry.name === name).actions);
   assert.equal(types.smartActionGroups.length, 7);
-  assert.equal(grouped.length, 36);
+  assert.equal(grouped.length, 39);
+  assert.equal(new Set(grouped).size, 39);
+  assert.deepEqual(group("crop"), [
+    "crop_details",
+    "crop_planning",
+    "crop_completion",
+    "field_layout_spacing",
+    "sowing_planting_method",
+  ]);
+  assert.deepEqual(group("inputs"), [
+    "soil_assessment",
+    "soil_test",
+    "seed_calculator",
+    "seed_record",
+    "sowing_record",
+    "choose_seed",
+  ]);
+  for (const legacy of ["choose_crop_variety_seed", "planting_method"])
+    assert.equal(templateTypes.templateSmartActions.includes(legacy), false);
   assert.deepEqual(
     [...grouped].sort(),
     [...templateTypes.templateSmartActions].sort(),
