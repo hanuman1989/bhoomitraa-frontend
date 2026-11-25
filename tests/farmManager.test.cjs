@@ -72,6 +72,9 @@ function hooks() {
     useRef(value) {
       return (slots[cursor++] ??= { current: value });
     },
+    useId() {
+      return `id-${cursor++}`;
+    },
     useCallback(fn, deps) {
       const i = cursor++;
       if (!slots[i] || changed(slots[i].deps, deps)) slots[i] = { fn, deps };
@@ -639,6 +642,7 @@ test("farm list thumbnails keep saved geometry, dimensions, selection, edit and 
     "@/icons": icons,
     "@/components/common/maps/FarmSatellitePreview": "SatellitePreview",
     "@/components/common/maps/farmMapStyle": mapStyle,
+    "@/components/common/Tooltip": "Tooltip",
   }).default;
   const farm = {
     id: 2,
@@ -690,6 +694,7 @@ test("thumbnails reuse workspace geometry by farm ID only when the row omits it,
     "@/icons": icons,
     "@/components/common/maps/FarmSatellitePreview": "SatellitePreview",
     "@/components/common/maps/farmMapStyle": mapStyle,
+    "@/components/common/Tooltip": "Tooltip",
   }).default;
   const saved = {
     id: 2,
@@ -2194,6 +2199,7 @@ test("individual farm rows retain their original recorded measurements and local
     "@/icons": icons,
     "@/components/common/maps/FarmSatellitePreview": "Preview",
     "@/components/common/maps/farmMapStyle": mapStyle,
+    "@/components/common/Tooltip": "Tooltip",
   }).default;
   const farms = [
     { id: 1, area: "4.000", area_unit: "bigha_pakka", name: "A" },
@@ -2531,6 +2537,8 @@ function editorHarness(unitMetadata = areaFixture.metadata) {
       "next-intl": intl,
       "./FarmBoundaryMap": "EditorMap",
       "./BoundaryConfirmDialog": "Confirm",
+      "./BoundaryDrawingActions": "DrawingActions",
+      "./BoundaryDrawHelp": "DrawHelp",
       [geoPath]: geometry,
       "@/icons": icons,
     },
@@ -2796,6 +2804,9 @@ function boundaryMapHarness({
         { DEFAULT_MAP_VIEW: { center: { lat: 22.5, lng: 79 }, zoom: 5 } },
       ["@/app/[locale]/(account)/account/(protected)/_components/mapViewport"]:
         { fitMapPositions: () => true },
+      ["@/app/[locale]/(account)/account/(protected)/_components/boundaryDraw/BoundaryDrawLayer"]:
+        "DrawLayer",
+      "./BoundaryConflictLayer": "ConflictLayer",
     },
     {
       process: { env: { NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "test-map-key" } },
@@ -2991,4 +3002,358 @@ test("map retry and late SDK completion do not leave empty polygons or listeners
   await tick();
   assert.equal(pending.maps.length, 0);
   assert.equal(pending.polygons.length, 0);
+});
+
+test("boundary editor uses floating actions instead of the Drawing Tools panel, wired to the same session", () => {
+  const h = editorHarness();
+  Object.assign(h.session, {
+    mode: "manual",
+    source: "manual",
+    phase: "drawing",
+    gpsState: "idle",
+    active: false,
+  });
+  const find = (type) => nodes(h.render()).find((node) => node.type === type);
+  const panel = () =>
+    nodes(h.render()).find(
+      (node) => node.type === "h4" && node.props.children === "drawingTools",
+    );
+  assert.equal(panel(), undefined, "the Drawing Tools sidebar is gone");
+  let actions = find("DrawingActions");
+  assert.equal(actions.props.extraActions, undefined);
+  const extra = [{ id: "farm", label: "useFarmBoundary", run() {} }];
+  h.props.extraActions = extra;
+  actions = find("DrawingActions");
+  assert.equal(actions.props.extraActions, extra);
+  assert.equal(actions.props.phase, "drawing");
+  assert.equal(actions.props.count, square.length);
+  assert.equal(actions.props.help.type, "DrawHelp");
+  assert.equal(actions.props.help.props.kind, "farm");
+  assert.equal(actions.props.onEdit, h.session.edit);
+  assert.equal(actions.props.onUndo, h.session.undo);
+  assert.equal(actions.props.onConfirm, h.session.confirm);
+  assert.equal(h.getMap().props.onComplete, h.session.confirm);
+  const hint = nodes(h.render()).find(
+    (node) =>
+      node.type === "p" && [node.props.children].flat().includes("hint"),
+  );
+  assert.ok(hint, "drawing shows the hint with point count and area");
+
+  assert.equal(
+    nodes(h.render()).some(
+      (node) => node.props?.children === "wizard.manualInstructions",
+    ),
+    false,
+    "help no longer opens as a paragraph under the map",
+  );
+  h.props.helpFor = "crop";
+  assert.equal(find("DrawingActions").props.help.props.kind, "crop");
+  delete h.props.helpFor;
+
+  actions.props.onClear();
+  let confirm = find("Confirm");
+  assert.ok(confirm, "clearing points still asks for confirmation");
+  confirm.props.onConfirm();
+  assert.deepEqual(h.calls, ["clear"]);
+
+  h.session.points = square;
+  find("DrawingActions").props.onDraw();
+  confirm = find("Confirm");
+  assert.ok(confirm, "redrawing over points asks first");
+  let drew = 0;
+  h.session.draw = () => drew++;
+  confirm.props.onConfirm();
+  assert.deepEqual(h.calls, ["clear", "clear"]);
+  assert.equal(drew, 1);
+
+  h.session.mode = "gps";
+  assert.equal(find("DrawingActions"), undefined, "GPS keeps its controls");
+  assert.equal(panel(), undefined);
+  h.runtime.cleanup();
+});
+
+test("floating drawing actions show only the steps that apply and explain blocked ones", () => {
+  const runtime = hooks();
+  const Actions = load(
+    "src/components/common/maps/BoundaryDrawingActions.tsx",
+    {
+      react: runtime.react,
+      "next-intl": intl,
+      "@/icons": icons,
+      "@headlessui/react": {
+        Popover: "Popover",
+        PopoverButton: "PopoverButton",
+        PopoverPanel: "PopoverPanel",
+      },
+      "@/components/common/Tooltip": "Tooltip",
+    },
+  ).default;
+  const calls = [];
+  const help = { type: "DrawHelp", props: {} };
+  const props = {
+    phase: "idle",
+    count: 0,
+    help,
+    onDraw: () => calls.push("draw"),
+    onEdit: () => calls.push("edit"),
+    onUndo: () => calls.push("undo"),
+    onClear: () => calls.push("clear"),
+    onConfirm: () => calls.push("confirm"),
+  };
+  const buttons = (next) =>
+    nodes(Actions({ ...props, ...next })).filter(
+      (node) => node.type === "button",
+    );
+  const labels = (next) =>
+    buttons(next).map((button) => button.props["aria-label"]);
+  const button = (next, label) =>
+    buttons(next).find((node) => node.props["aria-label"] === label);
+  const toolbar = Actions(props);
+  assert.equal(toolbar.props.role, "toolbar");
+  assert.equal(toolbar.props["aria-label"], "drawingTools");
+  assert.deepEqual(labels(), ["drawPolygon"]);
+  assert.deepEqual(labels({ phase: "drawing" }), [
+    "wizard.undoPoint",
+    "wizard.clearBoundary",
+    "confirmBoundary",
+  ]);
+  assert.deepEqual(labels({ phase: "editing", count: 4 }), [
+    "wizard.clearBoundary",
+    "confirmBoundary",
+  ]);
+  assert.deepEqual(labels({ phase: "confirmed", count: 4 }), [
+    "editBoundary",
+    "redrawBoundary",
+    "wizard.clearBoundary",
+  ]);
+  for (const phase of ["idle", "drawing", "editing", "confirmed"]) {
+    const tree = Actions({ ...props, phase });
+    const trigger = nodes(tree).find((n) => n.type === "PopoverButton");
+    assert.equal(trigger.props["aria-label"], "howToDraw", phase);
+    assert.equal(trigger.props.type, "button");
+    assert.equal(trigger.props.onMouseEnter, undefined, "click only");
+    const panel = nodes(tree).find((n) => n.type === "PopoverPanel");
+    assert.equal(panel.props.children, help);
+    assert.deepEqual(clone(panel.props.anchor), {
+      to: "bottom start",
+      gap: 8,
+      padding: 12,
+    });
+    assert.match(panel.props.className, /z-999999/, "above fullscreen");
+  }
+  const drawing = { phase: "drawing", count: 2 };
+  assert.equal(
+    button({ phase: "drawing" }, "wizard.undoPoint").props.disabled,
+    true,
+  );
+  assert.equal(
+    button({ phase: "drawing" }, "wizard.clearBoundary").props.disabled,
+    true,
+  );
+  // Labels show beside the icons, so only the blocked action has a tooltip:
+  // the reason, which its button also references for screen readers.
+  const drawingTree = Actions({ ...props, ...drawing });
+  const tips = nodes(drawingTree).filter((n) => n.type === "Tooltip");
+  assert.deepEqual(
+    tips.map((tip) => tip.props.content),
+    [undefined, undefined, "minPoints"],
+  );
+  const blocked = nodes(drawingTree).find(
+    (n) => n.type === "button" && n.props["aria-label"] === "confirmBoundary",
+  );
+  assert.equal(blocked.props["aria-disabled"], true);
+  assert.equal(blocked.props["aria-describedby"], tips[2].props.id);
+  assert.equal(blocked.props.title, undefined);
+  blocked.props.onClick();
+  assert.deepEqual(calls, [], "blocked confirmation does nothing");
+  button({ phase: "drawing", count: 3 }, "confirmBoundary").props.onClick();
+  button(drawing, "wizard.undoPoint").props.onClick();
+  button(drawing, "wizard.clearBoundary").props.onClick();
+  button({ phase: "confirmed", count: 4 }, "editBoundary").props.onClick();
+  button({ phase: "confirmed", count: 4 }, "redrawBoundary").props.onClick();
+  button(undefined, "drawPolygon").props.onClick();
+  assert.deepEqual(calls, ["confirm", "undo", "clear", "edit", "draw", "draw"]);
+  for (const node of buttons(drawing)) {
+    assert.equal(node.props.type, "button", "never submits the wizard form");
+    assert.ok(node.props["aria-label"]);
+    assert.ok(
+      nodes(node).some(
+        (n) =>
+          n.type === "span" && n.props.children === node.props["aria-label"],
+      ),
+      "label shown beside the icon",
+    );
+    assert.match(node.props.className, /min-h-11/, "44 px touch target");
+  }
+});
+test("guided drawing hands map clicks, vertices and the drawing line to the shared draw layer", async () => {
+  const added = [];
+  let completed = 0;
+  const h = boundaryMapHarness({ points: square.slice(0, 2), drawing: true });
+  h.props.onAdd = (point) => added.push(point);
+  let tree = await h.mount();
+  const click = (lat, lng) =>
+    h.maps[0].click({ latLng: { lat: () => lat, lng: () => lng } });
+  assert.equal(
+    nodes(tree).some((node) => node.type === "DrawLayer"),
+    false,
+  );
+  click(26.5, 77.5);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(added)),
+    [{ lat: 26.5, lng: 77.5 }],
+    "unguided maps unchanged",
+  );
+  const unguidedVertices = h.layers.filter((layer) => layer.map).length;
+  assert.ok(unguidedVertices > 0);
+  assert.ok(h.lines.some((line) => line.map));
+  h.props.onComplete = () => completed++;
+  tree = h.render();
+  const layer = nodes(tree).find((node) => node.type === "DrawLayer");
+  assert.equal(layer.props.mode, "drawing");
+  assert.equal(layer.props.points, h.props.points);
+  assert.equal(layer.props.onAdd, h.props.onAdd);
+  assert.equal(layer.props.onComplete, h.props.onComplete);
+  click(26.6, 77.6);
+  assert.equal(
+    added.length,
+    1,
+    "the layer owns clicks, so nothing is added twice",
+  );
+  assert.equal(h.layers.filter((layer) => layer.map).length, 0);
+  assert.equal(
+    h.lines.some((line) => line.map),
+    false,
+  );
+  layer.props.onComplete();
+  assert.equal(completed, 1);
+  h.props.drawing = false;
+  tree = h.render();
+  assert.equal(
+    nodes(tree).some((node) => node.type === "DrawLayer"),
+    false,
+  );
+  h.runtime.cleanup();
+});
+
+test("boundary map shows the conflict layer only with limits, offering Undo only while drawing", async () => {
+  const undo = () => {};
+  const h = boundaryMapHarness({ points: square, drawing: true });
+  h.props.onAdd = () => {};
+  h.props.onComplete = () => {};
+  h.props.onUndo = undo;
+  await h.mount();
+  const layer = () => nodes(h.render()).find((n) => n.type === "ConflictLayer");
+  assert.equal(layer(), undefined, "farms without limits are unchanged");
+  const limits = {
+    inside: geometry.pointsToBoundary(square),
+    avoid: [],
+    messages: { outside: "outsideFarm", overlap: "overlap" },
+  };
+  h.props.limits = limits;
+  assert.equal(layer().props.limits, limits);
+  assert.equal(layer().props.closed, false);
+  assert.equal(layer().props.onUndo, undo);
+  assert.equal(layer().props.points, h.props.points);
+  h.props.drawing = false;
+  assert.equal(layer().props.closed, true);
+  assert.equal(layer().props.onUndo, undefined);
+  h.props.points = [];
+  assert.equal(layer(), undefined);
+  h.runtime.cleanup();
+});
+
+test("How to Draw help explains farm drawing, and crop reuse, redraw and limits, using the real button names", () => {
+  const rich = (namespace) => {
+    const fn = (key) => `${namespace}.${key}`;
+    fn.rich = (key, values) => ({
+      type: "Rich",
+      props: { id: `${namespace}.${key}`, values },
+    });
+    return fn;
+  };
+  const Help = load("src/components/common/maps/BoundaryDrawHelp.tsx", {
+    "next-intl": { useTranslations: rich },
+  }).default;
+  const ids = (tree) =>
+    nodes(tree)
+      .filter((n) => n.type === "Rich")
+      .map((n) => n.props.id);
+  const farm = Help({ kind: "farm" });
+  assert.deepEqual(ids(farm), [
+    "farmerFarms.drawHelp.start",
+    "farmerFarms.drawHelp.close",
+    "farmerFarms.drawHelp.fix",
+    "farmerFarms.drawHelp.edit",
+    "farmerFarms.drawHelp.tip",
+  ]);
+  assert.ok(
+    nodes(farm).some((n) => n.props?.children === "farmerFarms.drawHelp.title"),
+  );
+  const crop = Help({ kind: "crop" });
+  assert.deepEqual(ids(crop), [
+    "farmerCrops.drawHelp.wholeFarm",
+    "farmerCrops.drawHelp.partFarm",
+    "farmerCrops.drawHelp.close",
+    "farmerCrops.drawHelp.limits",
+    "farmerCrops.drawHelp.fix",
+    "farmerCrops.drawHelp.tip",
+  ]);
+  const values = nodes(crop).find((n) => n.type === "Rich").props.values;
+  assert.equal(values.useFarm, "farmerCrops.useFarmBoundary");
+  assert.equal(values.redraw, "farmerFarms.redrawBoundary");
+  assert.equal(values.draw, "farmerFarms.drawPolygon");
+  assert.equal(values.confirm, "farmerFarms.confirmBoundary");
+  assert.equal(values.undo, "farmerFarms.wizard.undoPoint");
+  assert.equal(values.edit, "farmerFarms.editBoundary");
+  for (const tag of ["b", "red", "orange"])
+    assert.equal(typeof values[tag], "function", tag);
+  assert.match(values.red("x").props.className, /text-error-600/);
+  assert.match(values.orange("x").props.className, /text-orange-600/);
+
+  const en = JSON.parse(fs.readFileSync("src/messages/en.json", "utf8"));
+  const hi = JSON.parse(fs.readFileSync("src/messages/hi.json", "utf8"));
+  const placeholders = (text) =>
+    [...text.matchAll(/\{(\w+)\}|<(\w+)>/g)].map((m) => m[1] ?? m[2]).sort();
+  for (const [section, keys] of [
+    ["farmerFarms", ["title", "start", "close", "fix", "edit", "tip"]],
+    [
+      "farmerCrops",
+      ["title", "wholeFarm", "partFarm", "close", "limits", "fix", "tip"],
+    ],
+  ])
+    for (const key of keys) {
+      const english = en[section].drawHelp[key];
+      const hindi = hi[section].drawHelp[key];
+      assert.ok(english && hindi, `${section}.drawHelp.${key}`);
+      assert.deepEqual(placeholders(hindi), placeholders(english), key);
+    }
+  assert.match(en.farmerCrops.drawHelp.wholeFarm, /\{useFarm\}/);
+  assert.match(en.farmerCrops.drawHelp.partFarm, /\{redraw\}/);
+  assert.match(en.farmerCrops.drawHelp.limits, /<red>.*<orange>/);
+});
+
+test("fullscreen Escape first closes an open How to Draw popover, then exits fullscreen", () => {
+  const h = editorHarness();
+  h.getButton("fullscreen").props.onClick();
+  h.render();
+  let stopped = 0;
+  const escape = (openPopover) =>
+    h.events.keydown({
+      key: "Escape",
+      target: { closest: (selector) => (openPopover ? { selector } : null) },
+      preventDefault() {},
+      stopPropagation() {
+        stopped++;
+      },
+    });
+  escape(true);
+  h.render();
+  assert.equal(stopped, 0, "left for the popover to close");
+  assert.ok(h.getButton("exitFullscreen"), "still fullscreen");
+  escape(false);
+  h.render();
+  assert.equal(stopped, 1);
+  assert.equal(h.getButton("exitFullscreen"), undefined);
+  h.runtime.cleanup();
 });

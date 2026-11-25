@@ -38,14 +38,24 @@ export interface MapsStyle {
   zIndex?: number;
   label?: string;
   title?: string;
-  icon?: {
-    path: number;
-    scale: number;
-    fillColor: string;
-    fillOpacity: number;
-    strokeColor: string;
-    strokeWeight: number;
-  };
+  icon?:
+    | {
+        path: number;
+        scale: number;
+        fillColor: string;
+        fillOpacity: number;
+        strokeColor: string;
+        strokeWeight: number;
+      }
+    | { url: string; scaledSize?: MapsSize; anchor?: MapsPoint };
+}
+export interface MapsSize {
+  width: number;
+  height: number;
+}
+export interface MapsPoint {
+  x: number;
+  y: number;
 }
 export interface MapsData {
   addGeoJson(value: object): MapsFeature[];
@@ -117,6 +127,8 @@ export interface MapsSDK {
   ) => MapsInstance;
   Data: new (options: { map: MapsInstance }) => MapsData;
   LatLngBounds: new () => MapsBounds;
+  Size: new (width: number, height: number) => MapsSize;
+  Point: new (x: number, y: number) => MapsPoint;
   OverlayView: {
     new (): MapsOverlay;
     preventMapHitsAndGesturesFrom(element: HTMLElement): void;

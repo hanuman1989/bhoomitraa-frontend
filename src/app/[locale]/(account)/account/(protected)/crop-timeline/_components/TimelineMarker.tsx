@@ -1,3 +1,4 @@
+import Tooltip from "@/components/common/Tooltip";
 import type { TimelineSection } from "@/types/account/cropTimeline";
 import CategoryIcon from "./CategoryIcon";
 
@@ -24,26 +25,37 @@ export default function TimelineMarker({
   const state =
     section.stage?.state ??
     (section.type === "before_sowing" ? "past" : "future");
+  // The tooltip wrapper carries the rail position; the tip opens towards the
+  // section, since the rail sits at the start edge.
   return (
-    <div
-      role="img"
-      aria-label={label}
-      title={label}
-      className={`absolute -start-11 top-3.5 flex size-9 items-center justify-center rounded-xl border-3 border-gray-50 ring-1 sm:-start-18.5 sm:top-3 sm:size-13.5 sm:rounded-2xl sm:border-4 dark:border-gray-950 ${states[state]}`}
+    <Tooltip
+      as="div"
+      content={label}
+      side="end"
+      className="absolute -start-11 top-3.5 sm:-start-18.5 sm:top-3"
     >
-      <CategoryIcon icon={section.marker.icon} className="size-4.5 sm:size-6" />
-      {section.marker.icons.length > 0 && (
-        <span className="shadow-theme-xs absolute top-full mt-1 hidden items-center gap-0.5 rounded-md border border-gray-200 bg-white p-0.5 text-gray-600 sm:flex dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-          {section.marker.icons.map((icon) => (
-            <CategoryIcon key={icon} icon={icon} className="size-3.5" />
-          ))}
-          {section.marker.more > 0 && (
-            <span className="text-theme-xs px-0.5 leading-none font-semibold">
-              +{section.marker.more}
-            </span>
-          )}
-        </span>
-      )}
-    </div>
+      <div
+        role="img"
+        aria-label={label}
+        className={`relative flex size-9 items-center justify-center rounded-xl border-3 border-gray-50 ring-1 sm:size-13.5 sm:rounded-2xl sm:border-4 dark:border-gray-950 ${states[state]}`}
+      >
+        <CategoryIcon
+          icon={section.marker.icon}
+          className="size-4.5 sm:size-6"
+        />
+        {section.marker.icons.length > 0 && (
+          <span className="shadow-theme-xs absolute top-full mt-1 hidden items-center gap-0.5 rounded-md border border-gray-200 bg-white p-0.5 text-gray-600 sm:flex dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+            {section.marker.icons.map((icon) => (
+              <CategoryIcon key={icon} icon={icon} className="size-3.5" />
+            ))}
+            {section.marker.more > 0 && (
+              <span className="text-theme-xs px-0.5 leading-none font-semibold">
+                +{section.marker.more}
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+    </Tooltip>
   );
 }

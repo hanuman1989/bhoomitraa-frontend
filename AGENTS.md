@@ -73,7 +73,7 @@ src/
 │   └── favicon and application icons
 ├── actions/admin/                     # adminUsers.ts, auth.ts
 ├── components/
-│   ├── common/                        # AppToaster, ImagePreview, loaders
+│   ├── common/                        # AppToaster, ImagePreview, loaders, Tooltip
 │   └── admin/
 │       ├── common/                    # Breadcrumb, cards, filters, URL pagination,
 │       │                              # loading states, theme controls, toaster
@@ -249,6 +249,12 @@ Inspect a similar page/component before building UI. Follow TailAdmin v2.3 typog
 - Reuse `menu-item-*`, `menu-dropdown-*`, `custom-scrollbar`, `no-scrollbar`, and other available utilities. Approved third-party CSS overrides belong alongside existing admin overrides, matching their `@apply` style.
 - Authorized installed chart integrations may use hex values copied from theme tokens in option objects. This exception does not permit arbitrary hex colors in component classes.
 - Add new SVG assets under `src/icons/`, export PascalCase components from `index.tsx`, and import from `@/icons`. Do not add inline SVG markup or another icon system.
+- **Tooltips:** use `Tooltip` from `@/components/common/Tooltip` (dark bubble shown on hover and keyboard focus, never on touch) instead of the native `title` attribute or another tooltip library.
+  - Keep an `aria-label` on icon-only triggers; without `id`, the bubble repeats that name and is hidden from assistive technology.
+  - When the tooltip adds information, such as why a control is unavailable, pass `id` and point the trigger's `aria-describedby` at it. Use `aria-disabled` rather than `disabled` for controls that must explain themselves.
+  - Don't repeat a label that is already visible beside the icon.
+  - Choose a `side` (`top`, `bottom`, `start`, `end`) with room: the bubble is CSS-positioned, so `overflow` hidden/auto ancestors clip it. Use `as="div"` around block content such as headings.
+  - Some admin screens still use `title`; convert them when you work on those files.
 - For approved client-only chart/calendar/carousel integrations, confirm the package is installed and use `next/dynamic` with `ssr: false` in a Client Component unless an existing client-only boundary already isolates it. Removed examples/legacy CSS do not justify installing ApexCharts, FullCalendar, or other absent packages.
 
 ## Forms, dialogs, and notifications

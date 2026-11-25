@@ -241,11 +241,12 @@ function timeline(overrides = {}) {
   };
 }
 
-function timelineHarness(data, actionResponses = {}) {
+function timelineHarness(data, actionResponses = {}, globals = {}) {
   const runtime = hooks();
   const calls = [];
   const notices = [];
   const workspace = [];
+  const cursorTargets = [];
   const actions = Object.fromEntries(
     [
       "addActivityNote",
@@ -285,6 +286,12 @@ function timelineHarness(data, actionResponses = {}) {
     "./TimelineActions": { TimelineActionsContext: { Provider: "Provider" } },
     "./TimelineToolbar": { __esModule: true, default: "TimelineToolbar" },
     "./TimelineRail": { __esModule: true, default: "TimelineRail" },
+    "./useScrollbarCursor": (element) => cursorTargets.push(element),
+    // The page's scrolling parent is given by the test as `node.scrollParent`.
+    "./timelineScroll": {
+      scrollBehavior: () => "smooth",
+      scrollParent: (node) => node.scrollParent,
+    },
   };
   for (const name of [
     "TimelineHeader",
@@ -297,18 +304,21 @@ function timelineHarness(data, actionResponses = {}) {
     "RescheduleDialog",
     "UnderProgressDialog",
     "SmartActionDialog",
+    "TimelineScrollButtons",
   ])
     deps[`./${name}`] = name;
   const Component = load(feature + "CropTimeline.tsx", deps, {
     requestAnimationFrame: () => 0,
     cancelAnimationFrame: () => {},
     document: { getElementById: () => null },
+    ...globals,
   }).default;
   const props = { timeline: data, variant: "dialog", onClose: () => {} };
   return {
     calls,
     notices,
     workspace,
+    cursorTargets,
     runtime,
     render: (extra = {}) => runtime.render(Component, { ...props, ...extra }),
   };
@@ -569,6 +579,449 @@ test("filters hide unmatched sections, and expense, labour, photo and smart acti
   );
 });
 
+test("the dialog and the page both get the scroll buttons and the scrollbar cursor on their scroll container", () => {
+  for (const variant of ["dialog", "page"]) {
+    const h = timelineHarness(timeline());
+    let tree = h.render({ variant });
+    const buttons = find(tree, "TimelineScrollButtons");
+    assert.ok(buttons, variant);
+    assert.equal(buttons.props.scroller, null);
+    assert.equal(buttons.props.content, null);
+    // The dialog body scrolls itself around a content wrapper; the page's
+    // content is its root, inside its scrolling parent.
+    const refs = nodes(tree).filter(
+      (n) => n.type === "div" && typeof n.props.ref === "function",
+    );
+    const scroller = { name: "scroller" };
+    const content = { name: "content", scrollParent: scroller };
+    if (variant === "dialog") {
+      assert.match(refs[0].props.className, /overflow-y-auto/);
+      refs[0].props.ref(scroller);
+      refs[1].props.ref(content);
+    } else refs[0].props.ref(content);
+    tree = h.render({ variant });
+    const wired = find(tree, "TimelineScrollButtons");
+    assert.equal(wired.props.scroller, scroller);
+    assert.equal(wired.props.content, content);
+    assert.match(
+      wired.props.className,
+      variant === "dialog" ? /\babsolute\b/ : /\bfixed\b/,
+    );
+    assert.equal(h.cursorTargets.at(-1), scroller);
+  }
+});
+
+test("Go to current clears hiding filters, opens, smoothly scrolls to and briefly highlights the current activity", () => {
+  const frames = [];
+  const timers = [];
+  const scrolled = [];
+  const h = timelineHarness(
+    timeline(),
+    {},
+    {
+      requestAnimationFrame: (fn) => frames.push(fn),
+      setTimeout: (fn, ms) => timers.push([fn, ms]),
+      clearTimeout: () => {},
+      document: {
+        getElementById: (id) => ({
+          scrollIntoView: (options) => scrolled.push([id, clone(options)]),
+        }),
+      },
+    },
+  );
+  const runFrames = () => frames.splice(0).forEach((fn) => fn());
+  let tree = h.render();
+  runFrames();
+  // The on-load scroll is the same effect and stays an instant jump.
+  assert.deepEqual(scrolled, [
+    ["timeline-activity-9", { block: "start", behavior: "auto" }],
+  ]);
+  let toolbar = find(tree, "TimelineToolbar");
+  assert.equal(toolbar.props.hasCurrent, true);
+  toolbar.props.onCollapseAll();
+  toolbar.props.onFilters({ search: "", status: "late", category: "all" });
+  find(h.render(), "TimelineToolbar").props.onGoToCurrent();
+  tree = h.render();
+  toolbar = find(tree, "TimelineToolbar");
+  assert.deepEqual(clone(toolbar.props.filters), {
+    search: "",
+    status: "all",
+    category: "all",
+  });
+  assert.equal(
+    find(tree, "TimelineRail").props.isSectionOpen("growth_stage:5"),
+    true,
+  );
+  const actions = find(tree, "Provider").props.value;
+  assert.equal(actions.isOpen(9), true);
+  assert.equal(actions.isHighlighted(9), true);
+  assert.equal(actions.isHighlighted(8), false);
+  runFrames();
+  assert.deepEqual(scrolled.at(-1), [
+    "timeline-activity-9",
+    { block: "start", behavior: "smooth" },
+  ]);
+  const highlight = timers.find(([, ms]) => ms === 1500);
+  assert.ok(highlight);
+  highlight[0]();
+  assert.equal(
+    find(h.render(), "Provider").props.value.isHighlighted(9),
+    false,
+  );
+
+  // Filters that already show the current activity are kept.
+  const kept = { search: "", status: "in_progress", category: "all" };
+  find(h.render(), "TimelineToolbar").props.onFilters(kept);
+  find(h.render(), "TimelineToolbar").props.onGoToCurrent();
+  assert.deepEqual(
+    clone(find(h.render(), "TimelineToolbar").props.filters),
+    kept,
+  );
+});
+
+test("without an In progress activity the first due one is current, and with neither Go to current is unavailable", () => {
+  const due = timeline();
+  due.sections[1].activities[1] = activity(9, { start_date: "2026-11-25" });
+  const h = timelineHarness(due);
+  find(h.render(), "TimelineToolbar").props.onGoToCurrent();
+  assert.equal(find(h.render(), "Provider").props.value.isHighlighted(8), true);
+
+  const none = timeline();
+  for (const section of none.sections)
+    section.activities = section.activities.map((item) =>
+      activity(item.id, { time_state: "upcoming", status: "pending" }),
+    );
+  const idle = timelineHarness(none);
+  const toolbar = find(idle.render(), "TimelineToolbar");
+  assert.equal(toolbar.props.hasCurrent, false);
+  toolbar.props.onGoToCurrent();
+  const actions = find(idle.render(), "Provider").props.value;
+  assert.equal(
+    [7, 8, 9].some((id) => actions.isHighlighted(id)),
+    false,
+  );
+});
+
+test("the toolbar has icon-only Expand/Collapse all with tooltips and a labelled Go to current after them", () => {
+  const Toolbar = load(feature + "TimelineToolbar.tsx", {
+    react: { useId: () => "no-current" },
+    "next-intl": { useTranslations: translate },
+    "@/icons": new Proxy({}, { get: (_, name) => name }),
+    "@/utils": { cn: (...classes) => classes.filter(Boolean).join(" ") },
+    "../../crops/_components/CropUi": { cropButton: "btn", cropControl: "ctl" },
+    "@/components/common/Tooltip": "Tooltip",
+  }).default;
+  const onGoToCurrent = () => {};
+  const render = (hasCurrent) =>
+    nodes(
+      Toolbar({
+        filters: { search: "", status: "all", category: "all" },
+        categories: [],
+        view: "stages",
+        hasCurrent,
+        onFilters: () => {},
+        onView: () => {},
+        onExpandAll: () => {},
+        onCollapseAll: () => {},
+        onGoToCurrent,
+      }),
+    ).filter((n) => n.type === "Tooltip");
+  const [expand, collapse, current] = render(true);
+  for (const [tip, label, icon] of [
+    [expand, "expandAll", "ChevronsUpDownIcon"],
+    [collapse, "collapseAll", "ChevronsDownUpIcon"],
+  ]) {
+    assert.equal(tip.props.content, label);
+    const button = tip.props.children;
+    assert.equal(button.type, "button");
+    assert.equal(button.props["aria-label"], label);
+    assert.equal(button.props.title, undefined);
+    assert.equal(button.props.children.type, icon);
+  }
+  // Go to current has a visible label, so it only gets a tooltip when unavailable.
+  assert.equal(current.props.content, null);
+  const button = current.props.children;
+  const children = [button.props.children].flat();
+  assert.equal(children[0].type, "CrosshairIcon");
+  assert.ok(children.includes("goToCurrent"));
+  assert.equal(button.props["aria-disabled"], false);
+  assert.equal(button.props["aria-describedby"], undefined);
+  assert.equal(button.props.onClick, onGoToCurrent);
+
+  const unavailable = render(false).at(-1);
+  assert.equal(unavailable.props.content, "noCurrent");
+  assert.equal(unavailable.props.id, "no-current");
+  assert.equal(unavailable.props.children.props["aria-disabled"], true);
+  assert.equal(
+    unavailable.props.children.props["aria-describedby"],
+    "no-current",
+  );
+  assert.equal(unavailable.props.children.props.onClick, undefined);
+});
+
+test("the scroll buttons stay in place, are disabled where they cannot scroll, page one screen from the target, and use one scroll listener", () => {
+  const runtime = hooks();
+  const frames = [];
+  const timers = [];
+  const observed = [];
+  let resized;
+  class ResizeObserver {
+    constructor(fn) {
+      resized = fn;
+    }
+    observe(element) {
+      observed.push(element);
+    }
+    disconnect() {
+      observed.length = 0;
+    }
+  }
+  const Buttons = load(
+    feature + "TimelineScrollButtons.tsx",
+    {
+      react: runtime.react,
+      "next-intl": { useTranslations: translate },
+      "@/icons": new Proxy({}, { get: (_, name) => name }),
+      "@/utils": { cn: (...classes) => classes.filter(Boolean).join(" ") },
+      "./timelineScroll": {
+        scrollBehavior: () => "smooth",
+        scrollEventTarget: (element) => element,
+      },
+      "@/components/common/Tooltip": "Tooltip",
+    },
+    {
+      requestAnimationFrame: (fn) => frames.push(fn),
+      cancelAnimationFrame: () => {},
+      setTimeout: (fn) => timers.push(fn),
+      clearTimeout: () => {},
+      ResizeObserver,
+    },
+  ).default;
+  const listeners = [];
+  const scrolls = [];
+  const scroller = {
+    scrollTop: 0,
+    scrollHeight: 2000,
+    clientHeight: 600,
+    addEventListener: (type, fn, options) =>
+      listeners.push([type, fn, options]),
+    removeEventListener: (type, fn) =>
+      listeners.splice(
+        listeners.findIndex(([t, f]) => t === type && f === fn),
+        1,
+      ),
+    scrollTo: (options) => scrolls.push(clone(options)),
+  };
+  const content = { name: "content" };
+  const props = { scroller, content, className: "absolute" };
+  const render = () => runtime.render(Buttons, props);
+  // The rendered <button> inside each RoundButton's tooltip.
+  const element = (tree, label) => {
+    const round = nodes(tree).find((n) => n.props?.label === label);
+    return round.type(round.props).props.children;
+  };
+  const labels = ["previousPage", "nextPage", "scrollToTop"];
+  const disabled = (tree) =>
+    labels.map((label) => element(tree, label).props["aria-disabled"]);
+  const press = (label) => element(render(), label).props.onClick?.();
+  const scrollTo = (top) => {
+    scroller.scrollTop = top;
+    listeners[0][1]();
+  };
+  const settle = () => timers.splice(0).forEach((fn) => fn());
+
+  assert.equal(render(), null);
+  // One passive scroll listener and one ResizeObserver on scroller and content.
+  assert.deepEqual(
+    listeners.map(([type, , options]) => [type, options.passive]),
+    [["scroll", true]],
+  );
+  assert.equal(observed.length, 2);
+  assert.equal(observed[0], scroller);
+  assert.equal(observed[1], content);
+  frames.splice(0).forEach((fn) => fn());
+
+  // At the top all three show in a fixed column; Previous and Top are disabled.
+  let tree = render();
+  assert.deepEqual(
+    nodes(tree)
+      .filter((n) => n.props?.label)
+      .map((n) => n.props.label),
+    labels,
+  );
+  assert.deepEqual(disabled(tree), [true, false, true]);
+  assert.match(tree.props.className, /pointer-events-none/);
+  assert.match(tree.props.className, /\babsolute\b/);
+  press("previousPage");
+  press("scrollToTop");
+  assert.deepEqual(scrolls, [], "disabled buttons do nothing");
+
+  // One visible screen less 48 px; a quick second click pages on from the target.
+  press("nextPage");
+  press("nextPage");
+  assert.deepEqual(scrolls, [
+    { top: 552, behavior: "smooth" },
+    { top: 1104, behavior: "smooth" },
+  ]);
+  scrollTo(552);
+  assert.deepEqual(disabled(render()), [false, false, false]);
+  // Clamped at the bottom, where Next page is disabled.
+  press("nextPage");
+  assert.equal(scrolls.at(-1).top, 1400);
+  scrollTo(1400);
+  settle();
+  assert.deepEqual(disabled(render()), [false, true, false]);
+  const count = scrolls.length;
+  press("nextPage");
+  assert.equal(scrolls.length, count);
+  press("previousPage");
+  assert.equal(scrolls.at(-1).top, 848);
+  scrollTo(100);
+  settle();
+  press("previousPage");
+  assert.equal(scrolls.at(-1).top, 0);
+  scrollTo(700);
+  settle();
+  press("scrollToTop");
+  assert.deepEqual(scrolls.at(-1), { top: 0, behavior: "smooth" });
+
+  // Each is a real labelled button with a side tooltip that keeps focus on press;
+  // disabled ones stay focusable (aria-disabled) and lose the hover colour.
+  scrollTo(0);
+  tree = render();
+  for (const [label, icon, off] of [
+    ["previousPage", "ChevronUpIcon", true],
+    ["nextPage", "ChevronDownIcon", false],
+    ["scrollToTop", "ArrowUpToLineIcon", true],
+  ]) {
+    const round = nodes(tree).find((n) => n.props?.label === label);
+    const tip = round.type(round.props);
+    assert.equal(tip.type, "Tooltip");
+    assert.equal(tip.props.content, label);
+    assert.equal(tip.props.side, "start");
+    const button = tip.props.children;
+    assert.equal(button.type, "button");
+    assert.equal(button.props.type, "button");
+    assert.equal(button.props.disabled, undefined);
+    assert.equal(button.props["aria-disabled"], off);
+    assert.equal(button.props["aria-label"], label);
+    assert.match(button.props.className, /rounded-full/);
+    assert.match(button.props.className, /size-12/);
+    assert.match(button.props.className, /bg-success-700/);
+    assert.match(button.props.className, /focus-visible:outline-2/);
+    if (off) {
+      assert.match(button.props.className, /opacity-40/);
+      assert.match(button.props.className, /cursor-not-allowed/);
+      assert.doesNotMatch(button.props.className, /hover:bg-success-800/);
+    } else assert.match(button.props.className, /hover:bg-success-800/);
+    assert.equal(button.props.children.type, icon);
+    let prevented = false;
+    button.props.onMouseDown({ preventDefault: () => (prevented = true) });
+    assert.equal(prevented, true);
+  }
+
+  // Content changes are seen without a scroll event.
+  scrollTo(1400);
+  scroller.scrollHeight = 3000;
+  resized();
+  assert.deepEqual(disabled(render()), [false, false, false]);
+  // A timeline that fits without scrolling shows no buttons.
+  scroller.scrollTop = 0;
+  scroller.scrollHeight = 600;
+  resized();
+  assert.equal(render(), null);
+  assert.equal(listeners.length, 1);
+  runtime.cleanup();
+  assert.equal(listeners.length, 0);
+  assert.equal(observed.length, 0);
+});
+
+test("scrolling respects reduced motion and the page scrolls in its nearest scrolling parent", () => {
+  let reduced = false;
+  const main = { style: "auto", parentElement: null };
+  const wrapper = { style: "visible", parentElement: main };
+  const scroll = load(
+    feature + "timelineScroll.ts",
+    {},
+    {
+      window: { matchMedia: () => ({ matches: reduced }) },
+      getComputedStyle: (node) => ({ overflowY: node.style }),
+      document: { scrollingElement: "document", documentElement: "root" },
+    },
+  );
+  assert.equal(scroll.scrollBehavior(), "smooth");
+  reduced = true;
+  assert.equal(scroll.scrollBehavior(), "auto");
+  assert.equal(scroll.scrollParent({ parentElement: wrapper }), main);
+  main.style = "hidden";
+  assert.equal(scroll.scrollParent({ parentElement: wrapper }), "document");
+});
+
+test("the scrollbar cursor is a pointer over the scrollbar, grabbing while pressed, and off on touch-only devices", () => {
+  let hover = true;
+  const windowListeners = {};
+  const effects = [];
+  const useScrollbarCursor = load(
+    feature + "useScrollbarCursor.ts",
+    { react: { useEffect: (fn) => effects.push(fn) } },
+    {
+      window: {
+        matchMedia: () => ({ matches: hover }),
+        addEventListener: (type, fn) => (windowListeners[type] = fn),
+        removeEventListener: (type) => delete windowListeners[type],
+      },
+    },
+  ).default;
+  const listeners = {};
+  // A 300 px wide scroller at x = 100 with a 6 px scrollbar at its end.
+  const element = {
+    style: { cursor: "" },
+    scrollHeight: 1000,
+    clientHeight: 400,
+    clientWidth: 294,
+    clientLeft: 0,
+    getBoundingClientRect: () => ({ left: 100 }),
+    addEventListener: (type, fn) => (listeners[type] = fn),
+    removeEventListener: (type) => delete listeners[type],
+  };
+  useScrollbarCursor(element);
+  const cleanup = effects.pop()();
+  const at = (clientX, target = element) => ({ target, clientX, button: 0 });
+  listeners.mousemove(at(397));
+  assert.equal(element.style.cursor, "pointer");
+  listeners.mousemove(at(150));
+  assert.equal(element.style.cursor, "");
+  // Content children keep their normal cursor.
+  listeners.mousemove(at(397, {}));
+  assert.equal(element.style.cursor, "");
+  listeners.mousedown(at(150));
+  assert.equal(element.style.cursor, "");
+  listeners.mousedown(at(397));
+  assert.equal(element.style.cursor, "grabbing");
+  listeners.mousemove(at(150));
+  assert.equal(element.style.cursor, "grabbing");
+  windowListeners.mouseup();
+  assert.equal(element.style.cursor, "");
+  listeners.mousemove(at(397));
+  listeners.mouseleave();
+  assert.equal(element.style.cursor, "");
+  // A right-to-left layout puts the scrollbar at the start.
+  element.clientLeft = 6;
+  listeners.mousemove(at(103));
+  assert.equal(element.style.cursor, "pointer");
+  element.scrollHeight = 400;
+  listeners.mousemove(at(103));
+  assert.equal(element.style.cursor, "");
+  cleanup();
+  assert.deepEqual(Object.keys(listeners), []);
+  assert.deepEqual(Object.keys(windowListeners), []);
+
+  hover = false;
+  useScrollbarCursor(element);
+  assert.equal(effects.pop()(), undefined);
+  assert.deepEqual(Object.keys(listeners), []);
+});
+
 test("a crop without a timeline shows the empty state and the generate fallback for active crops", async () => {
   const empty = timeline({
     generated: false,
@@ -726,6 +1179,16 @@ test("English/Hindi timeline messages match and keep their placeholders", () => 
     [...text.matchAll(/\{(\w+)/g)].map((match) => match[1]).sort();
   for (const key of Object.keys(en))
     assert.deepEqual(placeholders(hi[key]), placeholders(en[key]), key);
+  for (const [key, english, hindi] of [
+    ["scrollToTop", "Scroll to top", "ऊपर जाएँ"],
+    ["previousPage", "Previous page", "पिछला भाग"],
+    ["nextPage", "Next page", "अगला भाग"],
+    ["toolbar.goToCurrent", "Go to current", "वर्तमान पर जाएँ"],
+    ["toolbar.noCurrent", "No current activity", "कोई वर्तमान गतिविधि नहीं"],
+  ]) {
+    assert.equal(en[key], english, key);
+    assert.equal(hi[key], hindi, key);
+  }
   for (const key of [
     "updateCrop",
     "viewTimeline",

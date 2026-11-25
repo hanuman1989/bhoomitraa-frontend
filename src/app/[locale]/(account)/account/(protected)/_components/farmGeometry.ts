@@ -260,72 +260,160 @@ export function pointsToBoundary(
   return { type: "MultiPolygon", coordinates: [[ring]] };
 }
 
+type Coordinate = readonly number[];
+const geometryPolygons = (geometry: FarmGeometry) =>
+  geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+const turn = (a: Coordinate, b: Coordinate, c: Coordinate) =>
+  (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+const onEdge = (point: Coordinate, a: Coordinate, b: Coordinate) =>
+  Math.abs(turn(a, b, point)) < 1e-12 &&
+  point[0] >= Math.min(a[0], b[0]) - 1e-10 &&
+  point[0] <= Math.max(a[0], b[0]) + 1e-10 &&
+  point[1] >= Math.min(a[1], b[1]) - 1e-10 &&
+  point[1] <= Math.max(a[1], b[1]) + 1e-10;
+function ringContains(point: Coordinate, ring: Ring, edges: boolean): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i],
+      b = ring[j];
+    if (onEdge(point, a, b)) return edges;
+    if (
+      a[1] > point[1] !== b[1] > point[1] &&
+      point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
+    )
+      inside = !inside;
+  }
+  return inside;
+}
+const geometryContains = (
+  geometry: FarmGeometry,
+  point: Coordinate,
+  edges: boolean,
+) =>
+  geometryPolygons(geometry).some(
+    ([outer, ...holes]) =>
+      ringContains(point, outer, edges) &&
+      !holes.some((hole) => ringContains(point, hole, !edges)),
+  );
+const geometrySegments = (geometry: FarmGeometry) =>
+  geometryPolygons(geometry).flatMap((p) =>
+    p.flatMap((r) => r.slice(1).map((b, i) => [r[i], b] as const)),
+  );
+const segmentsCross = (
+  p: Coordinate,
+  q: Coordinate,
+  r: Coordinate,
+  s: Coordinate,
+) =>
+  turn(p, q, r) * turn(p, q, s) < -1e-24 &&
+  turn(r, s, p) * turn(r, s, q) < -1e-24;
+/** One edge leaves the container: an end or its midpoint lies outside, or it
+ * crosses a container edge. Touching or following an edge stays inside. */
+function edgeLeavesContainer(
+  container: FarmGeometry,
+  a: Coordinate,
+  b: Coordinate,
+): boolean {
+  return (
+    !geometryContains(container, a, true) ||
+    !geometryContains(
+      container,
+      [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
+      true,
+    ) ||
+    geometrySegments(container).some(([r, s]) => segmentsCross(a, b, r, s))
+  );
+}
+
+/** One edge enters an area another record already uses: an end or its
+ * midpoint lies strictly inside, or it crosses that area's edge. Sharing or
+ * touching an edge is allowed. */
+function edgeEntersArea(
+  area: FarmGeometry,
+  a: Coordinate,
+  b: Coordinate,
+): boolean {
+  return (
+    geometryContains(area, a, false) ||
+    geometryContains(area, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], false) ||
+    geometrySegments(area).some(([r, s]) => segmentsCross(a, b, r, s))
+  );
+}
+
+export type BoundaryConflict = "outside" | "overlap" | null;
+/** Live drawing preview with cropAllocationError's rules: corners and edges
+ * that leave `inside` ("outside", reported first) or enter an `avoid` area
+ * ("overlap"). Edge i joins point i to i + 1; a closed shape adds the edge
+ * from the last point back to the first. `enclosed` is an avoid area a closed
+ * shape surrounds without any edge touching it. */
+export function boundaryConflicts(
+  points: readonly MapPosition[],
+  limits: { inside: FarmGeometry; avoid: readonly FarmGeometry[] },
+  closed: boolean,
+): {
+  vertices: BoundaryConflict[];
+  edges: BoundaryConflict[];
+  enclosed: number | null;
+} {
+  const coordinates = points.map(({ lng, lat }) => [lng, lat] as const);
+  const count =
+    closed && points.length >= 3 ? points.length : points.length - 1;
+  const pairs = Array.from({ length: Math.max(0, count) }, (_, i) => [
+    coordinates[i],
+    coordinates[(i + 1) % coordinates.length],
+  ]);
+  const edges = pairs.map(([a, b]): BoundaryConflict =>
+    edgeLeavesContainer(limits.inside, a, b)
+      ? "outside"
+      : limits.avoid.some((area) => edgeEntersArea(area, a, b))
+        ? "overlap"
+        : null,
+  );
+  const drawn = closed ? pointsToBoundary(points) : null;
+  const enclosed = drawn
+    ? limits.avoid.findIndex(
+        (area) =>
+          !pairs.some(([a, b]) => edgeEntersArea(area, a, b)) &&
+          geometryPolygons(area).some(([outer]) =>
+            outer.some((point) => geometryContains(drawn, point, false)),
+          ),
+      )
+    : -1;
+  return {
+    vertices: coordinates.map((point) =>
+      !geometryContains(limits.inside, point, true)
+        ? "outside"
+        : limits.avoid.some((area) => geometryContains(area, point, false))
+          ? "overlap"
+          : null,
+    ),
+    edges,
+    enclosed: enclosed >= 0 ? enclosed : null,
+  };
+}
+
 /** Crop allocation preview. Topology and shared edges are rechecked by Laravel. */
 export function cropAllocationError(
   boundary: FarmGeometry,
   farm: FarmGeometry,
   occupied: readonly FarmGeometry[],
 ): "outsideFarm" | "overlap" | null {
-  const polygons = (geometry: FarmGeometry) =>
-    geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
-  const cross = (a: number[], b: number[], c: number[]) =>
-    (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-  const onEdge = (point: number[], a: number[], b: number[]) =>
-    Math.abs(cross(a, b, point)) < 1e-12 &&
-    point[0] >= Math.min(a[0], b[0]) - 1e-10 &&
-    point[0] <= Math.max(a[0], b[0]) + 1e-10 &&
-    point[1] >= Math.min(a[1], b[1]) - 1e-10 &&
-    point[1] <= Math.max(a[1], b[1]) + 1e-10;
-  function ringContains(point: number[], ring: Ring, edges: boolean): boolean {
-    let inside = false;
-    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-      const a = ring[i],
-        b = ring[j];
-      if (onEdge(point, a, b)) return edges;
-      if (
-        a[1] > point[1] !== b[1] > point[1] &&
-        point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
-      )
-        inside = !inside;
-    }
-    return inside;
-  }
-  const contains = (geometry: FarmGeometry, point: number[], edges: boolean) =>
-    polygons(geometry).some(
-      ([outer, ...holes]) =>
-        ringContains(point, outer, edges) &&
-        !holes.some((hole) => ringContains(point, hole, !edges)),
-    );
-  const segments = (geometry: FarmGeometry) =>
-    polygons(geometry).flatMap((p) =>
-      p.flatMap((r) => r.slice(1).map((b, i) => [r[i], b] as const)),
-    );
-  const cropEdges = segments(boundary);
   const crossing = (a: FarmGeometry, b: FarmGeometry) =>
-    segments(a).some(([p, q]) =>
-      segments(b).some(
-        ([r, s]) =>
-          cross(p, q, r) * cross(p, q, s) < -1e-24 &&
-          cross(r, s, p) * cross(r, s, q) < -1e-24,
-      ),
+    geometrySegments(a).some(([p, q]) =>
+      geometrySegments(b).some(([r, s]) => segmentsCross(p, q, r, s)),
     );
   if (
-    cropEdges.some(
-      ([a, b]) =>
-        !contains(farm, a, true) ||
-        !contains(farm, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], true),
-    ) ||
-    crossing(boundary, farm)
+    geometrySegments(boundary).some(([a, b]) => edgeLeavesContainer(farm, a, b))
   )
     return "outsideFarm";
   if (
-    polygons(farm).some(([, ...holes]) =>
-      holes.some((hole) => contains(boundary, hole[0], false)),
+    geometryPolygons(farm).some(([, ...holes]) =>
+      holes.some((hole) => geometryContains(boundary, hole[0], false)),
     )
   )
     return "outsideFarm";
   function interiorSamples(geometry: FarmGeometry) {
-    return segments(geometry).flatMap(([a, b]) => {
+    return geometrySegments(geometry).flatMap(([a, b]) => {
       const dx = b[0] - a[0],
         dy = b[1] - a[1],
         length = Math.hypot(dx, dy);
@@ -336,14 +424,16 @@ export function cropAllocationError(
       return [
         [x - (dy / length) * epsilon, y + (dx / length) * epsilon],
         [x + (dy / length) * epsilon, y - (dx / length) * epsilon],
-      ].filter((point) => contains(geometry, point, false));
+      ].filter((point) => geometryContains(geometry, point, false));
     });
   }
   for (const other of occupied) {
     if (
       crossing(boundary, other) ||
-      interiorSamples(boundary).some((p) => contains(other, p, false)) ||
-      interiorSamples(other).some((p) => contains(boundary, p, false))
+      interiorSamples(boundary).some((p) =>
+        geometryContains(other, p, false),
+      ) ||
+      interiorSamples(other).some((p) => geometryContains(boundary, p, false))
     )
       return "overlap";
   }

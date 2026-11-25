@@ -72,6 +72,10 @@ function hooks() {
       const [index] = entry();
       return (slots[index] ??= { current: initial });
     },
+    useId() {
+      const [index] = entry();
+      return `id-${index}`;
+    },
     useEffect(fn, deps) {
       const [index, prior] = entry();
       if (!prior || changed(prior.deps, deps))
@@ -473,7 +477,12 @@ test("floating actions keep the idle stack and pin Confirm Boundary / Save as Fa
   const runtime = hooks();
   const Fab = load(
     base + "AccountFloatingActions.tsx",
-    { react: runtime.react, "next-intl": intl, "@/icons": icons },
+    {
+      react: runtime.react,
+      "next-intl": intl,
+      "@/icons": icons,
+      "@/components/common/Tooltip": "Tooltip",
+    },
     { document: { addEventListener() {}, removeEventListener() {} } },
   ).default;
   let drawn = 0;
@@ -513,7 +522,13 @@ test("floating actions keep the idle stack and pin Confirm Boundary / Save as Fa
     (node) => node.props?.["aria-label"] === "confirm",
   );
   assert.equal(pinned.props["aria-disabled"], true);
-  assert.equal(pinned.props.title, "minPoints");
+  // The label is visible, so the tooltip only explains why it is blocked.
+  const reason = nodes(tree).find(
+    (node) => node.type === "Tooltip" && node.props.content === "minPoints",
+  );
+  assert.ok(reason);
+  assert.equal(pinned.props["aria-describedby"], reason.props.id);
+  assert.equal(pinned.props.title, undefined);
   pinned.props.onClick();
   assert.equal(drawn, 0);
   tree = runtime.render(Fab, {
@@ -524,6 +539,13 @@ test("floating actions keep the idle stack and pin Confirm Boundary / Save as Fa
   pinned = nodes(tree).find(
     (node) => node.props?.["aria-label"] === "saveAsFarm",
   );
+  assert.equal(pinned.props["aria-describedby"], undefined);
+  assert.equal(
+    nodes(tree).some(
+      (node) => node.type === "Tooltip" && node.props.content === "minPoints",
+    ),
+    false,
+  );
   pinned.props.onClick();
   assert.equal(drawn, 1);
 });
@@ -532,6 +554,7 @@ test("toolbar switches Undo to Reopen and blocks Complete below three points", (
   const Toolbar = load(base + "boundaryDraw/BoundaryDrawToolbar.tsx", {
     "next-intl": intl,
     "@/icons": icons,
+    "@/components/common/Tooltip": "Tooltip",
   }).default;
   const calls = [];
   const props = {
@@ -543,10 +566,18 @@ test("toolbar switches Undo to Reopen and blocks Complete below three points", (
   };
   const buttons = (tree) =>
     nodes(tree).filter((node) => node.type === "button");
-  let [undo, clear, complete] = buttons(Toolbar(props));
+  const idle = Toolbar(props);
+  let [undo, clear, complete] = buttons(idle);
   assert.equal(undo.props.disabled, true);
   assert.equal(complete.props["aria-disabled"], true);
-  assert.equal(complete.props.title, "minPoints");
+  // Icon-only buttons get their name as a shared tooltip, not a native title.
+  assert.deepEqual(
+    nodes(idle)
+      .filter((node) => node.type === "Tooltip")
+      .map((node) => node.props.content),
+    ["undo", "clear", "minPoints"],
+  );
+  assert.equal(complete.props.title, undefined);
   complete.props.onClick();
   clear.props.onClick();
   assert.deepEqual(calls, ["clear"]);

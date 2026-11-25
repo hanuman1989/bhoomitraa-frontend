@@ -7,11 +7,12 @@ import {
   useState,
   startTransition,
 } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useLocale, useTranslations } from "next-intl";
 import useFarmBoundary from "@/hooks/useFarmBoundary";
 import useAreaUnits from "@/hooks/useAreaUnits";
 import {
+  canonicalAreaUnit,
   fromSquareMeters,
   formatArea,
   isSupportedAreaUnit,
@@ -19,9 +20,10 @@ import {
 import { getCropOccupancy } from "@/actions/account/farm-crops";
 import FarmBoundaryEditor from "@/components/common/maps/FarmBoundaryEditor";
 import BoundaryConfirmDialog from "@/components/common/maps/BoundaryConfirmDialog";
-import AreaUnitSelect from "@/components/common/AreaUnitSelect";
+import type { BoundaryLimits } from "@/components/common/maps/BoundaryConflictLayer";
 import Input from "@/components/admin/form/input/InputField";
 import { farmMapColor } from "@/components/common/maps/farmMapStyle";
+import { FitMapIcon } from "@/icons";
 import {
   boundaryArea,
   cropAllocationError,
@@ -44,15 +46,12 @@ export default function CropBoundaryStep({
   onValidity,
 }: CropStepProps & { onValidity?: (valid: boolean) => void }) {
   const t = useTranslations("farmerCrops");
-  const tf = useTranslations("farmerFarms");
   const locale = useLocale();
   const units = useAreaUnits();
   const [occupancy, setOccupancy] = useState<CropOccupancy | null>(null);
   const [error, setErrorMessage] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const [resetConfirm, setResetConfirm] = useState<"farm" | "draw" | null>(
-    null,
-  );
+  const [resetConfirm, setResetConfirm] = useState(false);
   const [preserveParts, setPreserveParts] = useState(true);
   const [parts, setParts] = useState(() =>
     structuredClone(crop.boundary_details.boundary),
@@ -86,6 +85,18 @@ export default function CropBoundaryStep({
   });
   const source = useWatch({ control, name: "boundary_source" });
   const areaUnit = useWatch({ control, name: "area_unit" });
+  // No unit picker: keep the crop's unit, else the farm's, else the default.
+  useEffect(() => {
+    if (!units.config || isSupportedAreaUnit(areaUnit, units.config)) return;
+    const fallback = [
+      crop.area_unit,
+      crop.farm.area_unit,
+      units.config.default_unit,
+    ]
+      .map((unit) => canonicalAreaUnit(unit))
+      .find((unit) => isSupportedAreaUnit(unit, units.config));
+    if (fallback) setValue("area_unit", fallback);
+  }, [units.config, areaUnit, crop.area_unit, crop.farm.area_unit, setValue]);
   const loadBoundary = s.loadBoundary;
   const loadFullFarm = useCallback(
     (farmBoundary: Boundary) => {
@@ -160,6 +171,22 @@ export default function CropBoundaryStep({
           ]
         : [],
     [occupancy, crop.farm.name],
+  );
+  // Live drawing preview: red outside the farm, orange over another crop.
+  const outsideMessage = t("outsideFarm");
+  const overlapMessage = t("overlap");
+  const limits = useMemo<BoundaryLimits | null>(
+    () =>
+      occupancy?.farm_boundary && isFarmGeometry(occupancy.farm_boundary)
+        ? {
+            inside: occupancy.farm_boundary,
+            avoid: occupancy.existing_active_crops.flatMap((c) =>
+              c.boundary ? [c.boundary] : [],
+            ),
+            messages: { outside: outsideMessage, overlap: overlapMessage },
+          }
+        : null,
+    [occupancy, outsideMessage, overlapMessage],
   );
   // The session edits one ring; parts retains the other parcels/holes and the
   // previous selection while a replacement GPS route is being reviewed.
@@ -281,11 +308,11 @@ export default function CropBoundaryStep({
     if (!canUseFullFarm || !occupancy?.farm_boundary) return;
     if (s.mode !== "manual") s.changeMode("manual");
     loadFullFarm(occupancy.farm_boundary);
-    setResetConfirm(null);
+    setResetConfirm(false);
   }
   function selectFarm() {
     if (source !== "farm_boundary" && (boundary || s.points.length))
-      setResetConfirm("farm");
+      setResetConfirm(true);
     else reset();
   }
   function clear() {
@@ -342,10 +369,6 @@ export default function CropBoundaryStep({
         }
       })}
     >
-      <div>
-        <h2 className="text-xl font-bold">{t("steps.boundary")}</h2>
-        <p className="mt-1 text-sm text-gray-500">{t("boundaryDescription")}</p>
-      </div>
       {error && (
         <CropNotice error>
           {error}{" "}
@@ -369,48 +392,6 @@ export default function CropBoundaryStep({
           {occupancy.existing_active_crops.some((c) => !c.boundary) && (
             <CropNotice error>{t("unverifiedCropBoundary")}</CropNotice>
           )}
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              disabled={!canUseFullFarm || s.active}
-              onClick={selectFarm}
-              aria-pressed={source === "farm_boundary"}
-              className={cropButton}
-            >
-              {t("useFarmBoundary")}
-            </button>
-            {occupancy.farm_boundary && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (boundary || s.points.length) setResetConfirm("draw");
-                  else draw();
-                }}
-                disabled={s.active}
-                className={cropButton}
-              >
-                {t("drawCustom")}
-              </button>
-            )}
-            <Controller
-              name="area_unit"
-              control={control}
-              rules={{
-                validate: (value) =>
-                  isSupportedAreaUnit(value, units.config) || t("required"),
-              }}
-              render={({ field }) => (
-                <div className="min-w-40">
-                  <AreaUnitSelect
-                    id="crop-area-unit"
-                    value={field.value}
-                    onChange={field.onChange}
-                    error={errors.area_unit?.message}
-                  />
-                </div>
-              )}
-            />
-          </div>
           {source !== "farm_boundary" &&
             preserveParts &&
             parts &&
@@ -467,7 +448,7 @@ export default function CropBoundaryStep({
               ) : (
                 <CropField
                   id="crop-manual-area"
-                  label={t("area")}
+                  label={t("areaInUnit", { unit: units.label(areaUnit) })}
                   error={errors.cultivated_area?.message}
                   required
                 >
@@ -487,7 +468,6 @@ export default function CropBoundaryStep({
           ) : (
             <>
               <FarmBoundaryEditor
-                collapsibleTools
                 boundaryStatus={
                   source === "farm_boundary" &&
                   valid &&
@@ -538,16 +518,21 @@ export default function CropBoundaryStep({
                   .join(", ")}
                 referenceLayers={references}
                 displayGeometry={boundary}
-                toolbar={
-                  <button
-                    type="button"
-                    disabled={!canUseFullFarm || s.active}
-                    className="text-success-700 rounded-lg px-3 py-2 text-start text-sm font-semibold disabled:opacity-40"
-                    onClick={selectFarm}
-                    aria-pressed={source === "farm_boundary"}
-                  >
-                    {t("useFarmBoundary")}
-                  </button>
+                limits={limits}
+                helpFor="crop"
+                extraActions={
+                  canUseFullFarm && source !== "farm_boundary"
+                    ? [
+                        {
+                          id: "farm",
+                          label: t("useFarmBoundary"),
+                          icon: FitMapIcon,
+                          color: "bg-theme-purple-500 text-white",
+                          run: selectFarm,
+                          disabled: s.active,
+                        },
+                      ]
+                    : undefined
                 }
               />
               {s.mode === "gps" && <CropNotice>{t("gpsSafety")}</CropNotice>}
@@ -599,6 +584,9 @@ export default function CropBoundaryStep({
               </dl>
             </>
           )}
+          {errors.area_unit && (
+            <CropNotice error>{errors.area_unit.message}</CropNotice>
+          )}
           {errors.boundary && (
             <CropNotice error>{errors.boundary.message}</CropNotice>
           )}
@@ -607,24 +595,10 @@ export default function CropBoundaryStep({
       )}
       {resetConfirm && (
         <BoundaryConfirmDialog
-          title={
-            resetConfirm === "farm"
-              ? t("resetBoundary")
-              : tf("discardBoundaryTitle")
-          }
-          description={
-            resetConfirm === "farm"
-              ? t("resetBoundaryDescription")
-              : tf("discardBoundaryDescription")
-          }
-          onClose={() => setResetConfirm(null)}
-          onConfirm={() => {
-            if (resetConfirm === "farm") reset();
-            else {
-              draw();
-              setResetConfirm(null);
-            }
-          }}
+          title={t("resetBoundary")}
+          description={t("resetBoundaryDescription")}
+          onClose={() => setResetConfirm(false)}
+          onConfirm={reset}
         />
       )}
     </form>

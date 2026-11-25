@@ -29,6 +29,7 @@ import {
   farmFeature,
   farmPositions,
   farmLocation,
+  isFarmGeometry,
   isMapPosition,
 } from "./farmGeometry";
 import {
@@ -87,7 +88,18 @@ interface Resources {
   farms: MapsData;
   crops: MapsData;
   location: MapsData;
+  cropPins: MapsData;
 }
+// public/images/seedling-icon.png (1023×873) drawn at 40×34 px; the stem tip
+// sits on the crop centre (or its saved location when it has no boundary),
+// the same point the crop popup uses.
+const CROP_PIN = {
+  url: "/images/seedling-icon.png",
+  width: 40,
+  height: 34,
+  anchorX: 19,
+  anchorY: 34,
+};
 
 export default function DashboardMap({
   ref,
@@ -242,6 +254,7 @@ export default function DashboardMap({
           farms: new sdk.Data({ map }),
           location: new sdk.Data({ map }),
           crops: new sdk.Data({ map }),
+          cropPins: new sdk.Data({ map }),
         };
         lifecycle.current = {
           owner: initial.current.farmerId,
@@ -277,9 +290,11 @@ export default function DashboardMap({
         current.farms.setMap(null);
         current.crops.setMap(null);
         current.location.setMap(null);
+        current.cropPins.setMap(null);
         current.sdk.event.clearInstanceListeners(current.farms);
         current.sdk.event.clearInstanceListeners(current.crops);
         current.sdk.event.clearInstanceListeners(current.location);
+        current.sdk.event.clearInstanceListeners(current.cropPins);
         current.sdk.event.clearInstanceListeners(current.map);
       }
       resources.current = null;
@@ -313,8 +328,12 @@ export default function DashboardMap({
     const current = resources.current;
     if (!current) return;
     current.crops.forEach((feature) => current.crops.remove(feature));
+    // Polygons only: every active crop, with or without a boundary, is marked
+    // by its seedling pin instead of Google's default marker.
     const features = (crops ?? [])
-      .filter((crop) => crop.status === "active")
+      .filter(
+        (crop) => crop.status === "active" && isFarmGeometry(crop.boundary),
+      )
       .map((crop) =>
         farmFeature({
           id: crop.id,
@@ -353,6 +372,56 @@ export default function DashboardMap({
     });
     return () => listener.remove();
   }, [crops, generation, selectedCrop?.id, onSelectCrop, drawing]);
+  useEffect(() => {
+    const current = resources.current;
+    if (!current) return;
+    const pins = current.cropPins;
+    pins.forEach((feature) => pins.remove(feature));
+    const features = (crops ?? []).flatMap((crop) => {
+      if (crop.status !== "active") return [];
+      const center = farmAnchor({
+        id: crop.id,
+        name: crop.crop_name ?? "",
+        boundary: crop.boundary,
+        location: farmLocation(crop.latitude, crop.longitude),
+      });
+      return center
+        ? [
+            {
+              type: "Feature",
+              id: crop.id,
+              properties: { name: crop.crop_name ?? "" },
+              geometry: {
+                type: "Point",
+                coordinates: [center.lng, center.lat],
+              },
+            },
+          ]
+        : [];
+    });
+    if (features.length)
+      pins.addGeoJson({ type: "FeatureCollection", features });
+    pins.setStyle((feature) => {
+      const name = feature.getProperty("name");
+      return {
+        clickable: !drawing,
+        zIndex: 30,
+        title: typeof name === "string" ? name : undefined,
+        icon: {
+          url: CROP_PIN.url,
+          scaledSize: new current.sdk.Size(CROP_PIN.width, CROP_PIN.height),
+          anchor: new current.sdk.Point(CROP_PIN.anchorX, CROP_PIN.anchorY),
+        },
+      };
+    });
+    const listener = pins.addListener("click", ({ feature }) => {
+      if (!view.current.blocked) {
+        reopenPopup();
+        onSelectCrop?.(Number(feature.getId()));
+      }
+    });
+    return () => listener.remove();
+  }, [crops, generation, onSelectCrop, drawing]);
 
   function stopAutomaticViewport() {
     lifecycle.current.manual = true;

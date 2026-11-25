@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import Tooltip from "@/components/common/Tooltip";
 import {
   CheckLineIcon,
   PencilIcon,
@@ -49,6 +50,7 @@ export default function AccountFloatingActions({
   const t = useTranslations("farmerDashboard.actions");
   const tb = useTranslations("farmerDashboard.boundaryDraw");
   const container = useRef<HTMLDivElement>(null);
+  const minPointsId = useId();
   useEffect(() => {
     if (!open) return;
     function outside(event: PointerEvent) {
@@ -156,42 +158,54 @@ export default function AccountFloatingActions({
       {drawing && (
         <div className="flex items-center gap-2">
           {drawToolbar}
-          <button
-            type="button"
-            aria-disabled={!canCompleteDraw}
-            aria-label={drawLabel}
-            title={canCompleteDraw ? drawLabel : tb("minPoints")}
-            onClick={() => {
-              if (canCompleteDraw) onDrawFarm();
-            }}
-            className="group focus-visible:outline-success-700 flex min-h-11 shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:min-h-0"
+          {/* The label is visible, so the tooltip only explains why it is blocked. */}
+          <Tooltip
+            content={canCompleteDraw ? null : tb("minPoints")}
+            id={minPointsId}
+            className="shrink-0"
           >
-            <span className="shadow-theme-md group-hover:bg-success-50 max-xsm:sr-only rounded-xl bg-white/95 px-2.5 py-1.5 text-xs font-medium text-gray-950 dark:bg-gray-900 dark:text-gray-100">
-              {drawLabel}
-            </span>
-            <span className="bg-success-700 shadow-theme-lg flex size-8 shrink-0 items-center justify-center rounded-full text-white">
-              <CheckLineIcon
-                aria-hidden="true"
-                className="block size-4 shrink-0"
-              />
-            </span>
-          </button>
+            <button
+              type="button"
+              aria-disabled={!canCompleteDraw}
+              aria-label={drawLabel}
+              aria-describedby={canCompleteDraw ? undefined : minPointsId}
+              onClick={() => {
+                if (canCompleteDraw) onDrawFarm();
+              }}
+              className="group focus-visible:outline-success-700 flex min-h-11 items-center gap-2 rounded-full focus-visible:outline-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:min-h-0"
+            >
+              <span className="shadow-theme-md group-hover:bg-success-50 max-xsm:sr-only rounded-xl bg-white/95 px-2.5 py-1.5 text-xs font-medium text-gray-950 dark:bg-gray-900 dark:text-gray-100">
+                {drawLabel}
+              </span>
+              <span className="bg-success-700 shadow-theme-lg flex size-8 shrink-0 items-center justify-center rounded-full text-white">
+                <CheckLineIcon
+                  aria-hidden="true"
+                  className="block size-4 shrink-0"
+                />
+              </span>
+            </button>
+          </Tooltip>
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => onToggle(!open)}
-        aria-expanded={open}
-        aria-controls="account-map-actions"
-        aria-label={open ? t("close") : t("open")}
-        title={open ? t("close") : t("open")}
-        className="bg-success-800 shadow-theme-xl hover:bg-success-700 focus-visible:outline-success-700 flex size-8 shrink-0 items-center justify-center rounded-full p-0 leading-none text-white transition focus-visible:outline-2 focus-visible:outline-offset-2"
+      <Tooltip
+        content={open ? t("close") : t("open")}
+        side="start"
+        className="shrink-0"
       >
-        <PencilIcon
-          aria-hidden="true"
-          className={`block size-4 shrink-0 transition-transform ${open ? "rotate-45" : ""}`}
-        />
-      </button>
+        <button
+          type="button"
+          onClick={() => onToggle(!open)}
+          aria-expanded={open}
+          aria-controls="account-map-actions"
+          aria-label={open ? t("close") : t("open")}
+          className="bg-success-800 shadow-theme-xl hover:bg-success-700 focus-visible:outline-success-700 flex size-8 items-center justify-center rounded-full p-0 leading-none text-white transition focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <PencilIcon
+            aria-hidden="true"
+            className={`block size-4 shrink-0 transition-transform ${open ? "rotate-45" : ""}`}
+          />
+        </button>
+      </Tooltip>
     </div>
   );
 }

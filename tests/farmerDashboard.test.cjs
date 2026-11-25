@@ -383,6 +383,16 @@ function sdkDouble({ geocode } = {}) {
     Map: MapSDK,
     Data,
     LatLngBounds: Bounds,
+    Size: class {
+      constructor(width, height) {
+        Object.assign(this, { width, height });
+      }
+    },
+    Point: class {
+      constructor(x, y) {
+        Object.assign(this, { x, y });
+      }
+    },
     InfoWindow,
     SymbolPath: { CIRCLE: 0 },
     importLibrary: async () => ({
@@ -563,6 +573,10 @@ function hooks() {
     useRef(initial) {
       const [index] = entry();
       return (slots[index] ??= { current: initial });
+    },
+    useId() {
+      const [index] = entry();
+      return `id-${index}`;
     },
     useReducer(reducer, initial) {
       const [index] = entry();
@@ -1293,7 +1307,7 @@ test("map loads once and stays mounted through panel resizing, module changes an
   assert.equal(h.calls.types.at(-1), "satellite");
   assert.equal(h.calls.fits.length, 1);
   h.runtime.cleanup();
-  assert.equal(h.calls.eventsCleared, 4); // Farm, location, crop layers and map.
+  assert.equal(h.calls.eventsCleared, 5); // Farm, location, crop, crop-pin layers and map.
   assert.equal(h.calls.data[0].map, null);
 });
 test("saved farm features select their exact record, highlight it and display its name as text", async () => {
@@ -2561,7 +2575,12 @@ test("floating actions collapse on outside click/Escape, avoid full-height panel
   class Node {}
   const Component = load(
     base + "AccountFloatingActions.tsx",
-    { react: runtime.react, "next-intl": intl, "@/icons": icons },
+    {
+      react: runtime.react,
+      "next-intl": intl,
+      "@/icons": icons,
+      "@/components/common/Tooltip": "Tooltip",
+    },
     {
       Node,
       document: {
@@ -2814,4 +2833,127 @@ test("dashboard messages match across English/Hindi, including every module, act
   assert.match(hi.comingSoon, /\{module\}/);
   assert.match(en.actions.currentMapType, /\{type\}/);
   assert.match(hi.actions.currentMapType, /\{type\}/);
+});
+
+test("each active crop gets a seedling pin at its polygon centre or saved location that selects the crop", async () => {
+  const h = mapHarness();
+  const base = {
+    farm_id: 1,
+    crop_id: 7,
+    crop_name: "Wheat",
+    crop_variety_name: null,
+    crop_color: null,
+    status: "active",
+    latitude: null,
+    longitude: null,
+    cultivated_area: "1.0",
+    area_unit: "acre",
+  };
+  const square = {
+    type: "MultiPolygon",
+    coordinates: [
+      [
+        [
+          [77, 26],
+          [77.02, 26],
+          [77.02, 26.02],
+          [77, 26.02],
+          [77, 26],
+        ],
+      ],
+    ],
+  };
+  h.props.crops = [
+    { ...base, id: 91, boundary: square },
+    // A saved centre inside the polygon is used, as for the crop popup.
+    {
+      ...base,
+      id: 92,
+      boundary: square,
+      latitude: "26.005",
+      longitude: "77.015",
+    },
+    { ...base, id: 93, boundary: square, status: "completed" },
+    { ...base, id: 94, boundary: null, latitude: 26.5, longitude: 77.5 },
+    {
+      ...base,
+      id: 95,
+      boundary: null,
+      status: "draft",
+      latitude: 26.6,
+      longitude: 77.6,
+    },
+    { ...base, id: 96, boundary: null },
+  ];
+  const selected = [];
+  h.props.onSelectCrop = (id) => selected.push(id);
+  await h.mount();
+  const pins = h.calls.data[3];
+  assert.deepEqual(
+    pins.features.map((feature) => feature.getId()),
+    [91, 92, 94],
+    "every active crop with a polygon or a location gets a pin",
+  );
+  assert.deepEqual(
+    h.calls.data[2].features.map((feature) => feature.getId()),
+    [91, 92],
+    "point crops no longer add Google's default marker",
+  );
+  assert.equal(
+    h.calls.data[2].features.some(
+      (feature) => feature.source.geometry.type === "Point",
+    ),
+    false,
+  );
+  const expected = [
+    [77.01, 26.01],
+    [77.015, 26.005],
+    [77.5, 26.5],
+  ];
+  pins.features.forEach((feature, index) => {
+    assert.equal(feature.source.geometry.type, "Point");
+    feature.source.geometry.coordinates.forEach((value, axis) =>
+      assert.ok(
+        Math.abs(value - expected[index][axis]) < 1e-9,
+        `${index}:${axis}`,
+      ),
+    );
+  });
+  const style = pins.style(pins.features[0]);
+  assert.equal(style.icon.url, "/images/seedling-icon.png");
+  assert.deepEqual(clone(style.icon.scaledSize), { width: 40, height: 34 });
+  assert.deepEqual(clone(style.icon.anchor), { x: 19, y: 34 });
+  assert.equal(style.clickable, true);
+  assert.equal(style.title, "Wheat");
+  assert.ok(
+    style.zIndex > h.calls.data[2].style(h.calls.data[2].features[0]).zIndex,
+  );
+  pins.click({ feature: pins.features[1] });
+  pins.click({ feature: pins.features[2] });
+  assert.deepEqual(selected, [92, 94], "point crops are selected from the pin");
+
+  h.props.boundaryDraw = {
+    mode: "drawing",
+    points: [],
+    label: "",
+    onAdd() {},
+    onComplete() {},
+    onOpen() {},
+  };
+  h.render();
+  assert.equal(
+    pins.style(pins.features[0]).clickable,
+    false,
+    "pins never block boundary drawing",
+  );
+  delete h.props.boundaryDraw;
+  h.props.crops = [h.props.crops[1]];
+  h.render();
+  assert.deepEqual(
+    pins.features.map((feature) => feature.getId()),
+    [92],
+  );
+  h.runtime.cleanup();
+  assert.equal(pins.map, null);
+  assert.ok(pins.removed > 0);
 });
