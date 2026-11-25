@@ -141,6 +141,23 @@
       "currentMapType": "मानचित्र का वर्तमान प्रकार: {type}",
       "drawFarm": "खेत की सीमा बनाएँ"
     },
+    "boundaryDraw": {
+      "confirm": "सीमा की पुष्टि करें",
+      "saveAsFarm": "खेत के रूप में सहेजें",
+      "minPoints": "कम से कम 3 बिंदु जोड़ें",
+      "toolbar": "सीमा बनाने के उपकरण",
+      "undo": "पिछला बिंदु हटाएँ",
+      "reopen": "सीमा फिर से खोलें",
+      "clear": "सीमा मिटाएँ",
+      "complete": "सीमा पूरी करें",
+      "addFarm": "इस सीमा के साथ खेत जोड़ें",
+      "hint": "कोने जोड़ने के लिए मानचित्र पर टैप करें। पूरा करने के लिए पहले बिंदु पर टैप करें।",
+      "drawnHint": "सीमा पूरी हो गई। खेत जोड़ने के लिए उस पर टैप करें।",
+      "progress": "{count, plural, =0 {अभी कोई बिंदु नहीं} one {# बिंदु} other {# बिंदु}}",
+      "progressWithArea": "{count, plural, one {# बिंदु} other {# बिंदु}} · क्षेत्रफल {area}",
+      "shortcuts": "Enter: पूरा करें · Backspace: पिछला हटाएँ · Esc: मिटाएँ",
+      "draftLabel": "बिना सहेजी सीमा · {area} · खेत जोड़ने के लिए टैप करें"
+    },
     "farms": {
       "selected": "चुना हुआ",
       "search": "नाम या स्थान से खेत खोजें",
@@ -403,7 +420,6 @@
     "distance": "दूरी: {distance} मीटर",
     "gpsResumeGap": "रोकने के दौरान आपका स्थान बदल गया। सीमा की पुष्टि से पहले जोड़ने वाली रेखा जाँचें।",
     "pointLimit": "सीमा में 499 बिंदुओं की सीमा पूरी हो गई है। रेखाचित्र पूरा करें या कुछ बिंदु हटाएँ।",
-    "continueToFarm": "खेत की जानकारी पर आगे बढ़ें",
     "gpsStates": {
       "idle": "शुरू नहीं हुआ",
       "requesting_permission": "स्थान की अनुमति माँगी जा रही है",
@@ -4310,7 +4326,7 @@
     },
     "sowingDate": "बुवाई की तिथि",
     "cropTimeline": "फसल अवधि और कटाई",
-    "maturityNote": "यह फसल पकने का अनुमान है। गतिविधियों की समयरेखा अभी उपलब्ध नहीं है।",
+    "maturityNote": "यह फसल पकने का अनुमान है। फसल सहेजने पर आपकी गतिविधि समयरेखा तैयार होगी।",
     "duration": "फसल की अवधि",
     "daysRange": "{min}–{max} दिन",
     "applicationGuidelines": "उपयोग के निर्देश",
@@ -4318,7 +4334,6 @@
     "cropInformation": "फसल की जानकारी",
     "cropBoundaryArea": "फसल की सीमा और क्षेत्रफल",
     "pendingEditDetails": "इस विवरण में सहेजे गए लंबित बदलाव शामिल हैं। अंतिम पुष्टि के बाद ही सक्रिय फसल का मानचित्र बदलेगा।",
-    "timelineUnavailable": "सहेजने पर फसल सक्रिय होगी। गतिविधियों की समयरेखा बनाना अभी उपलब्ध नहीं है।",
     "continueEditing": "बदलाव जारी रखें",
     "keepDraftTitle": "यह फसल योजना रखें?",
     "keepDraftDescription": "पूरे किए गए चरण सहेजे गए हैं। बाद में जारी रखने के लिए योजना रखें या इसे स्थायी रूप से हटाएँ।",
@@ -4342,7 +4357,16 @@
     "saveCrop": "सहेजें और फसल समयरेखा बनाएँ",
     "maturityUnavailable": "फसल पकने का अनुमान उपलब्ध नहीं है।",
     "daysSingle": "{days} दिन",
-    "farmLocation": "खेत का स्थान"
+    "farmLocation": "खेत का स्थान",
+    "updateCrop": "फसल अपडेट करें",
+    "viewTimeline": "समयरेखा देखें",
+    "timelineNotGenerated": "समयरेखा नहीं बनी",
+    "generateTimeline": "समयरेखा बनाएँ",
+    "lockedSelection": "फसल सहेजने के बाद खेत, फसल, किस्म और मौसम नहीं बदले जा सकते। बुवाई की तिथि आप अब भी बदल सकते हैं।",
+    "sowingShiftNote": "बुवाई की तिथि बदलने पर आपकी फसल समयरेखा की तारीखें भी बदल जाएँगी।",
+    "deleteCrop": "फसल हटाएँ",
+    "deleteCropDescription": "{name} को स्थायी रूप से हटाएँ? इसकी फसल समयरेखा, गतिविधियाँ, नोट और अन्य सहेजे गए रिकॉर्ड हटा दिए जाएँगे। इसे वापस नहीं लाया जा सकता।",
+    "cropDeleted": "फसल स्थायी रूप से हटा दी गई।"
   },
   "timelineBuilder": {
     "title": "फसल गतिविधि समयरेखा बिल्डर",
@@ -4640,6 +4664,170 @@
       "deleteFailed": "गतिविधि हटाई नहीं जा सकी। कृपया फिर से प्रयास करें।",
       "configSaved": "समयरेखा कॉन्फ़िगरेशन सहेजा गया।",
       "storageUnavailable": "ब्राउज़र स्टोरेज उपलब्ध नहीं है। प्राथमिकताएँ याद नहीं रहेंगी।"
+    }
+  },
+  "farmerCropTimeline": {
+    "title": "फसल समयरेखा",
+    "pageDescription": "इस फसल की आपकी गतिविधियाँ, अवस्था-दर-अवस्था, बुवाई की तिथि से गिनी गई तारीखों के साथ।",
+    "close": "बंद करें",
+    "back": "फसलों पर वापस जाएँ",
+    "breadcrumbCrops": "फसलें",
+    "breadcrumb": "पथ",
+    "openFullPage": "पूरे पेज पर खोलें",
+    "loading": "फसल समयरेखा लोड हो रही है…",
+    "loadFailed": "फसल समयरेखा लोड नहीं हो सकी। कृपया फिर से प्रयास करें।",
+    "saveFailed": "यह बदलाव सहेजा नहीं जा सका। कृपया फिर से प्रयास करें।",
+    "generateFailed": "फसल समयरेखा तैयार नहीं हो सकी। आपकी फसल सहेज ली गई है, आप फिर से प्रयास कर सकते हैं।",
+    "retry": "फिर से प्रयास करें",
+    "generating": {
+      "title": "लोड हो रहा है...",
+      "description": "कृपया प्रतीक्षा करें, हम आपके लिए सब तैयार कर रहे हैं"
+    },
+    "empty": {
+      "notGeneratedTitle": "समयरेखा नहीं बनी",
+      "notGeneratedDescription": "इस फसल की गतिविधि समयरेखा अभी नहीं बनी है।",
+      "generate": "समयरेखा बनाएँ",
+      "draftTitle": "पहले फसल की योजना पूरी करें",
+      "draftDescription": "गतिविधि समयरेखा तैयार करने के लिए यह फसल पूरी करके सहेजें।",
+      "continueSetup": "योजना जारी रखें",
+      "historicalDescription": "इस फसल के लिए कोई गतिविधि समयरेखा तैयार नहीं की गई थी।",
+      "noActivities": "इस फसल के लिए अभी कोई गतिविधि तय नहीं है।"
+    },
+    "alert": {
+      "title": "आपकी फसल समयरेखा तैयार है",
+      "description": "{stages, plural, one {# विकास अवस्था} other {# विकास अवस्थाओं}} में {activities, plural, one {# गतिविधि} other {# गतिविधियाँ}}, आपकी बुवाई की तिथि {date} से तय की गईं।",
+      "dismiss": "हटाएँ"
+    },
+    "summary": {
+      "label": "फसल सारांश",
+      "sowingDate": "बुवाई की तिथि",
+      "expectedHarvest": "अनुमानित कटाई",
+      "growthStages": "विकास अवस्थाएँ",
+      "activities": "गतिविधियाँ",
+      "dueNow": "अभी करनी है",
+      "dueNowLate": "अभी करनी है · {late} देर से",
+      "completed": "पूरी",
+      "completedValue": "{completed} / {total}"
+    },
+    "toolbar": {
+      "label": "गतिविधियाँ छाँटें",
+      "search": "गतिविधि या अवस्था खोजें…",
+      "searchLabel": "गतिविधियाँ खोजें",
+      "status": "स्थिति",
+      "category": "श्रेणी",
+      "allStatuses": "सभी स्थितियाँ",
+      "statuses": {
+        "due": "अभी करनी है",
+        "upcoming": "आने वाली",
+        "late": "देर से या अवधि बीती",
+        "in_progress": "जारी",
+        "completed": "पूरी"
+      },
+      "allCategories": "सभी श्रेणियाँ",
+      "view": "दृश्य",
+      "views": {
+        "stages": "विकास अवस्थाएँ",
+        "calendar": "कैलेंडर सूची"
+      },
+      "expandAll": "सभी खोलें",
+      "collapseAll": "सभी बंद करें",
+      "noMatches": "इन फ़िल्टर से कोई गतिविधि नहीं मिली।",
+      "clearFilters": "फ़िल्टर हटाएँ"
+    },
+    "stage": {
+      "youAreHere": "आप यहाँ हैं",
+      "activities": "{count, plural, one {# गतिविधि} other {# गतिविधियाँ}}",
+      "done": "{done}/{total} पूरी",
+      "progress": "{total} में से {done} पूरी",
+      "expand": "{name} खोलें",
+      "collapse": "{name} बंद करें",
+      "markerLabel": "{name}: {categories}",
+      "noActivities": "इस अवस्था में कोई गतिविधि नहीं है।"
+    },
+    "activity": {
+      "expand": "{title} खोलें",
+      "collapse": "{title} बंद करें",
+      "markDone": "{title} को पूरा चिह्नित करें",
+      "reopenTick": "पूरी हो चुकी है। {title} फिर से खोलें",
+      "informationOnly": "केवल जानकारी",
+      "moved": "तारीख बदली",
+      "details": "गतिविधि का विवरण",
+      "schedule": "समय",
+      "startDate": "शुरू होने की तिथि",
+      "endDate": "समाप्ति की तिथि",
+      "whatToDo": "क्या करें",
+      "goodToKnow": "जानने योग्य",
+      "noInstructions": "इस गतिविधि के लिए अभी कोई निर्देश नहीं जोड़े गए हैं।",
+      "infoFooter": "केवल जानकारी · बदलने के लिए कोई स्थिति नहीं।"
+    },
+    "records": {
+      "title": "इस गतिविधि का रिकॉर्ड",
+      "count": "{count, plural, one {# रिकॉर्ड} other {# रिकॉर्ड}}",
+      "remaining": "{count, plural, one {# प्रकार बाकी} other {# प्रकार बाकी}}",
+      "allDone": "सब पूरा",
+      "addNote": "नोट जोड़ें",
+      "addExpense": "खर्च जोड़ें",
+      "addLabour": "मज़दूर जोड़ें",
+      "addPhoto": "फोटो जोड़ें",
+      "recorded": "{count} दर्ज",
+      "notes": "नोट",
+      "deleteNote": "{date} का नोट हटाएँ",
+      "nothingYet": "अभी कुछ दर्ज नहीं किया गया है।",
+      "firstRecordHint": "आपका पहला रिकॉर्ड इस गतिविधि को ‘जारी’ में ले जाएगा।"
+    },
+    "smartActions": {
+      "title": "स्मार्ट कार्य",
+      "tools": "{count, plural, one {# टूल} other {# टूल}}",
+      "remaining": "{count, plural, one {# टूल बाकी} other {# टूल बाकी}}",
+      "used": "उपयोग किया · {date}",
+      "dialogSubtitle": "{activity} · {crop} · {farm} के लिए"
+    },
+    "footer": {
+      "reschedule": "तारीख बदलें",
+      "markDone": "पूरा चिह्नित करें",
+      "reopen": "फिर से खोलें"
+    },
+    "noteDialog": {
+      "title": "नोट जोड़ें",
+      "linked": "इससे जुड़ा: {activity}",
+      "note": "नोट",
+      "placeholder": "आपने क्या किया या क्या देखा?",
+      "counter": "{count} / 1000",
+      "date": "तिथि",
+      "save": "नोट सहेजें",
+      "required": "पहले नोट लिखें।",
+      "tooLong": "नोट अधिकतम 1000 अक्षरों का हो सकता है।",
+      "dateRequired": "तिथि चुनें।",
+      "futureDate": "तिथि भविष्य की नहीं हो सकती।",
+      "saved": "नोट सहेजा गया।"
+    },
+    "rescheduleDialog": {
+      "title": "तारीख बदलें",
+      "startDate": "नई शुरू होने की तिथि",
+      "endDate": "नई समाप्ति की तिथि",
+      "planned": "केवल यह गतिविधि बदलेगी। योजना वाली तारीखें: {dates}।",
+      "backToPlanned": "योजना वाली तारीखों पर लौटें",
+      "save": "तारीखें सहेजें",
+      "required": "दोनों तारीखें चुनें।",
+      "endBeforeStart": "समाप्ति की तिथि शुरू होने की तिथि के बराबर या बाद की होनी चाहिए।",
+      "saved": "गतिविधि की तारीख बदली गई।"
+    },
+    "underProgress": "काम जारी है",
+    "confirm": {
+      "reopenTitle": "यह गतिविधि फिर से खोलें?",
+      "reopenWithRecords": "{title} फिर से ‘जारी’ में चली जाएगी। आपके रिकॉर्ड सहेजे रहेंगे।",
+      "reopenWithoutRecords": "{title} फिर से ‘बाकी’ में चली जाएगी।",
+      "reopen": "फिर से खोलें",
+      "deleteNoteTitle": "यह नोट हटाएँ?",
+      "deleteNoteDescription": "{date} का नोट इस गतिविधि से हटा दिया जाएगा।",
+      "delete": "हटाएँ",
+      "cancel": "रद्द करें"
+    },
+    "toasts": {
+      "completed": "पूरा चिह्नित किया गया।",
+      "reopened": "गतिविधि फिर से खोली गई।",
+      "noteDeleted": "नोट हटाया गया।",
+      "updated": "गतिविधि अपडेट की गई।"
     }
   }
 }

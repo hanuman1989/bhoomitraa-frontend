@@ -15,7 +15,11 @@ import toast from "react-hot-toast";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useUserAuth } from "@/hooks/useUserAuth";
 import useAreaUnits from "@/hooks/useAreaUnits";
-import { formatArea, resolvePreferredAreaUnit } from "@/lib/areaUnits";
+import {
+  formatArea,
+  fromSquareMeters,
+  resolvePreferredAreaUnit,
+} from "@/lib/areaUnits";
 import { useLocale } from "next-intl";
 import AccountLanguageSwitcher from "@/components/common/AccountLanguageSwitcher";
 import { MenuIcon, PlusIcon, MinusIcon } from "@/icons";
@@ -35,13 +39,18 @@ import type { CropInfoAction } from "@/components/common/maps/CropInfoWindow";
 import type { FarmInfoAction } from "@/components/common/maps/FarmInfoWindow";
 import CropWizardDialog from "../crops/_components/CropWizardDialog";
 import CropDetailsDialog from "../crops/_components/CropDetailsDialog";
+import CropTimelineDialog from "../crop-timeline/_components/CropTimelineDialog";
 import CropDeleteConfirm from "../crops/_components/CropDeleteConfirm";
 import { AccountFarmContext } from "./AccountFarmContext";
 import AddFarmDialog from "../farms/_components/AddFarmDialog";
-import FarmBoundaryDialog from "@/components/common/maps/FarmBoundaryDialog";
+import BoundaryConfirmDialog from "@/components/common/maps/BoundaryConfirmDialog";
 import type { FarmSatelliteSources } from "@/components/common/maps/farmStaticMap";
 import DashboardMap from "./DashboardMap";
-import { farmLocation } from "./farmGeometry";
+import { farmLocation, pointsToBoundary } from "./farmGeometry";
+import useBoundaryDraw from "./boundaryDraw/useBoundaryDraw";
+import useBoundaryDrawShortcuts from "./boundaryDraw/useBoundaryDrawShortcuts";
+import BoundaryDrawHint from "./boundaryDraw/BoundaryDrawHint";
+import BoundaryDrawToolbar from "./boundaryDraw/BoundaryDrawToolbar";
 import AccountSidebar from "./AccountSidebar";
 import AccountBottomPanel from "./AccountBottomPanel";
 import AccountFloatingActions from "./AccountFloatingActions";
@@ -97,6 +106,7 @@ export default function AccountDashboardShell({
 }) {
   const t = useTranslations("farmerDashboard");
   const tf = useTranslations("farmerFarms");
+  const tb = useTranslations("farmerDashboard.boundaryDraw");
   const { user, isAuthenticated, isLoading } = useUserAuth();
   const locale = useLocale();
   const metadata = useAreaUnits();
@@ -153,8 +163,12 @@ export default function AccountDashboardShell({
   const [farmDialog, setFarmDialog] = useState<{
     farm?: Farm;
     boundary?: BoundaryDraft;
+    fromDraft?: boolean;
   } | null>(null);
-  const [drawing, setDrawing] = useState(false);
+  const draw = useBoundaryDraw(user?.id);
+  const drawActive = draw.mode !== "idle";
+  const [confirmClear, setConfirmClear] = useState(false);
+  const panelCollapsedForDraw = useRef(false);
   const refresh = useCallback(() => setRevision((value) => value + 1), []);
   const openFarm = useCallback((farm?: Farm) => setFarmDialog({ farm }), []);
   const [cropRevision, setCropRevision] = useState(0);
@@ -174,6 +188,15 @@ export default function AccountDashboardShell({
     startStep?: number;
   } | null>(null);
   const [cropDetails, setCropDetails] = useState<{ id: number } | null>(null);
+  const [cropTimeline, setCropTimeline] = useState<{
+    id: number;
+    generate?: boolean;
+  } | null>(null);
+  const showCropTimeline = useCallback(
+    (id: number, options: { generate?: boolean } = {}) =>
+      setCropTimeline({ id, generate: options.generate }),
+    [],
+  );
   const [cropDelete, setCropDelete] = useState<{
     id: number;
     name: string;
@@ -478,6 +501,58 @@ export default function AccountDashboardShell({
     },
     [cropMap.records, selectedCrop, openCrop, selectFarm, showCropDetails],
   );
+  const drawUnit = resolvePreferredAreaUnit(preferredUnit, metadata.config);
+  const drawArea = fromSquareMeters(draw.area, drawUnit, metadata.config);
+  const drawAreaLabel =
+    draw.area === null
+      ? null
+      : `${formatArea(drawArea ?? draw.area, locale)} ${areaUnitLabel(drawArea === null || !drawUnit ? "sqm" : drawUnit)}`;
+  function startDraw() {
+    dispatch({ type: "fab", open: false });
+    // Phones: the panel would cover most of the map while drawing.
+    if (viewport.width < 768 && panelVisible) {
+      panelCollapsedForDraw.current = true;
+      setPanelHidden(true);
+    }
+    draw.dispatch({ type: "start" });
+  }
+  function leaveDraw() {
+    setConfirmClear(false);
+    draw.dispatch({ type: "reset" });
+    if (panelCollapsedForDraw.current) {
+      panelCollapsedForDraw.current = false;
+      setPanelHidden(false);
+    }
+  }
+  function openDraftFarm() {
+    const boundary = draw.mode === "drawn" && pointsToBoundary(draw.points);
+    if (!boundary) return;
+    dispatch({ type: "fab", open: false });
+    setFarmDialog({
+      boundary: { boundary, boundary_source: "manual", gps_accuracy_m: null },
+      fromDraft: true,
+    });
+  }
+  function completeDraw() {
+    if (draw.mode === "drawn") openDraftFarm();
+    else draw.dispatch({ type: "complete" });
+  }
+  function undoDraw() {
+    draw.dispatch({ type: "undo" });
+  }
+  function clearDraw() {
+    if (draw.points.length >= 3) setConfirmClear(true);
+    else leaveDraw();
+  }
+  useBoundaryDrawShortcuts(
+    drawActive &&
+      mapVisible &&
+      !state.fabOpen &&
+      !state.sidebarOpen &&
+      !farmDialog &&
+      !confirmClear,
+    { complete: completeDraw, undo: undoDraw, clear: clearDraw },
+  );
   function saveForLanguageChange() {
     saveDashboardSnapshot(
       user?.id,
@@ -515,6 +590,7 @@ export default function AccountDashboardShell({
           select: selectCrop,
           open: openCrop,
           details: showCropDetails,
+          timeline: showCropTimeline,
           remove: setCropDelete,
         },
       }}
@@ -539,10 +615,10 @@ export default function AccountDashboardShell({
               viewport={viewport}
               sidebarWidth={state.sidebarOpen ? sidebarWidth : 0}
               automaticViewportBlocked={
-                drawing ||
                 Boolean(farmDialog) ||
                 Boolean(cropDialog) ||
                 Boolean(cropDetails) ||
+                Boolean(cropTimeline) ||
                 Boolean(cropDelete) ||
                 !mapVisible ||
                 (state.sidebarOpen && sidebarWidth === 0)
@@ -562,6 +638,18 @@ export default function AccountDashboardShell({
               onSelect={selectFarm}
               onReady={ready}
               bottomPadding={visiblePanelHeight}
+              boundaryDraw={
+                draw.mode === "idle"
+                  ? undefined
+                  : {
+                      mode: draw.mode,
+                      points: draw.points,
+                      label: tb("draftLabel", { area: drawAreaLabel ?? "" }),
+                      onAdd: (point) => draw.dispatch({ type: "add", point }),
+                      onComplete: completeDraw,
+                      onOpen: openDraftFarm,
+                    }
+              }
             />
           ) : (
             <div
@@ -603,6 +691,14 @@ export default function AccountDashboardShell({
             </div>
           </div>
         )}
+        {mapVisible && drawActive && (
+          <BoundaryDrawHint
+            mode={draw.mode}
+            count={draw.points.length}
+            areaLabel={drawAreaLabel}
+            error={draw.error}
+          />
+        )}
         {mapVisible && mapSpace >= 280 && !state.fabOpen && (
           <div
             role="group"
@@ -641,10 +737,20 @@ export default function AccountDashboardShell({
               navigate("farm-manager");
               openFarm();
             }}
-            onDrawFarm={() => {
-              dispatch({ type: "fab", open: false });
-              setDrawing(true);
-            }}
+            onDrawFarm={drawActive ? completeDraw : startDraw}
+            drawMode={draw.mode}
+            canCompleteDraw={draw.mode === "drawn" || draw.points.length >= 3}
+            drawToolbar={
+              drawActive ? (
+                <BoundaryDrawToolbar
+                  mode={draw.mode}
+                  count={draw.points.length}
+                  onUndo={undoDraw}
+                  onClear={clearDraw}
+                  onComplete={completeDraw}
+                />
+              ) : undefined
+            }
             onMapType={(mapType) => dispatch({ type: "map-type", mapType })}
             onLocate={() => map.current?.locate()}
             onFit={() => map.current?.fitAll()}
@@ -683,6 +789,7 @@ export default function AccountDashboardShell({
             initialBoundary={farmDialog.boundary}
             onClose={() => setFarmDialog(null)}
             onSaved={(farm) => {
+              if (farmDialog.fromDraft) leaveDraw();
               setFarmDialog(null);
               setWorkspace((current) => ({
                 ...current,
@@ -712,24 +819,12 @@ export default function AccountDashboardShell({
             }}
           />
         )}
-        {drawing && (
-          <FarmBoundaryDialog
-            areaUnit={
-              resolvePreferredAreaUnit(preferredUnit, metadata.config) ?? ""
-            }
-            location={[
-              user?.farmer_profile?.village,
-              user?.farmer_profile?.district?.name,
-              user?.farmer_profile?.state?.name,
-            ]
-              .filter(Boolean)
-              .join(", ")}
-            onClose={() => setDrawing(false)}
-            onConfirm={(boundary) => {
-              setDrawing(false);
-              setFarmDialog({ boundary });
-              navigate("farm-manager");
-            }}
+        {confirmClear && (
+          <BoundaryConfirmDialog
+            title={tf("discardBoundaryTitle")}
+            description={tf("discardBoundaryDescription")}
+            onConfirm={leaveDraw}
+            onClose={() => setConfirmClear(false)}
           />
         )}
         {cropDialog && (
@@ -763,6 +858,18 @@ export default function AccountDashboardShell({
               }));
               selectCrop(record);
             }}
+            onGenerateTimeline={(id) =>
+              showCropTimeline(id, { generate: true })
+            }
+          />
+        )}
+        {cropTimeline && (
+          <CropTimelineDialog
+            key={`${cropTimeline.id}-${cropTimeline.generate ? "generate" : "view"}`}
+            id={cropTimeline.id}
+            generate={cropTimeline.generate}
+            onClose={() => setCropTimeline(null)}
+            onGenerated={refreshCrops}
           />
         )}
         {cropDetails && (

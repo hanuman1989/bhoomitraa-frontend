@@ -4,9 +4,8 @@ import { useTranslations, useLocale } from "next-intl";
 import useAreaUnits from "@/hooks/useAreaUnits";
 import { formatArea } from "@/lib/areaUnits";
 import {
-  CalenderIcon,
+  MapLayersIcon,
   LocationPinIcon,
-  EyeIcon,
   MoreDotIcon,
   SproutIcon,
 } from "@/icons";
@@ -101,18 +100,49 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
           >
             <LocationPinIcon className="size-4" />
           </button>
-          <button
-            type="button"
-            className={`${cropButton} !min-h-9 !rounded-lg px-3 py-2 text-xs`}
-            onClick={() =>
-              draft
-                ? workspace.open({ id: crop.id })
-                : workspace.details(crop.id)
-            }
-          >
-            {!draft && <EyeIcon className="size-4" />}
-            {t(draft ? "continueSetup" : "viewDetails")}
-          </button>
+          {draft ? (
+            <button
+              type="button"
+              className={`${cropButton} !min-h-9 !rounded-lg px-3 py-2 text-xs`}
+              onClick={() => workspace.open({ id: crop.id })}
+            >
+              {t("continueSetup")}
+            </button>
+          ) : crop.has_timeline ? (
+            <button
+              type="button"
+              className={`${cropButton} !min-h-9 !rounded-lg px-3 py-2 text-xs`}
+              onClick={() => workspace.timeline(crop.id)}
+            >
+              <MapLayersIcon className="size-4" />
+              {t("viewTimeline")}
+            </button>
+          ) : crop.status === "active" ? (
+            <button
+              type="button"
+              className={`${cropButton} !min-h-9 !rounded-lg px-3 py-2 text-xs`}
+              onClick={() => workspace.timeline(crop.id, { generate: true })}
+            >
+              <MapLayersIcon className="size-4" />
+              {t("generateTimeline")}
+            </button>
+          ) : (
+            // A disabled button fires no pointer events, so the tooltip sits on its wrapper.
+            <span title={t("timelineNotGenerated")} className="inline-flex">
+              <button
+                type="button"
+                disabled
+                aria-describedby={`crop-${crop.id}-no-timeline`}
+                className={`${cropButton} !min-h-9 !rounded-lg px-3 py-2 text-xs`}
+              >
+                <MapLayersIcon className="size-4" />
+                {t("viewTimeline")}
+              </button>
+              <span id={`crop-${crop.id}-no-timeline`} className="sr-only">
+                {t("timelineNotGenerated")}
+              </span>
+            </span>
+          )}
           <Menu>
             <MenuButton
               aria-label={t("cropActions")}
@@ -158,7 +188,7 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
                   {t("locate")}
                 </button>
               </MenuItem>
-              {editable && (
+              {(editable || crop.status === "cancelled") && (
                 <MenuItem>
                   <button
                     type="button"
@@ -171,7 +201,13 @@ export default function CropListItem({ crop }: { crop: CropCycle }) {
                       })
                     }
                   >
-                    {t(draft ? "deleteDraft" : "cancelCrop")}
+                    {t(
+                      draft
+                        ? "deleteDraft"
+                        : crop.status === "cancelled"
+                          ? "deleteCrop"
+                          : "cancelCrop",
+                    )}
                   </button>
                 </MenuItem>
               )}

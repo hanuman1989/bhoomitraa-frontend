@@ -13,7 +13,11 @@ import toast from "react-hot-toast";
 import { saveFarmerFarm } from "@/actions/account/farms";
 import useFarmBoundary from "@/hooks/useFarmBoundary";
 import useAreaUnits from "@/hooks/useAreaUnits";
-import { canonicalAreaUnit, resolvePreferredAreaUnit } from "@/lib/areaUnits";
+import {
+  canonicalAreaUnit,
+  fromSquareMeters,
+  resolvePreferredAreaUnit,
+} from "@/lib/areaUnits";
 import BoundaryConfirmDialog from "@/components/common/maps/BoundaryConfirmDialog";
 import {
   ArrowRightIcon,
@@ -29,6 +33,7 @@ import type {
   FarmBasicPayload,
 } from "@/types/account/farm";
 import {
+  boundaryArea,
   boundaryError,
   boundaryPoints,
 } from "@/app/[locale]/(account)/account/(protected)/_components/farmGeometry";
@@ -89,6 +94,12 @@ export default function AddFarmDialog({
     farm ? savedBoundary : initialBoundary,
     farm?.actual_area_sqm,
   );
+  // A boundary drawn before opening Add Farm also suggests the recorded area.
+  const [drawnAreaSqm] = useState(() =>
+    farm || !initialBoundary
+      ? null
+      : boundaryArea(boundaryPoints(initialBoundary.boundary)),
+  );
   const form = useForm<FarmFormValues>({
     mode: "onTouched",
     defaultValues: {
@@ -109,7 +120,7 @@ export default function AddFarmDialog({
       address: farm?.address ?? "",
     },
   });
-  const { getFieldState, resetField } = form;
+  const { getFieldState, getValues, resetField } = form;
   useEffect(() => {
     if (farm || !metadata.config || unitInitialized.current) return;
     unitInitialized.current = true;
@@ -121,7 +132,27 @@ export default function AddFarmDialog({
             metadata.config,
           ) ?? "",
       });
-  }, [farm, metadata.config, originalProfile, getFieldState, resetField]);
+    const measured = fromSquareMeters(
+      drawnAreaSqm || null,
+      getValues("area_unit"),
+      metadata.config,
+    )?.toFixed(3);
+    if (
+      measured &&
+      Number(measured) > 0 &&
+      Number(measured) <= 999999999.999 &&
+      !getFieldState("area").isDirty
+    )
+      resetField("area", { defaultValue: measured });
+  }, [
+    farm,
+    metadata.config,
+    originalProfile,
+    drawnAreaSqm,
+    getFieldState,
+    getValues,
+    resetField,
+  ]);
   const values = useWatch({ control: form.control }) as FarmFormValues;
   useEffect(() => {
     content.current?.scrollTo({ top: 0 });

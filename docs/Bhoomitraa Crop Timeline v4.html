@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bhoomitraa Crop Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm farm diary inside the farmer's map dashboard
+   IDEA: the timeline opens like the Add/Edit Crop dialog, over the farm map
+   PICTURE: a growth-stage rail whose markers carry each stage's activity-category icons
+   COLOUR and TYPE: Bhoomitraa field green, amber for due, red for late; Outfit + Noto Sans Devanagari
+   LAYOUT: map + Crop Manager panel behind; large dialog with summary, toolbar, rail; accordion rows per activity */
+:root{color-scheme:light dark;
+--bg:light-dark(#F6F7F4,#0E1511);--card:light-dark(#FFFFFF,#16201A);--soft:light-dark(#F9FAFB,#1B2620);
+--ink:light-dark(#1D2939,#E8EEEA);--mut:light-dark(#475467,#A9B6AE);--faint:light-dark(#667085,#8C9A92);
+--line:light-dark(#E4E7EC,#2A3730);--line2:light-dark(#D0D5DD,#3A4A41);
+--g:light-dark(#0E7A4B,#3FBF82);--gd:light-dark(#05603A,#7FDCAE);--gs:light-dark(#ECFDF3,#123323);--gb:light-dark(#ABEFC6,#24573D);
+--a:light-dark(#B54708,#F5B65A);--as:light-dark(#FFFAEB,#33270F);--ab:light-dark(#FEDF89,#5A4515);
+--r:light-dark(#B42318,#F59A90);--rs:light-dark(#FEF3F2,#3A1714);--rb:light-dark(#FECDCA,#6A2A24);
+--b:light-dark(#175CD3,#84B3F5);--bs:light-dark(#EFF8FF,#132539);--v:light-dark(#5925DC,#B4A3F5);--vs:light-dark(#F4F3FF,#211A3A)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Outfit','Noto Sans Devanagari',system-ui,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+.hi{font-family:'Noto Sans Devanagari','Outfit',sans-serif}
+/* dashboard */
+.dash{position:fixed;inset:0;display:flex;flex-direction:column}
+.map{position:relative;flex:1 1 40%;min-height:180px;background:#4f6b3a;overflow:hidden}
+.map svg.bg{position:absolute;inset:0;width:100%;height:100%}
+.fab{position:absolute;width:40px;height:40px;border-radius:99px;border:0;background:#fff;color:#1D2939;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.mseg{position:absolute;top:14px;right:16px;display:flex;background:#fff;border-radius:99px;padding:3px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.mseg button{border:0;background:transparent;border-radius:99px;height:30px;padding:0 10px;font-size:13px;color:#1D2939}
+.mseg button[aria-pressed=true]{background:#0E7A4B;color:#fff;font-weight:600}
+.zoom{position:absolute;right:16px;top:64px;display:flex;flex-direction:column;background:#fff;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.25);overflow:hidden}
+.zoom button{width:36px;height:36px;border:0;background:#fff;color:#0E7A4B;font-size:22px;line-height:1}
+.panel{flex:0 0 auto;max-height:60%;overflow:auto;background:var(--card);border-radius:18px 18px 0 0;margin-top:-18px;position:relative;padding:14px max(2vw,14px) 10px;box-shadow:0 -6px 20px rgba(0,0,0,.18)}
+.handle{width:58px;height:22px;border-radius:99px;border:1px solid var(--gb);background:var(--gs);margin:-26px auto 6px;display:grid;place-items:center;color:var(--g)}
+.pm-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pm-h h1{margin:0;font-size:22px}
+.kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+.kp>div{display:flex;gap:10px;align-items:center;border:1px solid var(--gb);background:var(--gs);border-radius:12px;padding:10px 12px}
+.kp b{display:block;font-size:19px;line-height:1.1}.kp small{font-size:12px;color:var(--mut)}
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);margin-bottom:8px;font-size:14px}
+.tabs span{padding:6px 0;color:var(--mut)}.tabs .on{color:var(--g);font-weight:600;border-bottom:2px solid var(--g)}
+.crow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr) auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.crow small{display:block;font-size:12px;color:var(--faint)}
+/* shared */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.btn{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line2);background:var(--card);font-size:14px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+.btn.pri{background:var(--g);border-color:var(--g);color:#fff;font-weight:600}
+.btn.out{border-color:var(--g);color:var(--g);font-weight:600}
+.btn.dan{background:var(--r);border-color:var(--r);color:#fff}
+.btn.sm{min-height:34px;padding:0 11px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.in{height:42px;border:1px solid var(--line2);border-radius:10px;padding:0 12px;background:var(--card);font-size:16px;width:100%}
+textarea.in{height:auto;min-height:100px;padding:10px 12px;resize:vertical}
+.pill{display:inline-flex;align-items:center;font-size:12px;font-weight:500;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--soft);color:var(--mut);border:1px solid var(--line)}
+.p-g{background:var(--gs);color:var(--gd);border-color:var(--gb)}.p-a{background:var(--as);color:var(--a);border-color:var(--ab)}
+.p-r{background:var(--rs);color:var(--r);border-color:var(--rb)}.p-b{background:var(--bs);color:var(--b);border-color:transparent}
+.p-solid{background:var(--g);color:#fff;border-color:var(--g)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+.seg button{height:38px;padding:0 12px;border:0;background:var(--card);font-size:14px}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button[aria-pressed=true]{background:var(--g);color:#fff;font-weight:600}
+.ci{border-radius:11px;display:grid;place-items:center;flex:none}
+.x{width:38px;height:38px;border:0;background:transparent;border-radius:10px;display:grid;place-items:center;color:var(--g);flex:none}
+.note{font-size:13px;color:var(--mut)}
+/* dialogs */
+dialog{border:0;padding:0;background:var(--card);color:var(--ink);box-shadow:0 24px 70px rgba(16,24,40,.35)}
+dialog::backdrop{background:rgba(16,24,40,.5)}
+dialog.big{width:min(1120px,96vw);height:min(94vh,1000px);max-height:94vh;border-radius:20px;overflow:hidden}
+dialog.big[open]{display:flex;flex-direction:column}
+dialog.sm{width:min(560px,94vw);max-height:88vh;border-radius:18px}
+.dh{display:flex;gap:12px;align-items:flex-start;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--card)}
+.dh h2,.dh h3{margin:0;font-size:20px}.dh p{margin:2px 0 0;font-size:13.5px;color:var(--faint)}
+.dbody{flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px;background:var(--card)}
+.df{display:flex;justify-content:flex-end;gap:10px;padding:12px 22px;border-top:1px solid var(--line);background:var(--card);flex-wrap:wrap;align-items:center}
+.db{padding:16px 22px;display:flex;flex-direction:column;gap:14px}
+.f{display:flex;flex-direction:column;gap:6px}.f label{font-size:13.5px;font-weight:600}
+.err{padding:10px 12px;border-radius:10px;background:var(--rs);color:var(--r);font-size:14px}
+.wip{min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:var(--mut)}
+.wip b{font-size:20px;color:var(--ink)}
+.blank{min-height:240px}
+.proto{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut);margin-right:auto}
+.proto input{height:34px;border:1px solid var(--line2);border-radius:8px;padding:0 8px;background:var(--card)}
+/* timeline content */
+.banner{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;background:var(--gs);border:1px solid var(--gb);color:var(--gd)}
+.sum{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 16px}
+.tile{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.tile small{display:block;font-size:12px;color:var(--faint)}.tile b{display:block;font-size:14.5px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:12px}
+.stat b{font-size:21px;line-height:1.1;display:block}.stat span{font-size:13px;color:var(--faint)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tools .in{width:auto}
+.rail{position:relative;padding-left:92px;padding-top:4px}
+.rail:before{content:'';position:absolute;left:38px;top:30px;bottom:24px;width:4px;border-radius:4px;background:var(--line2)}
+.stage{position:relative;padding:16px 18px;margin-bottom:20px;min-height:108px}
+.stage:before{content:'';position:absolute;left:-26px;top:40px;width:25px;height:2px;background:var(--line2)}
+.stage.now{border-color:var(--gb);box-shadow:0 0 0 3px var(--gs)}
+.mk{position:absolute;left:-81px;top:13px;width:54px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.dot{width:54px;height:54px;border-radius:16px;border:4px solid var(--card);display:grid;place-items:center;background:var(--bs);color:var(--b);box-shadow:0 0 0 1px light-dark(#D1E0FF,#24406A)}
+.dot.done{background:var(--gs);color:var(--gd);box-shadow:0 0 0 1px var(--gb)}
+.dot.now{background:var(--g);color:#fff;box-shadow:0 0 0 1px var(--g),0 0 0 6px var(--gs)}
+.dot.none{background:var(--soft);color:var(--faint);box-shadow:0 0 0 1px var(--line)}
+.badges{display:flex;align-items:center;gap:2px;padding:3px 4px;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 3px rgba(16,24,40,.08);white-space:nowrap}
+.badges span{width:18px;height:18px;display:grid;place-items:center;color:var(--b)}
+.badges small{font-size:10.5px;font-weight:600;color:var(--mut);padding:0 1px}
+.shead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:50px}
+.shead h3{margin:0;font-size:18px;font-weight:650}
+.seq{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint);font-weight:600}
+.prog{width:90px;height:7px;border-radius:9px;background:var(--line);overflow:hidden}.prog i{display:block;height:100%;background:var(--g)}
+.chev{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;flex:none}
+.act{border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-top:10px;background:var(--card)}
+.act.open{border:2px solid var(--g);padding:14px 16px}
+.act.isdone{background:light-dark(#FCFEFD,#15221B)}
+.arow{display:flex;align-items:center;gap:12px}
+.tick{width:32px;height:32px;border-radius:999px;border:2px solid var(--line2);background:var(--card);display:grid;place-items:center;flex:none;padding:0}
+.tick.ip{border-color:#F79009}.tick.ip:after{content:'';width:12px;height:12px;border-radius:9px;background:#F79009}
+.tick.ok{background:var(--g);border-color:var(--g)}
+.when{font-size:12.5px;color:var(--mut)}.when.due{color:var(--a);font-weight:600}.when.late{color:var(--r);font-weight:600}
+.ttl{font-size:15.5px;font-weight:600}.hin{font-size:13px;color:var(--mut)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.det{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.todo{padding:12px 14px;border-radius:10px;background:var(--bs);border:1px solid light-dark(#D1E9FF,#1F3A5A)}
+.todo b{color:var(--b);font-size:13px}
+.acc{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.acch{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:0;background:var(--soft);text-align:left;min-height:52px}
+.acch b{font-size:14.5px;font-weight:600}
+.accb{padding:12px 14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line)}
+.recs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding-top:6px}
+.rb{position:relative}.rb.ok{border-color:var(--gb);background:var(--gs);color:var(--gd);font-weight:600}
+.rb .cnt{font-size:12px;font-weight:700;background:var(--card);border:1px solid var(--gb);border-radius:99px;padding:0 7px}
+.okb{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:99px;background:var(--g);display:grid;place-items:center;box-shadow:0 0 0 2px var(--card)}
+.okc{width:24px;height:24px;border-radius:99px;background:var(--g);display:grid;place-items:center;flex:none}
+.sa.used{background:var(--gs);border-color:var(--gb)}.sa.used .t{color:var(--gd)}
+.chipset{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.dbody{scroll-padding-top:12px}
+.ent{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.ent .d{width:56px;flex:none;color:var(--faint);font-size:12.5px;padding-top:1px}.ent .m{flex:1;white-space:pre-wrap}
+.sas{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.sa{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);text-align:left;min-height:58px;width:100%}
+.sa:hover{border-color:var(--g)}
+.sa .n{font-size:14px;font-weight:600;display:block}.sa .t{font-size:12.5px;color:var(--faint);display:block}
+.foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.st{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 13px;border-radius:10px;font-size:14px;font-weight:600}
+.month{font-size:13px;font-weight:700;color:var(--mut);margin:16px 0 0}
+.empty{padding:24px;text-align:center;color:var(--mut)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font-size:14px;z-index:9999;display:none}
+.rnd{width:40px;height:40px;border-radius:99px;border:1px solid var(--line2);background:var(--card);display:grid;place-items:center;flex:none}
+.menuw{position:relative}.menu{position:absolute;right:0;top:46px;z-index:5;min-width:190px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(16,24,40,.16);padding:6px}
+.menu button{width:100%;min-height:42px;display:flex;align-items:center;gap:9px;padding:0 12px;border:0;background:transparent;border-radius:8px;font-size:14px;text-align:left}.menu button:hover{background:var(--soft)}
+.steps{list-style:none;margin:0;padding:12px 22px 14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-bottom:1px solid var(--line);background:var(--card)}
+.steps li{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13.5px;font-weight:500;color:var(--mut)}
+.steps li span{width:32px;height:32px;border-radius:99px;display:grid;place-items:center;background:var(--g);color:#fff;font-weight:700;z-index:1}
+.steps li.cur{color:var(--g);font-weight:600}.steps li.cur span{box-shadow:0 0 0 5px var(--gs)}
+.steps li:not(:last-child):after{content:'';position:absolute;top:16px;left:50%;width:100%;height:2px;background:var(--g)}
+.ecg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.kvg{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:10px 18px;margin-top:12px}.kvg small{display:block;font-size:12.5px;color:var(--faint)}.kvg b{font-size:14.5px}
+.lnk{border:0;background:transparent;color:var(--g);font-weight:600;font-size:14px;min-height:32px}
+.loader{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(14,40,24,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.loader[hidden]{display:none}
+.ldcard{width:min(520px,90vw);background:linear-gradient(180deg,#fff,#F3F7F2);border-radius:28px;padding:34px 30px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.25);color:#1D2939}
+.ldt{display:flex;align-items:center;gap:18px;justify-content:center;margin-top:12px}.ldt span{width:64px;height:2px;background:#0E7A4B}.ldt b{font-size:clamp(28px,5vw,40px);color:#172340}
+.ldcard p{margin:10px 0 18px;font-size:17px;color:#475467}
+.lddots{display:flex;gap:16px;justify-content:center}.lddots i{width:14px;height:14px;border-radius:99px;background:#0E7A4B;opacity:.25}
+@media(prefers-reduced-motion:no-preference){.lddots i{animation:dot 1.2s infinite}.lddots i:nth-child(2){animation-delay:.15s}.lddots i:nth-child(3){animation-delay:.3s}.lddots i:nth-child(4){animation-delay:.45s}.lddots i:nth-child(5){animation-delay:.6s}@keyframes dot{40%{opacity:1;transform:scale(1.25)}}.scan{animation:scan 1.6s ease-in-out infinite alternate}@keyframes scan{from{transform:translateY(-30px)}to{transform:translateY(30px)}}}
+@media(max-width:700px){.ecg{grid-template-columns:1fr}}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:900px){.kp,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.crow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.crow .acts{grid-column:1/-1}}
+@media(max-width:600px){dialog.big{width:100vw;max-width:100vw;height:100vh;max-height:100vh;border-radius:0}dialog.sm{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:20px 20px 0 0}
+.dbody,.dh,.df{padding-left:14px;padding-right:14px}.rail{padding-left:52px}.rail:before{left:19px;width:3px}.mk{left:-49px;width:38px;top:14px}.dot{width:38px;height:38px;border-radius:11px;border-width:3px}.dot svg{width:18px;height:18px}.badges{flex-direction:column;padding:3px 2px}
+.stage{padding:12px}.stage:before{left:-12px;width:11px;top:32px}.recs{grid-template-columns:1fr 1fr}.act{padding:11px}.act.open{padding:12px}}
+@media(prefers-reduced-motion:no-preference){dialog[open]{animation:up .18s ease-out}@keyframes up{from{transform:translateY(12px);opacity:.6}}}
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="map" aria-label="Farm map (illustration)">
+    <svg class="bg" id="mapSvg" viewBox="0 0 1400 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+    <button type="button" class="fab" style="top:14px;left:16px" aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="mseg" role="group" aria-label="Language"><button type="button" class="hi" data-a="lang" data-k="hi" id="mHi">हिंदी</button><button type="button" data-a="lang" data-k="en" id="mEn">EN</button></div>
+    <div class="zoom"><button type="button" aria-label="Zoom in">+</button><button type="button" aria-label="Zoom out">−</button></div>
+  </div>
+  <section class="panel" aria-labelledby="pmT">
+    <div class="handle" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10h14M5 14h14"/></svg></div>
+    <div class="pm-h"><span class="ci" style="width:44px;height:44px;background:var(--gs);color:var(--g)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-9M12 13C5 13 3 9 3 4c6 0 9 3 9 9ZM12 17c0-6 3-9 9-9 0 6-3 9-9 9Z"/></svg></span><div style="flex:1"><h1 id="pmT">Crop Manager</h1><div class="note">Manage your crops, track cultivation and plan your next season.</div></div><select class="in" style="width:auto" aria-label="Season"><option>All Seasons</option></select><button type="button" class="btn pri">+ Plant Crop</button></div>
+    <div class="kp"><div><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg></span><div><small>Total Crop Cycles</small><b>2</b></div></div><div><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-9M12 13C5 13 3 9 3 4c6 0 9 3 9 9ZM12 17c0-6 3-9 9-9 0 6-3 9-9 9Z"/></svg></span><div><small>Active Crops</small><b>2</b></div></div><div><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span><div><small>Cultivated Area</small><b>1.733 Acre</b></div></div><div style="border-color:var(--ab);background:var(--as)"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span><div><small>Completed Crops</small><b>0</b></div></div></div>
+    <div class="tabs"><span class="on">Active Crops (2)</span><span>Drafts (0)</span><span>Crop History (0)</span></div>
+    <div class="crow"><div style="display:flex;gap:10px;align-items:center"><span class="ci" style="width:44px;height:44px;background:var(--as);color:var(--a)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22V8M12 8c-1.5-1-2-2.5-1.5-4 1.5.5 2 2 1.5 4Zm0 0c1.5-1 2-2.5 1.5-4-1.5.5-2 2-1.5 4ZM12 12c-2-.5-3-2-3-3.5 1.8 0 3 1.5 3 3.5Zm0 0c2-.5 3-2 3-3.5-1.8 0-3 1.5-3 3.5ZM12 16c-2-.5-3-2-3-3.5 1.8 0 3 1.5 3 3.5Zm0 0c2-.5 3-2 3-3.5-1.8 0-3 1.5-3 3.5Z"/></svg></span><div><b>Wheat</b><small>Karan Vaidehi DBW 370 · Rabi Season</small></div></div><div><small>Farm</small><b style="display:flex;gap:4px;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Mall 9 Bigha</b></div><div><small>Sown</small><b id="pmSown">28 Nov 2026</b><small>1.361 Acre</small></div><div><small>Expected harvest</small><b id="pmHarv">25 – 30 Apr 2027</b></div><div class="acts" style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap"><span id="wStat"></span><button type="button" class="rnd" aria-label="Show Wheat on map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button><button type="button" class="btn out" data-a="openTL" id="wTL"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></svg>View Timeline</button><div class="menuw"><button type="button" class="rnd" data-a="menu" data-k="w" aria-label="More actions for Wheat" aria-haspopup="menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><div class="menu" id="menu-w" role="menu" hidden><button type="button" role="menuitem" data-a="toastMsg" data-k="View Details opens the crop details page"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>View Details</button><button type="button" role="menuitem" data-a="openEC"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg>Edit Crop</button></div></div></div></div>
+    <div class="crow"><div style="display:flex;gap:10px;align-items:center"><span class="ci" style="width:44px;height:44px;background:var(--gs);color:var(--g)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4c-9 0-15 4-15 10a6 6 0 0 0 6 6c6 0 10-6 9-16ZM4 21 15 10"/></svg></span><div><b>Indian Mustard</b><small>Brijraj · Rabi Season</small></div></div><div><small>Farm</small><b style="display:flex;gap:4px;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Aadi Likha</b></div><div><small>Sown</small><b>16 Nov 2026</b><small>0.928 Kaccha Bigha</small></div><div><small>Expected harvest</small><b>Not available</b></div><div class="acts" style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap"><span class="pill p-g">Active</span><button type="button" class="rnd" aria-label="Show Indian Mustard on map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button><button type="button" class="btn out" disabled title="Timeline not generated for this crop"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/></svg>View Timeline</button><div class="menuw"><button type="button" class="rnd" data-a="menu" data-k="m" aria-label="More actions for Indian Mustard" aria-haspopup="menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button><div class="menu" id="menu-m" role="menu" hidden><button type="button" role="menuitem" data-a="toastMsg" data-k="View Details opens the crop details page"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>View Details</button><button type="button" role="menuitem" data-a="toastMsg" data-k="Edit Crop for this crop is not part of the prototype"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/></svg>Edit Crop</button></div></div></div></div>
+  </section>
+</div>
+
+<dialog id="tlD" class="big" aria-labelledby="tlT">
+  <div class="dh"><span class="ci" style="width:40px;height:40px;color:var(--g)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-9M12 13C5 13 3 9 3 4c6 0 9 3 9 9ZM12 17c0-6 3-9 9-9 0 6-3 9-9 9Z"/></svg></span><div style="flex:1"><h2 id="tlT">Crop Timeline</h2><p id="tlS"></p></div>
+    <button type="button" class="x" data-a="closeTL" aria-label="Close timeline"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="dbody" id="tlBody">
+    <div id="banner"></div>
+    <section class="card" id="hero"></section>
+    <div class="tools">
+      <label class="vh" for="q">Search activities</label><input class="in" id="q" placeholder="Search activities or stages…" style="flex:1 1 220px">
+      <label class="vh" for="fs">Status</label><select class="in" id="fs"><option value="all">All statuses</option><option value="due">Due now</option><option value="up">Upcoming</option><option value="late">Late or window passed</option><option value="ip">In progress</option><option value="done">Completed</option></select>
+      <label class="vh" for="fc">Category</label><select class="in" id="fc"></select>
+      <div class="seg" role="group" aria-label="View"><button type="button" data-a="view" data-k="stage" id="vStage">Growth stages</button><button type="button" data-a="view" data-k="cal" id="vCal">Calendar list</button></div>
+      <button type="button" class="btn" data-a="expandAll">Expand all</button><button type="button" class="btn" data-a="collapseAll">Collapse all</button>
+    </div>
+    <div id="tl"></div>
+    <p class="note">Stage windows and activities are sample values for this prototype, not agronomic recommendations.</p>
+  </div>
+  <div class="df"><div class="proto"><b>Prototype</b><label for="today">Today</label><input type="date" id="today"><button type="button" class="btn sm" data-a="reset">Reset demo</button></div><button type="button" class="btn" data-a="closeTL">Close</button></div>
+</dialog>
+
+<dialog id="dlg" class="sm" aria-labelledby="dT"><div class="dh"><span id="dI"></span><div style="flex:1"><h3 id="dT"></h3><p id="dS"></p></div><button type="button" class="x" data-a="close" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="db" id="dB"></div><div class="df" id="dF"></div></dialog>
+<dialog id="ecD" class="big" aria-labelledby="ecT" style="width:min(1000px,96vw);height:auto">
+  <div class="dh"><span class="ci" style="width:40px;height:40px;color:var(--g)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-9M12 13C5 13 3 9 3 4c6 0 9 3 9 9ZM12 17c0-6 3-9 9-9 0 6-3 9-9 9Z"/></svg></span><div style="flex:1"><h2 id="ecT">Edit Crop</h2><p>Update your crop information in 3 simple steps.</p></div><button type="button" class="x" data-a="closeEC" aria-label="Close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <ol class="steps" aria-label="Steps"><li class="ok"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span>Crop Selection</li><li class="ok"><span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span>Select Boundary</li><li class="cur" aria-current="step"><span>3</span>Review &amp; Save</li></ol>
+  <div class="dbody">
+    <div><h3 style="margin:0;font-size:19px">Review &amp; Save</h3><p class="note" style="margin:2px 0 0">Review your crop information, sowing date and crop boundary before saving.</p></div>
+    <div class="todo" style="color:var(--b);font-size:14px">These details include saved pending edits. The live crop map changes only after final confirmation.</div>
+    <div class="ecg">
+      <section class="card" style="padding:16px"><div style="display:flex;justify-content:space-between"><b>Crop Information</b><button type="button" class="lnk" data-a="toastMsg" data-k="Opens step 1 in the real app">Edit</button></div>
+        <div class="kvg"><span class="ci" style="width:48px;height:48px;background:var(--as);color:var(--a);grid-row:span 3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22V8M12 8c-1.5-1-2-2.5-1.5-4 1.5.5 2 2 1.5 4Zm0 0c1.5-1 2-2.5 1.5-4-1.5.5-2 2-1.5 4ZM12 12c-2-.5-3-2-3-3.5 1.8 0 3 1.5 3 3.5Zm0 0c2-.5 3-2 3-3.5-1.8 0-3 1.5-3 3.5ZM12 16c-2-.5-3-2-3-3.5 1.8 0 3 1.5 3 3.5Zm0 0c2-.5 3-2 3-3.5-1.8 0-3 1.5-3 3.5Z"/></svg></span><div><small>Crop</small><b>Wheat</b></div><div><small>Variety</small><b>Karan Vaidehi DBW 370</b></div><div><small>Season</small><b>Rabi Season</b></div><div><small>Sowing Date</small><b id="ecSow">28 Nov 2026</b></div><div><small>Status</small><b id="ecStat">Pending changes</b></div></div>
+        <div style="display:flex;gap:24px;margin-top:12px;flex-wrap:wrap"><div><small class="note">Crop Duration</small><b style="display:block;color:var(--g);font-size:17px">148–153 days</b></div><div><small class="note">Expected harvest</small><b style="display:block;font-size:17px" id="ecHarv">25 Apr 2027 – 30 Apr 2027</b></div></div></section>
+      <section class="card" style="padding:16px"><div style="display:flex;justify-content:space-between"><b>Crop Boundary &amp; Area</b><button type="button" class="lnk" data-a="toastMsg" data-k="Opens step 2 in the real app">Edit</button></div>
+        <div class="kvg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div><small>Farm / Land</small><b>Mall 9 Bigha</b></div><div><small>Farm location</small><b>Didawata, Jaipur, Rajasthan</b></div></div>
+        <svg viewBox="0 0 400 170" style="width:100%;border-radius:12px;margin-top:10px;display:block" role="img" aria-label="Crop boundary on the map (illustration)"><rect width="400" height="170" fill="#4d6b38"/><rect x="0" y="0" width="140" height="80" fill="#5b7d3f"/><rect x="250" y="90" width="150" height="80" fill="#8a7d55"/><rect x="280" y="0" width="120" height="70" fill="#6d8a48"/><path d="M0 120 C120 110 260 130 400 118" stroke="#b9a27a" stroke-width="4" fill="none"/><polygon points="150,30 225,40 290,75 270,145 140,110" fill="#22c55e" fill-opacity=".35" stroke="#16a34a" stroke-width="3"/></svg>
+        <b style="display:block;margin-top:10px">Full farm boundary</b><b style="font-size:20px;color:var(--g)">1.361 Acre</b><div class="note">0.551 Hectare</div></section>
+    </div>
+  </div>
+  <div class="df"><button type="button" class="btn out" style="margin-right:auto" data-a="toastMsg" data-k="Goes back to Select Boundary in the real app"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Previous</button><button type="button" class="btn out" data-a="closeEC">Cancel</button><button type="button" class="btn pri" data-a="generate">Save &amp; Generate Crop Timeline<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+</dialog>
+<div class="loader" id="ld" hidden role="alertdialog" aria-modal="true" aria-labelledby="ldT" aria-describedby="ldS"><div class="ldcard">
+  <svg width="170" height="150" viewBox="0 0 170 150" aria-hidden="true"><path d="M30 18h-12v22M140 18h12v22M30 112h-12V90M140 112h12V90" stroke="#0E7A4B" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M85 14C45 40 40 85 70 108c8 6 22 6 30 0 30-23 25-68-15-94Z" fill="#2E9E3A"/><path d="M85 14c-10 30-12 62-2 96" stroke="#fff" stroke-width="3" fill="none"/><path d="M84 55l18-12M84 75l22-12M83 92l16-9" stroke="#fff" stroke-width="2.4" fill="none"/><circle cx="102" cy="43" r="3" fill="#fff"/><circle cx="106" cy="63" r="3" fill="#fff"/><circle cx="99" cy="83" r="3" fill="#fff"/><rect class="scan" x="40" y="62" width="90" height="3" rx="1.5" fill="#F59E0B"/><path d="M20 132c30-14 100-14 130 0-30-4-100-4-130 0Z" fill="#8B5A2B"/><path d="M85 108v18" stroke="#3D7A2A" stroke-width="4"/></svg>
+  <div class="ldt"><span></span><b id="ldT">Loading...</b><span></span></div><p id="ldS">Please wait while we prepare your experience</p><div class="lddots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P={sprout:'<path d="M12 22v-9M12 13C5 13 3 9 3 4c6 0 9 3 9 9ZM12 17c0-6 3-9 9-9 0 6-3 9-9 9Z"/>',layers:'<path d="m3 7 9-4 9 4-9 4-9-4Zm0 5 9 4 9-4M3 17l9 4 9-4"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',flask:'<path d="M9 3h6m-5 0v7L4 19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2l-6-9V3"/>',tools:'<path d="m4 4 16 16M15 4l5 5-4 4-5-5M4 16l4-4 4 4-4 4Z"/>',seed:'<ellipse cx="12" cy="12" rx="5" ry="9" transform="rotate(35 12 12)"/><path d="m8 18 8-12"/>',drop:'<path d="M12 2C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-13Z"/>',cloud:'<path d="M5 17a4 4 0 1 1 1-8 6 6 0 0 1 11-1 5 5 0 1 1 2 10H5"/>',eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',leaf:'<path d="M20 4c-9 0-15 4-15 10a6 6 0 0 0 6 6c6 0 10-6 9-16ZM4 21 15 10"/>',shield:'<path d="m12 3 8 3v6c0 5-4 8-8 10-4-2-8-5-8-10V6l8-3Z"/><path d="m8 12 3 3 5-6"/>',chart:'<path d="M3 3v18h18M7 16l5-6 4 3 5-8"/>',box:'<path d="m3 7 9-4 9 4v11l-9 4-9-4V7Zm0 0 9 4 9-4m-9 4v11"/>',scissors:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 13 12M8 16 21 4"/>',rupee:'<path d="M6 4h12M6 9h12M6 4h4a5 5 0 0 1 0 10H6l11 8"/>',note:'<path d="M8 10h8M8 14h5M5 4h14a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-4 3V5a1 1 0 0 1 1-1z"/>',users:'<circle cx="9" cy="8" r="3"/><path d="M3 20v-1a5 5 0 0 1 10 0v1M16 5a3 3 0 0 1 0 6M21 20v-1a5 5 0 0 0-3-4.6"/>',clip:'<path d="M15.2 7l-6.6 6.6a2 2 0 1 0 2.8 2.8l6.4-6.6a4 4 0 0 0-5.6-5.6l-6.4 6.6a6 6 0 1 0 8.4 8.4L20 13"/>',bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/>',check:'<path d="M5 12l5 5 9-10"/>',chev:'<path d="m6 9 6 6 6-6"/>',up:'<path d="m6 15 6-6 6 6"/>',right:'<path d="m9 6 6 6-6 6"/>',dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',reopen:'<path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8M3 3v5h5"/>',plus:'<path d="M12 5v14M5 12h14"/>',grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',truck:'<rect x="2" y="5" width="13" height="12" rx="2"/><path d="M15 9h4l3 4v4h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14zM20 17v4H6.5"/>'};
+Object.assign(P,{pin:'<path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',back:'<path d="m15 18-6-6 6-6"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',grip:'<path d="M5 10h14M5 14h14"/>',close:'<path d="M6 6l12 12M18 6 6 18"/>',sack:'<path d="M8 3h8l-1.5 3c3 2 5.5 6 5.5 10a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5c0-4 2.5-8 5.5-10L8 3Z"/><path d="M9.5 6h5"/>',wheat:'<path d="M12 22V8M12 8c-1.5-1-2-2.5-1.5-4 1.5.5 2 2 1.5 4Zm0 0c1.5-1 2-2.5 1.5-4-1.5.5-2 2-1.5 4ZM12 12c-2-.5-3-2-3-3.5 1.8 0 3 1.5 3 3.5Zm0 0c2-.5 3-2 3-3.5-1.8 0-3 1.5-3 3.5ZM12 16c-2-.5-3-2-3-3.5 1.8 0 3 1.5 3 3.5Zm0 0c2-.5 3-2 3-3.5-1.8 0-3 1.5-3 3.5Z"/>',wip:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'});
+const ic=(n,s=20,c='currentColor',w=1.8)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]||P.sprout}</svg>`;
+
+/* ---------- sample data ---------- */
+const CROP={crop:'Wheat',hiCrop:'गेहूँ',variety:'Karan Vaidehi DBW 370',season:'Rabi Season',farm:'Mall 9 Bigha',area:'1.361 Acre',place:'Didawata, Jaipur, Rajasthan',hf:148,ht:153};
+const STAGES=[['Before Sowing','बुवाई से पहले',-30,0],['Germination','अंकुरण',0,10],['Seedling Growth','पौध वृद्धि',10,20],['Tillering','कल्ले निकलना',20,45],['Stem Elongation','तना बढ़ना',45,65],['Booting','गाभा अवस्था',65,80],['Heading','बाली निकलना',80,95],['Flowering','फूल आना',95,105],['Milk Development','दूधिया अवस्था',105,118],['Dough Development','दाना सख्त होना',118,130],['Ripening & Maturity','पकना',130,145],['Harvest Maturity','कटाई योग्य',145,150],['Harvesting','कटाई',148,153],['After Harvesting','कटाई के बाद',153,200]];
+const INDEP=[0,13],GROWTH=[1,2,3,4,5,6,7,8,9,10,11,12];
+const CATS={'Farm & Crop Planning':['cal','b'],'Soil Testing & Assessment':['flask','a'],'Land Preparation':['tools','a'],'Seed Management':['seed','g'],'Irrigation':['drop','b'],'Weather & Stress Management':['cloud','b'],'Sowing & Planting':['sprout','g'],'Crop Growth Monitoring':['eye','g'],'Weed Management':['leaf','g'],'Fertilizer & Nutrition':['sack','a'],'Pest Management':['shield','r'],'Yield Assessment':['chart','v'],'Machinery & Equipment':['truck','a'],'Harvesting':['scissors','a'],'Storage Management':['box','v']};
+const TONE={g:['var(--gs)','var(--gd)'],a:['var(--as)','var(--a)'],b:['var(--bs)','var(--b)'],r:['var(--rs)','var(--r)'],v:['var(--vs)','var(--v)']};
+const A=(id,st,s,e,en,hi,cat,fl,acts,pr,todo,type)=>({id,st,s,e,en,hi,cat,fl,acts,pr:pr||'Medium',todo:todo||'',type:type||'Task'});
+const ACTS=[
+A(1,0,-30,-15,'Crop and Sowing Plan','फसल और बुवाई की योजना','Farm & Crop Planning','SNR',['crop_planning','crop_details'],'','Confirm crop, variety, area and planned sowing date for this field.'),
+A(2,0,-25,-15,'Farm Field Assessment','खेत का मूल्यांकन','Soil Testing & Assessment','SNP',['soil_assessment']),
+A(3,0,-21,-7,'Soil Test Report Review','मिट्टी जाँच रिपोर्ट देखें','Soil Testing & Assessment','SNPR',['soil_test','fertilizer_recommendation','knowledge_reference']),
+A(4,0,-10,-2,'Field Preparation','खेत की तैयारी','Land Preparation','SNELPR',['crop_planning','crop_details','soil_assessment','fertilizer_recommendation','choose_seed','weather_forecast','seed_calculator','expense_summary'],'High','Plough and level the field so it is ready for sowing. Clear stubble and weeds left from the previous crop.'),
+A(5,0,-14,-5,'Variety and Seed Selection','किस्म और बीज चयन','Seed Management','SN',['choose_seed','crop_details']),
+A(6,0,-7,-2,'Seed Requirement Planning','बीज आवश्यकता की योजना','Seed Management','SNE',['seed_calculator','choose_seed','seed_record']),
+A(7,0,-7,-1,'Irrigation Availability Check','सिंचाई उपलब्धता जाँच','Irrigation','SN',['water_management','irrigation_recommendation']),
+A(8,0,-3,0,'Sowing Weather and Field Check','बुवाई से पहले मौसम और खेत की जाँच','Weather & Stress Management','SNR',['weather_forecast','weather_alerts']),
+A(9,0,-7,0,'Good sowing conditions for wheat','गेहूँ की बुवाई के लिए अनुकूल परिस्थितियाँ','Weather & Stress Management','',['weather_forecast','knowledge_reference'],'','Information prepared by the admin for this stage appears here.','Information'),
+A(10,1,0,0,'Wheat Sowing and Sowing Record','गेहूँ की बुवाई और रिकॉर्ड','Sowing & Planting','SNELPR',['sowing_record','seed_record','sowing_method','labour_assignment'],'High'),
+A(11,1,5,10,'Germination and Emergence Check','अंकुरण और उगाव की जाँच','Crop Growth Monitoring','SNP',['crop_observation','growth_stage_tracking']),
+A(12,2,12,18,'Seedling Establishment Check','पौध स्थापना जाँच','Crop Growth Monitoring','SNP',['crop_observation']),
+A(13,2,15,20,'Early Irrigation Need Assessment','शुरुआती सिंचाई आवश्यकता','Irrigation','SNER',['irrigation_recommendation','irrigation_record','weather_forecast']),
+A(14,3,20,25,'First Irrigation','पहली सिंचाई','Irrigation','SNELR',['irrigation_record','weather_forecast','labour_assignment'],'High'),
+A(15,3,25,35,'Early Weed Monitoring','शुरुआती खरपतवार निगरानी','Weed Management','SNLP',['crop_observation','labour_assignment']),
+A(16,3,30,40,'Tillering Progress Check','कल्ले बढ़ने की जाँच','Crop Growth Monitoring','SNP',['growth_stage_tracking']),
+A(17,3,25,40,'Crop Nutrition and Soil Status Review','पोषण और मिट्टी की स्थिति','Fertilizer & Nutrition','SNE',['fertilizer_recommendation','fertilizer_record','soil_test']),
+A(18,3,35,45,'Pest and Disease Scouting','कीट और रोग की निगरानी','Pest Management','SNP',['pest_monitoring','disease_monitoring','ai_crop_doctor','ask_expert']),
+A(19,4,45,55,'Second Irrigation','दूसरी सिंचाई','Irrigation','SNELR',['irrigation_record','labour_assignment']),
+A(20,5,65,75,'Booting Stage Observation','गाभा अवस्था निरीक्षण','Crop Growth Monitoring','SNP',['crop_observation','growth_stage_tracking']),
+A(21,6,80,90,'Heading and Ear Emergence Record','बाली निकलने का रिकॉर्ड','Crop Growth Monitoring','SNP',['growth_stage_tracking']),
+A(22,7,95,105,'Flowering and Weather Monitoring','फूल और मौसम निगरानी','Weather & Stress Management','SN',['weather_alerts','weather_forecast']),
+A(23,8,105,115,'Grain Filling Irrigation Review','दाना भराव सिंचाई समीक्षा','Irrigation','SNER',['irrigation_record']),
+A(24,9,118,128,'Dough Stage and Grain Filling Check','दाना भराव जाँच','Crop Growth Monitoring','SNP',['crop_observation']),
+A(25,9,120,130,'Expected Yield Assessment','अनुमानित उपज आकलन','Yield Assessment','SN',['yield_estimation']),
+A(26,10,135,145,'Harvest Readiness and Equipment Planning','कटाई और उपकरण की तैयारी','Machinery & Equipment','SNELR',['machinery_usage','market_prices','labour_assignment']),
+A(27,11,145,150,'Harvest Maturity Check','कटाई योग्य जाँच','Crop Growth Monitoring','SNP',['crop_observation']),
+A(28,12,148,153,'Wheat Harvesting','गेहूँ की कटाई','Harvesting','SNELPR',['harvest_record','labour_assignment','expense_summary'],'High'),
+A(29,13,154,160,'Actual Yield and Sale Record','वास्तविक उपज और बिक्री','Yield Assessment','SNE',['actual_yield_record','produce_sale','crop_completion']),
+A(30,13,155,170,'Storage and Transport','भंडारण और परिवहन','Storage Management','SNE',['storage_record','transport_record'])];
+const SA={crop_details:['Crop Details','Crop, variety and dates','sprout','g'],crop_planning:['Crop Planning','Your crop plan','cal','g'],crop_completion:['Crop Completion','Close this crop','check','g'],field_layout:['Field Layout & Spacing','Row and plant spacing','grid','g'],sowing_method:['Sowing / Planting Method','How you sow','sprout','g'],
+soil_assessment:['Soil Assessment','Soil type and drainage','flask','a'],soil_test:['Soil Test','Lab report','flask','a'],seed_calculator:['Seed Calculator','Seed needed for your area','seed','a'],seed_record:['Seed Record','Seed you used','seed','a'],sowing_record:['Sowing Record','Actual sowing date','sprout','a'],choose_seed:['Choose Seed','Seed for this crop','seed','a'],
+fertilizer_recommendation:['Fertilizer Recommendation','Dose plan','sack','b'],fertilizer_record:['Fertilizer Record','Fertilizer applied','sack','b'],irrigation_recommendation:['Irrigation Recommendation','When to irrigate','drop','b'],irrigation_record:['Irrigation Record','Irrigation done','drop','b'],water_management:['Water Management','Water source','drop','b'],
+weather_forecast:['Weather Forecast','Rain and wind for your farm','cloud','b'],weather_alerts:['Weather Alerts','Severe weather warnings','cloud','b'],crop_observation:['Crop Observation','How the crop looks','eye','g'],growth_stage_tracking:['Growth Stage Tracking','Confirm the stage','sprout','g'],pest_monitoring:['Pest Monitoring','Pests seen','shield','r'],disease_monitoring:['Disease Monitoring','Disease seen','shield','r'],
+ai_crop_doctor:['AI Crop Doctor','Photo diagnosis','eye','v'],ask_expert:['Ask an Agricultural Expert','Send a question','users','v'],knowledge_reference:['Knowledge Reference','Sources for this activity','book','v'],
+yield_estimation:['Yield Estimation','Expected yield','chart','v'],actual_yield_record:['Actual Yield Record','Final yield','chart','v'],harvest_record:['Harvest Record','Harvest details','scissors','a'],produce_quality:['Produce Quality','Grade and moisture','box','v'],storage_record:['Storage Record','Where it is stored','box','v'],transport_record:['Transport Record','Trips and cost','truck','v'],
+market_prices:['Market Prices','Mandi prices','chart','b'],produce_sale:['Produce Sale','Record a sale','rupee','g'],income_estimation:['Income Estimation','Expected income','rupee','g'],financial_summary:['Financial Summary','Income and costs','rupee','g'],expense_summary:['Expense Summary','Spending by category','rupee','g'],crop_profitability:['Crop Profitability','Profit per acre','chart','g'],machinery_usage:['Machinery Usage','Machine hours','truck','a'],labour_assignment:['Labour Assignment','Daily wage labour','users','a']};
+
+/* ---------- state ---------- */
+const KEY='bhoomitraa.farmer.timeline.v4';
+const fresh=()=>({sowing:'2026-11-28',today:'2026-11-24',lang:'en',view:'stage',generated:false,bannerSeen:false,st:{1:{s:'completed',done:'2026-11-12'},4:{s:'in_progress',started:'2026-11-22'}},ov:{},notes:[{id:1,act:4,date:'2026-11-22',text:'First ploughing done. Levelling tomorrow.'}],sim:{4:{photo:{n:2,date:'2026-11-22'}}},usedA:{4:{crop_details:'2026-11-21',soil_assessment:'2026-11-22',weather_forecast:'2026-11-23'}},seq:100,openA:[],closedS:null,acc:{}});
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}if(!S||!S.sowing)S=fresh();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const nid=()=>++S.seq;
+
+/* ---------- dates ---------- */
+const D=s=>new Date(s+'T12:00:00Z');const iso=d=>d.toISOString().slice(0,10);
+const add=(s,n)=>{const d=D(s);d.setUTCDate(d.getUTCDate()+n);return iso(d)};
+const diff=(a,b)=>Math.round((D(a)-D(b))/864e5);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const fd=(s,y=true)=>{const d=D(s);return d.getUTCDate()+' '+MON[d.getUTCMonth()]+(y?' '+d.getUTCFullYear():'')};
+const win=a=>{const o=S.ov[a.id];return o?[o.s,o.e]:[add(S.sowing,a.s),add(S.sowing,a.e)]};
+const offTxt=a=>S.ov[a.id]?'Rescheduled':a.s===0&&a.e===0?'Sowing day':a.e<=0?(-a.s)+'–'+(-a.e)+' days before sowing':a.s===a.e?a.s+' days after sowing':a.s+'–'+a.e+' days after sowing';
+const has=(a,f)=>a.fl.includes(f);
+const stat=a=>(S.st[a.id]&&S.st[a.id].s)||'pending';
+function timeState(a){const [s,e]=win(a),t=S.today;if(!has(a,'S'))return t<s?'up':t>e?'past':'due';if(stat(a)==='completed')return 'done';if(t>e)return 'late';if(t>=s)return 'due';return 'up'}
+function whenLine(a){const [s,e]=win(a),t=S.today,ts=timeState(a);let r=offTxt(a)+' · '+(s===e?fd(s):fd(s,D(s).getUTCFullYear()!==D(e).getUTCFullYear())+' – '+fd(e)),cls='';
+ if(ts==='due'){const l=diff(e,t);r+=' · '+(l===0?'last day':l+(l===1?' day':' days')+' left');cls='due'}
+ else if(ts==='up'){const n=diff(s,t);if(n<=7)r+=' · '+(n===1?'starts tomorrow':'starts in '+n+' days')}
+ else if(ts==='late'){const n=diff(t,e);r+=' · ended '+n+(n===1?' day':' days')+' ago';cls='late'}
+ return [r,cls]}
+const stageNow=()=>{const t=diff(S.today,S.sowing);if(t<0)return -1;const i=GROWTH.find(j=>t>=STAGES[j][2]&&t<STAGES[j][3]);return i===undefined?13:i};
+const T=a=>S.lang==='hi'?[a.hi,a.en]:[a.en,a.hi];
+const stT=i=>S.lang==='hi'?[STAGES[i][1],STAGES[i][0]]:[STAGES[i][0],STAGES[i][1]];
+
+/* ---------- status ---------- */
+function touch(id){const a=ACTS.find(x=>x.id===id);if(a&&has(a,'S')&&stat(a)==='pending'){S.st[id]={s:'in_progress',started:S.today};if(!S.openA.includes(id))S.openA.push(id);toast('Activity moved to In progress')}}
+const recCount=id=>{const n=S.notes.filter(x=>x.act===id).length,sm=S.sim[id]||{};return {note:n,expense:(sm.expense||{}).n||0,labour:(sm.labour||{}).n||0,photo:(sm.photo||{}).n||0}};
+const hasRec=id=>{const c=recCount(id);return c.note+c.expense+c.labour+c.photo>0||Object.keys(S.usedA[id]||{}).length>0};
+function complete(id){S.st[id]={...(S.st[id]||{}),s:'completed',done:S.today};render();toast('Marked as done')}
+function reopen(id){const r=hasRec(id),c=S.st[id]||{};S.st[id]={s:r?'in_progress':'pending',started:r?(c.started||S.today):undefined};render();toast('Activity reopened')}
+
+/* ---------- render ---------- */
+const actOf=id=>ACTS.find(x=>x.id===id);
+function catIcon(cat,size=42){const [n,t]=CATS[cat]||['sprout','g'];const [bg,fg]=TONE[t];return `<span class="ci" style="background:${bg};color:${fg};width:${size}px;height:${size}px">${ic(n,size>38?21:18)}</span>`}
+const pillFor=a=>{if(!has(a,'S'))return '<span class="pill p-b">Information</span>';const s=stat(a);return s==='completed'?'<span class="pill p-solid">Completed</span>':s==='in_progress'?'<span class="pill p-a">In progress</span>':'<span class="pill">Pending</span>'};
+function tickBtn(a){const t=T(a)[0];if(!has(a,'S'))return `<span class="tick" style="border:0;color:var(--faint)" title="Information only">${ic('info',20)}</span>`;const s=stat(a);
+ return s==='completed'?`<button type="button" class="tick ok" data-a="tick" data-id="${a.id}" aria-label="Completed. Reopen ${esc(t)}">${ic('check',16,'#fff',3)}</button>`:`<button type="button" class="tick ${s==='in_progress'?'ip':''}" data-a="tick" data-id="${a.id}" aria-label="Mark ${esc(t)} as done"></button>`}
+function marker(cats,cls){const main=cats.length===1?(CATS[cats[0]]||['sprout'])[0]:cats.length>1?'layers':'sprout';const lab=cats.length?cats.join(', '):'Growth stage';
+ return `<div class="mk" role="img" aria-label="${esc(lab)}" title="${esc(lab)}"><div class="dot ${cats.length?cls:'none'}">${ic(main,26)}</div>${cats.length>1?`<div class="badges">${cats.slice(0,3).map(c=>`<span title="${esc(c)}">${ic((CATS[c]||['sprout'])[0],15,'currentColor',2)}</span>`).join('')}${cats.length>3?`<small>+${cats.length-3}</small>`:''}</div>`:''}</div>`}
+function card(a){const open=S.openA.includes(a.id),[t1,t2]=T(a),[w,wc]=whenLine(a),done=stat(a)==='completed'&&has(a,'S');
+ return `<article class="act ${open?'open':''} ${done?'isdone':''}" id="a${a.id}"><div class="arow">${tickBtn(a)}${catIcon(a.cat)}<div style="flex:1"><div class="when ${wc}">${esc(w)}</div><div class="ttl" ${S.lang==='hi'?'lang="hi"':''}>${esc(t1)}</div><div class="hin" ${S.lang==='en'?'lang="hi"':''}>${esc(t2)}</div><div class="tags"><span class="pill p-g">${esc(a.cat)}</span><span class="pill">${esc(a.type)}</span>${a.pr==='High'?'<span class="pill p-r">High priority</span>':''}${S.ov[a.id]?'<span class="pill p-b">Moved</span>':''}</div></div>${pillFor(a)}<button type="button" class="chev" data-a="openA" data-id="${a.id}" aria-expanded="${open}" aria-label="${open?'Collapse':'Expand'} ${esc(t1)}">${ic(open?'up':'chev',16,'currentColor',2)}</button></div>${open?details(a):''}</article>`}
+function details(a){const [s,e]=win(a),st=stat(a),ts=timeState(a);
+ const last=st==='completed'&&has(a,'S')?`<div class="tile" style="background:var(--gs);border-color:var(--gb)"><small style="color:var(--gd)">Completed on</small><b style="color:var(--gd)">${fd(S.st[a.id].done)}</b></div>`:ts==='due'?`<div class="tile" style="background:var(--as);border-color:var(--ab)"><small style="color:var(--a)">Time left</small><b style="color:var(--a)">${diff(e,S.today)===0?'Last day':diff(e,S.today)+' days'}</b></div>`:ts==='late'?`<div class="tile" style="background:var(--rs);border-color:var(--rb)"><small style="color:var(--r)">Window ended</small><b style="color:var(--r)">${diff(S.today,e)} days ago</b></div>`:ts==='up'?`<div class="tile"><small>Starts in</small><b>${diff(s,S.today)} days</b></div>`:`<div class="tile"><small>Window</small><b>Ended</b></div>`;
+ const sched=a.s===0&&a.e===0?'Sowing day':a.e<=0?'Before Sowing':'After Sowing';
+ return `<div class="det"><div class="tiles"><div class="tile"><small>Schedule</small><b>${sched}</b></div><div class="tile"><small>Start date</small><b>${fd(s)}</b></div><div class="tile"><small>End date</small><b>${fd(e)}</b></div>${last}</div>
+ <div class="todo"><b>${a.type==='Information'?'Good to know':'What to do'}</b><p style="margin:3px 0 0">${esc(a.todo||'Instructions written by the admin for this activity appear here.')}</p></div>${recordAcc(a)}${actionsAcc(a)}${footer(a)}</div>`}
+const accOpen=(id,k)=>{const o=S.acc[id];return !o||o[k]!==false};
+function accHead(a,k,icon,tone,title,chips){const o=accOpen(a.id,k);const [bg,fg]=TONE[tone];return `<button type="button" class="acch" data-a="acc" data-id="${a.id}" data-k="${k}" aria-expanded="${o}"><span class="ci" style="width:32px;height:32px;border-radius:9px;background:${bg};color:${fg}">${ic(icon,17)}</span><b>${title}</b><span class="chipset">${chips}</span>${ic(o?'up':'chev',16,'currentColor',2)}</button>`}
+const remChip=(n,unit)=>n?`<span class="pill p-a">${n} ${unit} remaining</span>`:'<span class="pill p-g">All done</span>';
+function recordAcc(a){const types=[['N','Note','note','note'],['E','Expense','rupee','expense'],['L','Labour','users','labour'],['P','Photo','clip','photo']].filter(x=>has(a,x[0]));if(!types.length)return '';
+ const c=recCount(a.id),nt=S.notes.filter(x=>x.act===a.id),o=accOpen(a.id,'rec'),total=c.note+c.expense+c.labour+c.photo,rem=types.filter(x=>!c[x[3]]).length,sm=S.sim[a.id]||{};
+ const chips=`<span class="pill">${total} ${total===1?'record':'records'}</span>${remChip(rem,rem===1?'type':'types')}`;
+ const btn=x=>{const n=c[x[3]];return `<button type="button" class="btn rb ${n?'ok':''}" data-a="rec" data-id="${a.id}" data-k="${x[3]}" aria-label="Add ${x[1]}${n?', '+n+' added':''}">${ic(x[2],17)}Add ${x[1]}${n?`<span class="cnt">${n}</span><span class="okb">${ic('check',12,'#fff',3.2)}</span>`:''}</button>`};
+ const simRows=types.filter(x=>x[3]!=='note'&&c[x[3]]).map(x=>`<div class="ent"><span class="d">${fd(sm[x[3]].date,false)}</span><span class="m">${c[x[3]]} ${x[1].toLowerCase()}${c[x[3]]>1?'s':''} added <span class="note">(prototype)</span></span></div>`).join('');
+ return `<section class="acc">${accHead(a,'rec','note','g','Record for this activity',chips)}${o?`<div class="accb"><div class="recs">${types.map(btn).join('')}</div>${nt.length||simRows?`<div>${nt.map(n=>`<div class="ent"><span class="d">${fd(n.date,false)}</span><span class="m"><span class="pill" style="margin-right:6px">Note</span>${esc(n.text)}</span><button type="button" class="x" style="color:var(--faint)" data-a="delNote" data-id="${n.id}" aria-label="Delete note">${ic('close',16,'currentColor',2)}</button></div>`).join('')}${simRows}</div>`:`<div class="note">Nothing recorded yet.${has(a,'S')&&stat(a)==='pending'?' Your first record moves this activity to In progress.':''}</div>`}</div>`:''}</section>`}
+function actionsAcc(a){if(!a.acts.length)return '';const o=accOpen(a.id,'sa'),u=S.usedA[a.id]||{},used=a.acts.filter(k=>u[k]).length,rem=a.acts.length-used;
+ const chips=`<span class="pill">${a.acts.length} tools</span>${remChip(rem,rem===1?'tool':'tools')}`;
+ return `<section class="acc">${accHead(a,'sa','bolt','v','Smart Actions',chips)}${o?`<div class="accb"><div class="sas">${a.acts.map(k=>{const m=SA[k];if(!m)return '';const [bg,fg]=TONE[m[3]],d=u[k];return `<button type="button" class="sa ${d?'used':''}" data-a="act" data-id="${a.id}" data-k="${k}" aria-label="${esc(m[0])}${d?', used':''}"><span class="ci" style="width:36px;height:36px;background:${bg};color:${fg}">${ic(m[2],18)}</span><span style="flex:1"><span class="n">${esc(m[0])}</span><span class="t">${d?'Used · '+fd(d,false):esc(m[1])}</span></span>${d?`<span class="okc">${ic('check',13,'#fff',3.2)}</span>`:ic('right',16,'currentColor',2)}</button>`}).join('')}</div></div>`:''}</section>`}
+function footer(a){const st=stat(a),r=has(a,'R')&&st!=='completed'?`<button type="button" class="btn" data-a="resched" data-id="${a.id}">${ic('cal',16)}Reschedule</button>`:'';
+ if(!has(a,'S'))return `<div class="foot">${r||'<span class="note">Information only · no status to update.</span>'}</div>`;
+ const lab=st==='completed'?`<span class="st" style="background:var(--gs);color:var(--gd)">${ic('check',15,'currentColor',2.6)}Status: Completed · ${fd(S.st[a.id].done)}</span><button type="button" class="btn" data-a="reopenAsk" data-id="${a.id}" style="min-height:46px;font-weight:600">${ic('reopen',16,'currentColor',2)}Reopen</button>`
+  :`<span class="st" style="${st==='in_progress'?'background:var(--as);color:var(--a)':'background:var(--soft);color:var(--mut)'}">Status: ${st==='in_progress'?'In progress'+(S.st[a.id].started?' · since '+fd(S.st[a.id].started,false):''):'Pending'}</span><button type="button" class="btn pri" data-a="done" data-id="${a.id}" style="min-height:46px">${ic('check',17,'#fff',2.4)}Mark as done</button>`;
+ return `<div class="foot">${r}<div style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap">${lab}</div></div>`}
+function match(a){const q=$('q').value.trim().toLowerCase(),fs=$('fs').value,fc=$('fc').value,ts=timeState(a),st=stat(a);
+ if(q&&![a.en,a.hi,a.cat,STAGES[a.st][0],STAGES[a.st][1]].join(' ').toLowerCase().includes(q))return false;if(fc!=='all'&&a.cat!==fc)return false;
+ return fs==='all'||fs==='due'&&ts==='due'||fs==='up'&&ts==='up'||fs==='late'&&ts==='late'||fs==='ip'&&st==='in_progress'||fs==='done'&&st==='completed'&&has(a,'S')}
+function render(){
+ for(const [id,v] of [['mEn','en'],['mHi','hi']])$(id).setAttribute('aria-pressed',S.lang===v);
+ $('vStage').setAttribute('aria-pressed',S.view==='stage');$('vCal').setAttribute('aria-pressed',S.view==='cal');$('today').value=S.today;
+ $('pmSown').textContent=fd(S.sowing);$('pmHarv').textContent=fd(add(S.sowing,CROP.hf),false)+' – '+fd(add(S.sowing,CROP.ht));
+ $('tlS').textContent=`${CROP.crop} · ${CROP.variety} · ${CROP.farm} · ${CROP.season}`;
+ const tasks=ACTS.filter(a=>has(a,'S')),dueN=tasks.filter(a=>timeState(a)==='due').length,doneN=tasks.filter(a=>stat(a)==='completed').length,lateN=tasks.filter(a=>timeState(a)==='late').length,ds=diff(S.today,S.sowing);
+ $('wStat').innerHTML=S.generated?'<span class="pill p-g">Active</span>':'<span class="pill p-a">Pending changes</span>';$('wTL').disabled=!S.generated;$('wTL').title=S.generated?'':'Generate the timeline from Edit Crop first';$('ecStat').textContent=S.generated?'Active':'Pending changes';$('ecSow').textContent=fd(S.sowing);$('ecHarv').textContent=fd(add(S.sowing,CROP.hf))+' – '+fd(add(S.sowing,CROP.ht));
+ $('banner').innerHTML=S.generated&&!S.bannerSeen?`<div class="banner" role="status"><span style="width:32px;height:32px;border-radius:99px;background:var(--g);display:grid;place-items:center;flex:none">${ic('check',17,'#fff',2.6)}</span><div style="flex:1"><b>Your crop timeline is ready</b><div style="font-size:14px">${ACTS.length} activities across 12 growth stages, planned from your sowing date of ${fd(S.sowing)}.</div></div><button type="button" class="x" data-a="banner" aria-label="Dismiss">${ic('close',18,'currentColor',2)}</button></div>`:'';
+ $('hero').innerHTML=`<div class="sum"><span class="ci" style="width:64px;height:64px;border-radius:14px;background:var(--as);color:var(--a)">${ic('wheat',34,'currentColor',1.4)}</span><div style="flex:1 1 240px"><div style="font-size:20px;font-weight:700">${esc(CROP.crop)} <span class="hi" style="font-size:15px;font-weight:500;color:var(--mut)">· ${CROP.hiCrop}</span></div><div style="font-weight:600;color:var(--mut)">${esc(CROP.variety)} · ${esc(CROP.season)}</div><div class="note">${esc(CROP.farm)} · ${esc(CROP.area)} · ${esc(CROP.place)}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><div class="tile"><small>${ds<0?'Days to sowing':'Days after sowing'}</small><b>${ds<0?-ds:'Day '+ds}</b></div><div class="tile"><small>Sowing date</small><b>${fd(S.sowing)}</b></div><div class="tile"><small>Expected harvest</small><b>${fd(add(S.sowing,CROP.hf),false)} – ${fd(add(S.sowing,CROP.ht))}</b></div></div></div>
+ <div class="stats" style="padding:0 16px 16px"><div class="stat"><span class="ci" style="width:38px;height:38px;background:var(--soft)">${ic('sprout',19)}</span><div><b>12</b><span>Growth stages</span></div></div><div class="stat"><span class="ci" style="width:38px;height:38px;background:var(--soft)">${ic('layers',19)}</span><div><b>${ACTS.length}</b><span>Activities</span></div></div><div class="stat" style="background:var(--as);border-color:var(--ab)"><span class="ci" style="width:38px;height:38px;background:var(--card);color:var(--a)">${ic('cal',19)}</span><div><b style="color:var(--a)">${dueN}</b><span style="color:var(--a)">Due now${lateN?' · '+lateN+' late':''}</span></div></div><div class="stat"><span class="ci" style="width:38px;height:38px;background:var(--gs);color:var(--gd)">${ic('check',19,'currentColor',2.4)}</span><div><b>${doneN} / ${tasks.length}</b><span>Completed</span></div></div></div>`;
+ const vis=ACTS.filter(match),now=stageNow(),filt=$('q').value||$('fs').value!=='all'||$('fc').value!=='all';
+ if(S.closedS===null){S.closedS=GROWTH.filter(i=>i>Math.max(now,1)+1);for(const a of ACTS)if(stat(a)==='in_progress')S.closedS=S.closedS.filter(i=>i!==a.st)}
+ let h='';
+ if(S.view==='cal'){let m='';for(const a of [...vis].sort((x,y)=>win(x)[0].localeCompare(win(y)[0])||x.id-y.id)){const k=win(a)[0].slice(0,7);if(k!==m){m=k;const d=D(k+'-01');h+=`<h3 class="month">${MONL[d.getUTCMonth()]} ${d.getUTCFullYear()}</h3>`}h+=card(a)}}
+ else{const sortW=l=>l.sort((x,y)=>win(x)[0].localeCompare(win(y)[0])||x.id-y.id);
+  const indep=(i,a)=>{const ts=timeState(a),st=stat(a),cls=st==='completed'?'done':(st==='in_progress'||ts==='due'||ts==='late')?'now':'',[n1,n2]=stT(i);return `<section class="card stage ${cls==='now'?'now':''}" aria-label="${esc(n1)}: ${esc(T(a)[0])}">${marker([a.cat],cls)}<div class="shead" style="min-height:36px"><div style="flex:1;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h3>${esc(n1)}</h3><span class="hin hi">${esc(n2)}</span></div></div>${card(a)}</section>`};
+  const grp=i=>{const sg=STAGES[i],items=sortW(vis.filter(a=>a.st===i));if(filt&&!items.length)return '';const cats=[...new Set(ACTS.filter(a=>a.st===i).map(a=>a.cat))],all=ACTS.filter(a=>a.st===i&&has(a,'S')),dn=all.filter(a=>stat(a)==='completed').length,closed=S.closedS.includes(i)&&!filt,[n1,n2]=stT(i);
+   return `<section class="card stage ${i===now?'now':''}" aria-labelledby="s${i}">${marker(cats,i===now?'now':now>0&&i<now?'done':'')}<div class="shead"><div style="flex:1 1 220px"><div class="seq">Growth stage ${String(i).padStart(2,'0')}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h3 id="s${i}">${esc(n1)}</h3><span class="hin hi">${esc(n2)}</span>${i===now?'<span class="pill p-solid">You are here</span>':''}</div><div class="note">${sg[2]}–${sg[3]} days after sowing · ${fd(add(S.sowing,sg[2]),false)} – ${fd(add(S.sowing,sg[3]))}</div></div><span class="pill">${items.length} ${items.length===1?'activity':'activities'}</span>${all.length?`<div class="prog" role="img" aria-label="${dn} of ${all.length} done"><i style="width:${dn/all.length*100}%"></i></div><span class="note">${dn}/${all.length} done</span>`:''}<button type="button" class="chev" data-a="stage" data-id="${i}" aria-expanded="${!closed}" aria-label="${closed?'Expand':'Collapse'} ${esc(n1)}">${ic(closed?'chev':'up',16,'currentColor',2)}</button></div>${closed?'':items.map(card).join('')||'<div class="empty">No activities in this stage.</div>'}</section>`};
+  h='<div class="rail">'+sortW(vis.filter(a=>a.st===0)).map(a=>indep(0,a)).join('')+GROWTH.map(grp).join('')+sortW(vis.filter(a=>a.st===13)).map(a=>indep(13,a)).join('')+'</div>'}
+ $('tl').innerHTML=h||'<div class="card empty">No activities match. <button type="button" class="btn sm" data-a="clear">Clear filters</button></div>';save()}
+
+function focusNow(){for(const a of ACTS)if(stat(a)==='in_progress'&&!S.openA.includes(a.id))S.openA.push(a.id);S.closedS=null;render();
+ const ip=ACTS.filter(a=>stat(a)==='in_progress').sort((x,y)=>win(x)[0].localeCompare(win(y)[0]))[0]||ACTS.find(a=>has(a,'S')&&timeState(a)==='due');
+ if(ip)requestAnimationFrame(()=>{const el=$('a'+ip.id);if(el)el.scrollIntoView({block:'start',behavior:'smooth'})})}
+/* ---------- small dialog ---------- */
+let DL=null;const dlg=$('dlg');
+function openD(o){DL=o;$('dI').innerHTML=o.icon||'';$('dT').textContent=o.title;$('dS').textContent=o.sub||'';$('dB').innerHTML=o.body;$('dF').innerHTML=o.foot!==undefined?o.foot:`<button type="button" class="btn" data-a="close">Cancel</button><button type="button" class="btn pri" data-a="dsave">${esc(o.ok||'Save')}</button>`;if(!dlg.open)dlg.showModal();o.after&&o.after()}
+function closeD(){if(dlg.open)dlg.close();DL=null}
+dlg.addEventListener('cancel',e=>{e.preventDefault();closeD()});dlg.addEventListener('click',e=>{if(e.target===dlg)closeD()});
+const tlD=$('tlD'),ecD=$('ecD');tlD.addEventListener('close',()=>{if(S.generated&&!S.bannerSeen){S.bannerSeen=true;render()}});
+function closeMenus(){document.querySelectorAll('.menu').forEach(m=>m.hidden=true)}
+document.addEventListener('click',e=>{if(!e.target.closest('.menuw'))closeMenus()});tlD.addEventListener('cancel',e=>{if(dlg.open){e.preventDefault();return}});
+function err(m){let x=$('dErr');if(!x){$('dB').insertAdjacentHTML('beforeend','<div class="err" id="dErr" role="alert"></div>');x=$('dErr')}x.textContent=m}
+function confirmD(title,msg,ok,fn,danger){openD({title,body:`<p style="margin:0">${msg}</p>`,foot:`<button type="button" class="btn" data-a="close">Cancel</button><button type="button" class="btn ${danger?'dan':'pri'}" data-a="dsave">${esc(ok)}</button>`,save:()=>{closeD();fn()}})}
+const closeOnly='<button type="button" class="btn" data-a="close">Close</button>';
+function noteForm(a){openD({title:'Add Note',sub:a.en,icon:catIcon(a.cat,36),body:`<div class="f"><label for="nT">Note</label><textarea class="in" id="nT" maxlength="1000" placeholder="What did you do or notice?"></textarea><span class="note" id="nC" style="text-align:right">0 / 1000</span></div><div class="f" style="max-width:240px"><label for="nD">Date</label><input type="date" class="in" id="nD" value="${S.today}" max="${S.today}"></div>`,ok:'Save Note',
+ after:()=>{$('nT').addEventListener('input',e=>$('nC').textContent=e.target.value.length+' / 1000');$('nT').focus()},
+ save:()=>{const t=$('nT').value.trim();if(!t)return err('Write a note first.');S.notes.unshift({id:nid(),act:a.id,date:$('nD').value||S.today,text:t});S.acc[a.id]={...(S.acc[a.id]||{}),rec:true};touch(a.id);closeD();render();toast('Note saved')}})}
+function wip(a,title,k){openD({title,sub:a.en,icon:catIcon(a.cat,36),body:`<div class="wip">${ic('wip',36,'currentColor',1.6)}<b>Under progress</b><span>This feature will be available soon.</span></div>`,foot:`<button type="button" class="btn sm" data-a="simRec" data-id="${a.id}" data-k="${k}" style="margin-right:auto">Mark as added (prototype)</button>${closeOnly}`})}
+function actionD(a,k){const m=SA[k],[bg,fg]=TONE[m[3]];openD({title:m[0],sub:`For ${a.en} · ${CROP.crop} · ${CROP.farm}`,icon:`<span class="ci" style="width:40px;height:40px;background:${bg};color:${fg}">${ic(m[2],20)}</span>`,body:'<div class="blank" aria-label="Content to be designed"></div>',foot:`${(S.usedA[a.id]||{})[k]?`<span class="note" style="margin-right:auto">Used on ${fd(S.usedA[a.id][k])}</span>`:`<button type="button" class="btn sm" data-a="simAct" data-id="${a.id}" data-k="${k}" style="margin-right:auto">Mark as used (prototype)</button>`}${closeOnly}`})}
+function reschedForm(a){const [s,e]=win(a);openD({title:'Reschedule',sub:a.en,icon:catIcon(a.cat,36),body:`<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px"><div class="f"><label for="rS">New start date</label><input type="date" class="in" id="rS" value="${s}"></div><div class="f"><label for="rE">New end date</label><input type="date" class="in" id="rE" value="${e}"></div></div><p class="note" style="margin:0">Only this activity moves. Planned dates: ${fd(add(S.sowing,a.s))} – ${fd(add(S.sowing,a.e))}.</p>${S.ov[a.id]?`<button type="button" class="btn" data-a="unResched" data-id="${a.id}">Back to planned dates</button>`:''}`,
+ save:()=>{const ns=$('rS').value,ne=$('rE').value;if(!ns||!ne)return err('Choose both dates.');if(ne<ns)return err('End date must be on or after the start date.');S.ov[a.id]={s:ns,e:ne};closeD();render();toast('Activity rescheduled')}})}
+
+/* ---------- map illustration ---------- */
+(function(){let r=7,o='';const rnd=()=>(r=(r*9301+49297)%233280)/233280;const cols=['#3f6b2a','#4d7d31','#5b8a3a','#6f8f45','#8a8a55','#9c8b62','#7a6b4a','#456f2e','#a39467'];
+ for(let y=0;y<600;y+=40+0)for(let x=0;x<1400;){const w=40+rnd()*70,h=34+rnd()*14;o+=`<rect x="${x.toFixed(0)}" y="${(y+rnd()*4).toFixed(0)}" width="${(w-2).toFixed(0)}" height="${(h-2).toFixed(0)}" fill="${cols[Math.floor(rnd()*cols.length)]}" transform="skewX(-8)"/>`;x+=w}
+ o+='<path d="M0 330 C300 300 600 340 900 320 S1300 300 1400 310" stroke="#c9b48a" stroke-width="5" fill="none"/><path d="M520 0 C540 200 560 400 600 600" stroke="#c9b48a" stroke-width="4" fill="none"/><circle cx="1000" cy="300" r="70" fill="#8f8a7e" opacity=".7"/>';
+ o+='<polygon points="560,210 600,220 590,250 548,240" fill="#f97316" fill-opacity=".35" stroke="#f97316" stroke-width="3"/><polygon points="545,300 560,300 558,330 540,332" fill="#16a34a" fill-opacity=".35" stroke="#22c55e" stroke-width="3"/><polygon points="760,300 790,305 770,370 735,365" fill="#f97316" fill-opacity=".35" stroke="#f97316" stroke-width="3"/><polygon points="840,385 875,383 873,408 838,410" fill="#7c3aed" fill-opacity=".35" stroke="#8b5cf6" stroke-width="3"/><polygon points="815,395 832,396 830,412 813,410" fill="#0ea5e9" fill-opacity=".35" stroke="#06b6d4" stroke-width="3"/>';
+ $('mapSvg').innerHTML=o})();
+
+/* ---------- events ---------- */
+let tt;function toast(m){$('toast').textContent=m;$('toast').style.display='block';clearTimeout(tt);tt=setTimeout(()=>$('toast').style.display='none',2600)}
+const H={
+ openTL:()=>{if(!S.generated)return;closeMenus();if(!tlD.open)tlD.showModal();focusNow()},closeTL:()=>{if(dlg.open)closeD();tlD.close()},
+ openEC:()=>{closeMenus();if(!ecD.open)ecD.showModal()},closeEC:()=>ecD.close(),
+ generate:()=>{ecD.close();const ld=$('ld');ld.hidden=false;ld.querySelector('.ldcard').focus?.();setTimeout(()=>{ld.hidden=true;S.generated=true;S.bannerSeen=false;S.closedS=null;S.openA=[];toast('Crop saved · status Active');tlD.showModal();focusNow()},2200)},
+ menu:(i,k)=>{const m=$('menu-'+k),was=!m.hidden;closeMenus();m.hidden=was},toastMsg:(i,k)=>{closeMenus();toast(k)},
+ lang:(i,k)=>{S.lang=k;render()},view:(i,k)=>{S.view=k;render()},banner:()=>{S.bannerSeen=true;render()},
+ reset:()=>confirmD('Reset demo?','All statuses, records and dates go back to the start.','Reset',()=>{S=fresh();$('q').value='';$('fs').value='all';$('fc').value='all';tlD.close();S.bannerSeen=false;render();ecD.showModal()},true),
+ clear:()=>{$('q').value='';$('fs').value='all';$('fc').value='all';render()},
+ expandAll:()=>{S.closedS=[];render()},collapseAll:()=>{S.closedS=STAGES.map((_,i)=>i);S.openA=[];render()},
+ stage:i=>{S.closedS=S.closedS.includes(i)?S.closedS.filter(x=>x!==i):[...S.closedS,i];render()},
+ openA:i=>{S.openA=S.openA.includes(i)?S.openA.filter(x=>x!==i):[...S.openA,i];render()},
+ acc:(i,k)=>{S.acc[i]={...(S.acc[i]||{}),[k]:!accOpen(i,k)};render()},
+ tick:i=>{stat(actOf(i))==='completed'?H.reopenAsk(i):complete(i)},done:i=>complete(i),
+ reopenAsk:i=>{const a=actOf(i),r=hasRec(i);confirmD('Reopen this activity?',`${esc(a.en)} will go back to <b>${r?'In progress':'Pending'}</b>.${r?' Your records stay saved.':''}`,'Reopen',()=>reopen(i))},
+ rec:(i,k)=>{const a=actOf(i);k==='note'?noteForm(a):wip(a,{expense:'Add Expense',labour:'Add Labour',photo:'Add Photo'}[k],k)},
+ simRec:(i,k)=>{const m=S.sim[i]=S.sim[i]||{};m[k]={n:((m[k]||{}).n||0)+1,date:S.today};S.acc[i]={...(S.acc[i]||{}),rec:true};touch(i);closeD();render();toast('Added (prototype)')},
+ simAct:(i,k)=>{(S.usedA[i]=S.usedA[i]||{})[k]=S.today;S.acc[i]={...(S.acc[i]||{}),sa:true};touch(i);closeD();render();toast('Marked as used (prototype)')},
+ delNote:i=>confirmD('Delete this note?','It will be removed from this activity.','Delete',()=>{S.notes=S.notes.filter(n=>n.id!==i);render();toast('Note deleted')},true),
+ resched:i=>reschedForm(actOf(i)),unResched:i=>{delete S.ov[i];closeD();render();toast('Back to planned dates')},
+ act:(i,k)=>actionD(actOf(i),k),
+ close:()=>closeD(),dsave:()=>{if(DL&&DL.save)DL.save()}};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||!H[b.dataset.a])return;e.preventDefault();const id=b.dataset.id;H[b.dataset.a](id===undefined?undefined:(isNaN(+id)?id:+id),b.dataset.k,b)});
+$('fc').innerHTML='<option value="all">All categories</option>'+Object.keys(CATS).map(c=>`<option>${esc(c)}</option>`).join('');
+['q','fs','fc'].forEach(id=>$(id).addEventListener(id==='q'?'input':'change',render));
+$('today').addEventListener('change',e=>{if(e.target.value){S.today=e.target.value;focusNow()}});
+render();if(!S.generated)ecD.showModal();
+}
+</script>
+</body>
+</html>

@@ -67,6 +67,10 @@ export const accountModuleEntries = Object.entries(accountModules) as [
   AccountNavigationId,
   AccountModule,
 ][];
+/** Detail pages that belong to a module but live outside its URL prefix. */
+const moduleChildRoutes: Partial<Record<AccountNavigationId, string[]>> = {
+  "crop-manager": ["/account/crop-timeline"],
+};
 export function accountPathname(pathname: string): string {
   return pathname.replace(/\/+$/, "") || "/";
 }
@@ -84,8 +88,10 @@ export function resolveAccountRoute(pathname: string): {
       titleKey: exact[1].titleKey,
     };
   // Only list routes use the panel. Their future creation/detail children deliberately use a full-page workspace.
-  const parent = accountModuleEntries.find(([, module]) =>
-    path.startsWith(`${module.href}/`),
+  const parent = accountModuleEntries.find(([id, module]) =>
+    [module.href, ...(moduleChildRoutes[id] ?? [])].some((prefix) =>
+      path.startsWith(`${prefix}/`),
+    ),
   );
   return {
     mode: "full-page",

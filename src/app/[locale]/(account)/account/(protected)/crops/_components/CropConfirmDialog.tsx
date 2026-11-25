@@ -7,7 +7,7 @@ import {
   Description,
 } from "@headlessui/react";
 import { useTranslations } from "next-intl";
-import { cropButton, cropPrimary } from "./CropUi";
+import { cropButton, cropDanger, cropPrimary } from "./CropUi";
 export default function CropConfirmDialog({
   title,
   description,
@@ -18,6 +18,7 @@ export default function CropConfirmDialog({
   alternativeLabel,
   onAlternative,
   cancelLabel,
+  danger = false,
 }: {
   title: string;
   description: string;
@@ -28,6 +29,8 @@ export default function CropConfirmDialog({
   alternativeLabel?: string;
   onAlternative?: () => void;
   cancelLabel?: string;
+  /** Red confirm button for permanent deletions. */
+  danger?: boolean;
 }) {
   const t = useTranslations("farmerCrops");
   return (
@@ -71,7 +74,7 @@ export default function CropConfirmDialog({
             <button
               type="button"
               disabled={busy}
-              className={cropPrimary}
+              className={danger ? cropDanger : cropPrimary}
               onClick={onConfirm}
             >
               {busy ? t("saving") : confirmLabel}

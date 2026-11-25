@@ -119,3 +119,7 @@ export { default as WaterIcon } from "./water-management.svg";
 export { default as FertilizerIcon } from "./fertilizer.svg";
 export { default as SlidersIcon } from "./sliders.svg";
 export { default as PanelTopIcon } from "./panel-top.svg";
+export { default as CameraIcon } from "./camera.svg";
+export { default as RupeeIcon } from "./rupee.svg";
+export { default as ReopenIcon } from "./reopen.svg";
+export { default as ExternalLinkIcon } from "./external-link.svg";

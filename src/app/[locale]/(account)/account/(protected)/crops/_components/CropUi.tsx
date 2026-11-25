@@ -125,6 +125,9 @@ export const cropControl =
 export const cropButton =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-success-600 px-4 py-2 text-sm font-semibold text-success-700 transition hover:bg-success-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-success-300 dark:hover:bg-success-950";
 export const cropPrimary = `${cropButton} bg-success-700 text-white shadow-theme-xs hover:bg-success-800 dark:text-white dark:hover:bg-success-800`;
+/** Confirm button for permanent deletions. */
+export const cropDanger =
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-error-600 bg-error-600 px-4 py-2 text-sm font-semibold text-white shadow-theme-xs transition hover:bg-error-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-error-700";
 export function CropField({
   id,
   label,

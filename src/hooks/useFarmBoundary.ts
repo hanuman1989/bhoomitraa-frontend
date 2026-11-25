@@ -6,6 +6,7 @@ import type { MapPosition } from "@/app/[locale]/(account)/account/(protected)/_
 import {
   boundaryArea,
   boundaryError,
+  boundaryPointRejection,
   boundaryPoints,
   isMapPosition,
   MAX_BOUNDARY_VERTICES,
@@ -186,11 +187,12 @@ export default function useFarmBoundary(
     setSource(next);
   }
   function add(point: MapPosition) {
-    if (!isMapPosition(point) || points.length >= MAX_BOUNDARY_VERTICES) {
+    const rejection = boundaryPointRejection(points, point);
+    if (rejection === "pointLimit") {
       setNotice("pointLimit");
       return;
     }
-    if (points.some((p) => pointDistance(p, point) < 0.05)) return;
+    if (rejection) return;
     setPoints((current) => [...current, point]);
     setPhase("drawing");
   }
