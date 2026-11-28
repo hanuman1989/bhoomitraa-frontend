@@ -23,6 +23,7 @@ import {
   KnowledgeSourcesIcon,
   LeafIcon,
   AgricultureIcon,
+  SowingIcon,
   SeedIcon,
   ChartNoAxesColumnIncreasingIcon,
   FlaskConicalIcon,
@@ -95,6 +96,14 @@ const navItems: NavItem[] = [
       { key: "farm", path: "/admin/farms" },
 
       { key: "farmerSmartTimeline", path: "/admin/farmer-smart-timeline" },
+    ],
+  },
+  {
+    icon: <SowingIcon />,
+    key: "sowingMethods",
+    subItems: [
+      { key: "sowingMethodsList", path: "/admin/sowing-methods" },
+      { key: "cropFieldLayouts", path: "/admin/crop-field-layouts" },
     ],
   },
   {

@@ -44,6 +44,15 @@ import {
 } from "./mapViewport";
 import type { FarmerProfile } from "@/lib/userAuth/types";
 import BoundaryDrawLayer from "./boundaryDraw/BoundaryDrawLayer";
+import IrrigationMapLayer from "../irrigation/_components/IrrigationMapLayer";
+import IrrigationLocationEditor from "../irrigation/_components/IrrigationLocationEditor";
+import IrrigationInfoWindow from "../irrigation/_components/IrrigationInfoWindow";
+import {
+  geometryAnchor,
+  type IrrigationEditorRequest,
+  type IrrigationLayers,
+  type IrrigationMapModel,
+} from "../irrigation/_components/irrigationMap";
 import {
   loadGoogleMaps,
   type MapsSDK,
@@ -53,6 +62,7 @@ import {
 import type {
   DashboardFarm,
   DashboardMapHandle,
+  MapPosition,
   MapType,
   MapView,
   FarmDataState,
@@ -81,6 +91,12 @@ interface Props {
   onFarmAction?: (action: FarmInfoAction, id: number) => void;
   /** Dashboard boundary drawing; existing parcels become non-interactive. */
   boundaryDraw?: Omit<ComponentProps<typeof BoundaryDrawLayer>, "sdk" | "map">;
+  /** Irrigation assets and layer toggles, on every page. While a location is edited, parcels become non-interactive. */
+  irrigation?: {
+    model: IrrigationMapModel;
+    layers: IrrigationLayers;
+    editor: (IrrigationEditorRequest & { id: number }) | null;
+  };
 }
 interface Resources {
   sdk: MapsSDK;
@@ -123,6 +139,7 @@ export default function DashboardMap({
   onCropAction,
   onFarmAction,
   boundaryDraw,
+  irrigation,
 }: Props) {
   const t = useTranslations("farmerDashboard.map");
   const locale = useLocale();
@@ -182,7 +199,31 @@ export default function DashboardMap({
   const [generation, setGeneration] = useState<Resources | null>(null);
   const [popupDismissed, setPopupDismissed] = useState(false);
   const [popupRequest, setPopupRequest] = useState(0);
-  const drawing = Boolean(boundaryDraw);
+  const irrigationEditor = irrigation?.editor ?? null;
+  const drawing = Boolean(boundaryDraw) || Boolean(irrigationEditor);
+  const farmsVisible = irrigation?.layers.farms ?? true;
+  // An irrigation selection replaces the farm and crop popups.
+  const irrigationSelection = irrigation?.model.selectedId ?? null;
+  const irrigationFeature = irrigationSelection
+    ? (irrigation?.model.features.find(
+        (feature) => feature.id === irrigationSelection,
+      ) ?? null)
+    : null;
+  const irrigationAnchor = irrigationFeature
+    ? geometryAnchor(irrigationFeature.geometry)
+    : null;
+  const irrigationPopup = Boolean(
+    irrigation &&
+    irrigationFeature &&
+    irrigationAnchor &&
+    irrigation.model.view === "map" &&
+    !irrigationEditor &&
+    irrigation.layers[
+      irrigationFeature.properties.asset_type === "source"
+        ? "sources"
+        : "pipelines"
+    ],
+  );
   const selectedFarm = farms.find((farm) => farm.id === selectedFarmId) ?? null;
   const cropAnchor = selectedCrop
     ? farmAnchor({
@@ -552,21 +593,20 @@ export default function DashboardMap({
         clickable: !drawing,
         editable: false,
         draggable: false,
+        // The Farm Boundaries layer toggle hides farms.
+        ...(farmsVisible ? {} : { visible: false }),
         title: typeof name === "string" ? name : undefined,
         label: typeof name === "string" ? name : undefined,
       };
     });
-  }, [selectedFarmId, farms, generation, drawing]);
+  }, [selectedFarmId, farms, generation, drawing, farmsVisible]);
 
-  function focusRecords(records: readonly DashboardFarm[]) {
+  /** False when the map isn't ready or there is nothing to show. */
+  function focusPositions(positions: readonly MapPosition[]) {
     const current = resources.current;
-    if (!current) return;
+    if (!current) return false;
     stopAutomaticViewport();
-    const positions = records.flatMap(farmPositions);
-    if (!positions.length) {
-      toast(t("noCoordinates"));
-      return;
-    }
+    if (!positions.length) return false;
     fitMapPositions(
       current.sdk,
       current.map,
@@ -574,6 +614,12 @@ export default function DashboardMap({
       view.current.panelHeight,
       view.current.viewport,
     );
+    return true;
+  }
+  function focusRecords(records: readonly DashboardFarm[]) {
+    if (!resources.current) return;
+    if (!focusPositions(records.flatMap(farmPositions)))
+      toast(t("noCoordinates"));
   }
   useImperativeHandle(ref, () => ({
     zoom(delta) {
@@ -620,6 +666,10 @@ export default function DashboardMap({
     focus(farm) {
       reopenPopup();
       focusRecords([farm]);
+    },
+    fit(positions) {
+      reopenPopup();
+      return focusPositions(positions);
     },
     getView() {
       const map = resources.current?.map;
@@ -733,6 +783,8 @@ export default function DashboardMap({
             !drawing &&
             !popupDismissed &&
             authReady &&
+            farmsVisible &&
+            !irrigationSelection &&
             Boolean(selectedFarm && anchor)
           }
           blocked={automaticViewportBlocked}
@@ -749,7 +801,13 @@ export default function DashboardMap({
           map={generation.map}
           farm={{ id: selectedCrop.id, name: selectedCrop.crop_name ?? "" }}
           anchor={cropAnchor}
-          open={!drawing && !popupDismissed && authReady && Boolean(cropAnchor)}
+          open={
+            !drawing &&
+            !popupDismissed &&
+            authReady &&
+            !irrigationSelection &&
+            Boolean(cropAnchor)
+          }
           blocked={automaticViewportBlocked}
           request={popupRequest}
           viewport={{ ...viewport, sidebarWidth }}
@@ -768,6 +826,53 @@ export default function DashboardMap({
           sdk={generation.sdk}
           map={generation.map}
           {...boundaryDraw}
+        />
+      )}
+      {generation && status === "ready" && irrigation && (
+        <IrrigationMapLayer
+          sdk={generation.sdk}
+          map={generation.map}
+          features={irrigation.model.features}
+          selectedId={irrigationSelection}
+          layers={irrigation.layers}
+          hiddenId={irrigationEditor?.assetId ?? null}
+          interactive={!drawing}
+          onSelect={(id) => {
+            reopenPopup();
+            irrigation.model.onSelect(id);
+          }}
+        />
+      )}
+      {generation && status === "ready" && irrigation && irrigationFeature && (
+        <FarmInfoOverlay
+          sdk={generation.sdk}
+          map={generation.map}
+          farm={{
+            id: Number(irrigationFeature.id),
+            name: irrigationFeature.properties.name,
+          }}
+          anchor={irrigationAnchor}
+          open={irrigationPopup && !popupDismissed && authReady}
+          blocked={automaticViewportBlocked}
+          request={popupRequest}
+          viewport={{ ...viewport, sidebarWidth }}
+          panelHeight={bottomPadding}
+          onClose={() => irrigation.model.onSelect(null)}
+        >
+          <IrrigationInfoWindow
+            feature={irrigationFeature}
+            onClose={() => irrigation.model.onSelect(null)}
+            onAction={irrigation.model.onAction}
+          />
+        </FarmInfoOverlay>
+      )}
+      {generation && status === "ready" && irrigationEditor && (
+        <IrrigationLocationEditor
+          key={irrigationEditor.id}
+          sdk={generation.sdk}
+          map={generation.map}
+          request={irrigationEditor}
+          onFit={focusPositions}
         />
       )}
       {status !== "ready" && (

@@ -85,6 +85,8 @@ function hooks() {
         });
     },
   };
+  // Effects run synchronously after render here, so layout effects are the same.
+  react.useLayoutEffect = react.useEffect;
   return {
     react,
     render(Component, props) {
@@ -473,26 +475,50 @@ test("map layer adds points, snaps to the first point and removes every listener
   });
 });
 
-test("floating actions keep the idle stack and pin Confirm Boundary / Save as Farm while drawing", () => {
+/** Renders nested function components so the real FAB markup can be inspected. */
+function expand(tree) {
+  if (Array.isArray(tree)) return tree.map(expand);
+  if (!tree || typeof tree !== "object") return tree;
+  if (typeof tree.type === "function") return expand(tree.type(tree.props));
+  return {
+    ...tree,
+    props: { ...tree.props, children: expand(tree.props?.children) },
+  };
+}
+test("the Draw button stays on top of the map actions and becomes Confirm Boundary / Save as Farm while drawing", () => {
   const runtime = hooks();
+  const utils = { cn: (...values) => values.filter(Boolean).join(" ") };
+  const FabButton = load(base + "fab/FabButton.tsx", {
+    "@/utils": utils,
+  }).default;
+  const FabGroup = load(base + "fab/FabGroup.tsx", {
+    "@/components/common/Tooltip": "Tooltip",
+    "@/icons": icons,
+    "@/utils": utils,
+    "./FabButton": FabButton,
+  }).default;
   const Fab = load(
     base + "AccountFloatingActions.tsx",
     {
       react: runtime.react,
       "next-intl": intl,
       "@/icons": icons,
+      "@/utils": utils,
       "@/components/common/Tooltip": "Tooltip",
+      "./fab/FabButton": FabButton,
+      "./fab/FabGroup": FabGroup,
+      "./fab/fabGroups": load(base + "fab/fabGroups.ts", { "@/icons": icons }),
     },
     { document: { addEventListener() {}, removeEventListener() {} } },
   ).default;
   let drawn = 0;
   const props = {
-    open: true,
+    group: null,
     mapType: "roadmap",
     mapReady: true,
     availableHeight: 600,
-    bottom: 24,
-    onToggle() {},
+    bottom: 48,
+    onGroup: (value) => (props.group = value),
     onAddFarm() {},
     onDrawFarm: () => drawn++,
     onMapType() {},
@@ -500,22 +526,38 @@ test("floating actions keep the idle stack and pin Confirm Boundary / Save as Fa
     onFit() {},
     onReset() {},
   };
+  const render = (extra = {}) =>
+    expand(runtime.render(Fab, { ...props, ...extra }));
+  // The stack's first row: the Draw button, or the drawing toolbar and Confirm.
+  const top = (tree) =>
+    [nodes(tree).find((node) => node.props?.role === "group").props.children]
+      .flat(Infinity)
+      .find(Boolean);
   const labels = (tree) =>
     nodes(tree)
       .filter((node) => node.type === "span")
       .map((node) => node.props.children);
-  let tree = runtime.render(Fab, props);
-  assert.equal(labels(tree).includes("drawFarm"), true);
+  let tree = render();
+  assert.equal(top(tree).type, "button");
+  assert.equal(labels(top(tree)).includes("drawFarm"), true);
   assert.equal(labels(tree).includes("confirm"), false);
-  tree = runtime.render(Fab, {
-    ...props,
+  // An open group hides the idle Draw button: Farm Actions is now on top
+  // (its own Draw item stays inside its closed menu).
+  tree = render({ group: "view" });
+  assert.notEqual(top(tree).type, "button");
+  assert.equal(
+    nodes(top(tree)).find((node) => node.props?.role === "group").props.hidden,
+    true,
+  );
+  tree = render({
+    group: "layers",
     drawMode: "drawing",
     canCompleteDraw: false,
     drawToolbar: { type: "DrawToolbar", props: {} },
   });
-  assert.equal(labels(tree).includes("drawFarm"), false);
+  // While drawing, Confirm and its toolbar stay even with a group open.
   assert.equal(
-    nodes(tree).some((node) => node.type === "DrawToolbar"),
+    nodes(top(tree)).some((node) => node.type === "DrawToolbar"),
     true,
   );
   let pinned = nodes(tree).find(
@@ -531,11 +573,7 @@ test("floating actions keep the idle stack and pin Confirm Boundary / Save as Fa
   assert.equal(pinned.props.title, undefined);
   pinned.props.onClick();
   assert.equal(drawn, 0);
-  tree = runtime.render(Fab, {
-    ...props,
-    drawMode: "drawn",
-    canCompleteDraw: true,
-  });
+  tree = render({ drawMode: "drawn", canCompleteDraw: true });
   pinned = nodes(tree).find(
     (node) => node.props?.["aria-label"] === "saveAsFarm",
   );
@@ -548,6 +586,7 @@ test("floating actions keep the idle stack and pin Confirm Boundary / Save as Fa
   );
   pinned.props.onClick();
   assert.equal(drawn, 1);
+  runtime.cleanup();
 });
 
 test("toolbar switches Undo to Reopen and blocks Complete below three points", () => {

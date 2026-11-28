@@ -8,6 +8,7 @@ export default function AccountBottomPanel({
   height,
   maximum,
   collapsed,
+  toggleHidden = false,
   children,
   onResize,
   onToggle,
@@ -15,6 +16,8 @@ export default function AccountBottomPanel({
   height: number;
   maximum: number;
   collapsed: boolean;
+  /** Hides the show/hide button, e.g. while the map is being edited. */
+  toggleHidden?: boolean;
   children: ReactNode;
   onResize: (height: number) => void;
   onToggle: () => void;
@@ -46,6 +49,7 @@ export default function AccountBottomPanel({
       </section>
       <button
         type="button"
+        hidden={toggleHidden}
         onClick={onToggle}
         aria-label={collapsed ? t("open") : t("close")}
         aria-expanded={!collapsed}
@@ -55,7 +59,7 @@ export default function AccountBottomPanel({
             ? "env(safe-area-inset-bottom)"
             : Math.max(0, height - (height >= maximum - 1 ? 36 : 16)),
         }}
-        className="border-success-300 text-success-700 shadow-theme-sm hover:bg-success-50 focus-visible:outline-success-600 dark:border-success-700 dark:text-success-400 absolute end-5 z-30 flex size-8 shrink-0 items-center justify-center rounded-full border bg-white p-0 leading-none focus-visible:outline-2 sm:end-7 dark:bg-gray-800 dark:hover:bg-gray-700"
+        className={`border-success-300 text-success-700 shadow-theme-sm hover:bg-success-50 focus-visible:outline-success-600 dark:border-success-700 dark:text-success-400 absolute end-5 z-30 size-8 shrink-0 items-center justify-center rounded-full border bg-white p-0 leading-none focus-visible:outline-2 sm:end-7 dark:bg-gray-800 dark:hover:bg-gray-700 ${toggleHidden ? "hidden" : "flex"}`}
       >
         <ChevronDownIcon
           aria-hidden="true"

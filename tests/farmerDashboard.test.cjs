@@ -29,6 +29,15 @@ function load(file, dependencies = {}, globals = {}) {
       if (Object.hasOwn(dependencies, name)) return dependencies[name];
       if (name === "@/actions/account/farm-crops")
         return { getCropMap: async () => ({ success: true, data: [] }) };
+      if (name === "@/actions/account/irrigation")
+        return {
+          getIrrigationWorkspace: async () => ({
+            map: {
+              success: true,
+              data: { type: "FeatureCollection", features: [] },
+            },
+          }),
+        };
       if (name === "@/components/common/maps/CropInfoWindow")
         return "CropPopup";
       if (name === "../crops/_components/CropWizardDialog") return "CropDialog";
@@ -38,6 +47,18 @@ function load(file, dependencies = {}, globals = {}) {
         return "CropTimelineDialog";
       if (name === "../crops/_components/CropDeleteConfirm")
         return "CropDelete";
+      if (name === "../irrigation/_components/irrigationMap")
+        return load(
+          "src/app/[locale]/(account)/account/(protected)/irrigation/_components/irrigationMap.ts",
+          {},
+          { localStorage: globals.localStorage },
+        );
+      if (name === "../irrigation/_components/IrrigationMapLayer")
+        return "IrrigationMapLayer";
+      if (name === "../irrigation/_components/IrrigationLocationEditor")
+        return "IrrigationLocationEditor";
+      if (name === "../irrigation/_components/IrrigationInfoWindow")
+        return "IrrigationPopup";
       if (Object.hasOwn(areaFixture.dependencies, name))
         return areaFixture.dependencies[name];
       throw new Error(`Unexpected dependency ${name} in ${file}`);
@@ -123,7 +144,7 @@ test("initial interaction state excludes route state and starts with closed side
   assert.deepEqual(clone(state.initialDashboardState), {
     sidebarOpen: false,
     panelHeight: null,
-    fabOpen: false,
+    fabGroup: null,
     selectedFarmId: null,
     mapType: "satellite",
   });
@@ -139,13 +160,21 @@ test("navigation closes sidebar/FAB without losing selection, map type or panel 
     type: "map-type",
     mapType: "satellite",
   });
-  current = state.dashboardReducer(current, { type: "fab", open: true });
+  current = state.dashboardReducer(current, { type: "fab", group: "view" });
+  assert.equal(current.fabGroup, "view");
+  // One group at a time: opening another replaces it.
+  current = state.dashboardReducer(current, { type: "fab", group: "layers" });
+  assert.equal(current.fabGroup, "layers");
   current = state.dashboardReducer(current, { type: "navigate" });
   assert.equal(current.sidebarOpen, false);
   assert.equal(current.panelHeight, 420);
   assert.equal(current.selectedFarmId, 1);
   assert.equal(current.mapType, "satellite");
-  assert.equal(current.fabOpen, false);
+  assert.equal(current.fabGroup, null);
+  current = state.dashboardReducer(current, { type: "fab", group: "farm" });
+  current = state.dashboardReducer(current, { type: "sidebar", open: true });
+  assert.equal(current.fabGroup, null);
+  assert.equal(Object.hasOwn(current, "fabOpen"), false);
   assert.equal(Object.hasOwn(current, "activeModule"), false);
   assert.equal(Object.hasOwn(current, "panelOpen"), false);
 });
@@ -153,19 +182,28 @@ test("map-only actions preserve selection; panel visibility and active module ar
   let current = {
     ...state.initialDashboardState,
     selectedFarmId: 2,
-    fabOpen: true,
+    fabGroup: "layers",
   };
+  // The map type is a toggle: Map Layers stays open for the next change.
   current = state.dashboardReducer(current, {
     type: "map-type",
-    mapType: "satellite",
+    mapType: "roadmap",
   });
   assert.equal(current.selectedFarmId, 2);
-  assert.equal(current.fabOpen, false);
-  current = state.dashboardReducer(current, { type: "fab", open: true });
+  assert.equal(current.mapType, "roadmap");
+  assert.equal(current.fabGroup, "layers");
+  const unchanged = state.dashboardReducer(current, {
+    type: "fab",
+    group: "layers",
+  });
+  assert.equal(unchanged, current);
+  current = state.dashboardReducer(current, { type: "select-farm", id: 3 });
+  assert.equal(current.fabGroup, null);
+  current = state.dashboardReducer(current, { type: "fab", group: "view" });
   current = state.dashboardReducer(current, {
     type: "navigate",
   });
-  assert.equal(current.fabOpen, false);
+  assert.equal(current.fabGroup, null);
   assert.equal(
     moduleConfig.resolveAccountRoute("/account/profile").mode,
     "panel",
@@ -479,6 +517,18 @@ test("locale snapshots contain UI state only, are scoped per Farmer and tolerate
   );
   assert.equal(snapshot.readDashboardSnapshot(1).view, null);
   assert.equal(snapshot.readDashboardSnapshot(1).state.mapType, "satellite");
+  // Snapshots saved before the grouped map actions still carry fabOpen.
+  sessionStorage.setItem(
+    snapshot.snapshotKey(1),
+    JSON.stringify({
+      state: { ...ui, fabOpen: true, mapType: "roadmap" },
+      view: null,
+    }),
+  );
+  const restored = snapshot.readDashboardSnapshot(1).state;
+  assert.equal(Object.hasOwn(restored, "fabOpen"), false);
+  assert.equal(restored.fabGroup, null);
+  assert.equal(restored.mapType, "roadmap");
 });
 test("SDK loader shares one script, uses the official async callback and supports network retry without logging keys", async () => {
   const scripts = [];
@@ -614,6 +664,8 @@ function hooks() {
     },
     Suspense: "Suspense",
   };
+  // Effects run synchronously after render here, so layout effects are the same.
+  react.useLayoutEffect = react.useEffect;
   return {
     react,
     render: (Component, props) => {
@@ -1666,7 +1718,12 @@ test("panel has no header; its persistent toggle hides and reopens content indep
   assert.equal(toggled, 2);
 });
 
-function shellHarness({ farmState, loadWorkspace, loadSummary } = {}) {
+function shellHarness({
+  farmState,
+  loadWorkspace,
+  loadSummary,
+  loadIrrigation,
+} = {}) {
   const runtime = hooks();
   const sessionStorage = storage();
   const events = {};
@@ -1697,10 +1754,17 @@ function shellHarness({ farmState, loadWorkspace, loadSummary } = {}) {
     {
       react: runtime.react,
       "next-intl": intl,
-      "react-hot-toast": (message) => notices.push(message),
+      "react-hot-toast": Object.assign((message) => notices.push(message), {
+        error: (message) => notices.push(["error", message]),
+      }),
       "@/hooks/useUserAuth": {
         useUserAuth: () => auth,
       },
+      ...(loadIrrigation && {
+        "@/actions/account/irrigation": {
+          getIrrigationWorkspace: loadIrrigation,
+        },
+      }),
       "@/i18n/navigation": {
         usePathname: () => pathname,
         useRouter: () => ({ push: (path) => routes.push(path) }),
@@ -2120,12 +2184,18 @@ test("shell renders real route children in one shared panel and retains height, 
   assert.equal(Object.hasOwn(get("Panel").props, "title"), false);
   assert.equal(get("Panel").props.children, null);
   assert.equal(typeof get("Panel").props.onToggle, "function");
-  assert.equal(get("Fab").props.open, false);
+  assert.equal(get("Fab").props.group, null);
+  // 16 px above the panel button, which sits on the panel's top edge.
+  assert.equal(get("Fab").props.bottom, get("Panel").props.height + 32);
+  get("Fab").props.onGroup("layers");
+  tree = h.render();
+  assert.equal(get("Fab").props.group, "layers");
   const mapType = get("Map").type;
   assert.equal(get("Map").props.mapType, "satellite");
   get("Fab").props.onMapType("roadmap");
   tree = h.render();
   assert.equal(get("Map").props.mapType, "roadmap");
+  assert.equal(get("Fab").props.group, "layers");
   get("Fab").props.onReset();
   tree = h.render();
   assert.equal(get("Map").props.mapType, "satellite");
@@ -2431,8 +2501,8 @@ test("sidebar uses the central module metadata, highlights the current route and
 });
 test("the remaining module pages return their own content without another panel, map, resize handle or auth provider", async () => {
   const locales = [];
+  // Irrigation is a working module now (tests/farmerIrrigation.test.cjs).
   for (const [path, expected, moduleId] of [
-    ["irrigation", "Unavailable", "irrigation"],
     ["machinery", "Unavailable", "machinery"],
     ["employees", "Unavailable", "employees"],
     ["profile", "ProfileDetails", "profile"],
@@ -2566,36 +2636,64 @@ test("language switching keeps the current module URL and saves only interaction
   assert.equal(Object.hasOwn(snapshot.state, "activeModule"), false);
   assert.equal(Object.hasOwn(snapshot.state, "panelOpen"), false);
 });
-test("floating actions collapse on outside click/Escape, avoid full-height panels and isolate map-only actions", () => {
+/** Renders nested function components so the real FAB markup can be inspected. */
+function expand(tree) {
+  if (Array.isArray(tree)) return tree.map(expand);
+  if (!tree || typeof tree !== "object") return tree;
+  if (typeof tree.type === "function") return expand(tree.type(tree.props));
+  return {
+    ...tree,
+    props: { ...tree.props, children: expand(tree.props?.children) },
+  };
+}
+function fabModules(react, globals) {
+  const utils = { cn: (...values) => values.filter(Boolean).join(" ") };
+  const FabButton = load(base + "fab/FabButton.tsx", {
+    "@/utils": utils,
+  }).default;
+  const FabGroup = load(base + "fab/FabGroup.tsx", {
+    "@/components/common/Tooltip": "Tooltip",
+    "@/icons": icons,
+    "@/utils": utils,
+    "./FabButton": FabButton,
+  }).default;
+  return load(
+    base + "AccountFloatingActions.tsx",
+    {
+      react,
+      "next-intl": intl,
+      "@/icons": icons,
+      "@/utils": utils,
+      "@/components/common/Tooltip": "Tooltip",
+      "./fab/FabButton": FabButton,
+      "./fab/FabGroup": FabGroup,
+      "./fab/fabGroups": load(base + "fab/fabGroups.ts", { "@/icons": icons }),
+    },
+    globals,
+  ).default;
+}
+test("map action groups close on outside click/Escape, keep toggles open, avoid full-height panels and isolate map-only actions", () => {
   const runtime = hooks();
   const listeners = {};
-  let toggled;
   let type;
   let added = 0;
   class Node {}
-  const Component = load(
-    base + "AccountFloatingActions.tsx",
-    {
-      react: runtime.react,
-      "next-intl": intl,
-      "@/icons": icons,
-      "@/components/common/Tooltip": "Tooltip",
+  const Component = fabModules(runtime.react, {
+    Node,
+    document: {
+      addEventListener: (name, fn) => (listeners[name] = fn),
+      removeEventListener: (name) => delete listeners[name],
+      querySelector: () => null,
+      activeElement: null,
     },
-    {
-      Node,
-      document: {
-        addEventListener: (name, fn) => (listeners[name] = fn),
-        removeEventListener: (name) => delete listeners[name],
-      },
-    },
-  ).default;
+  });
   const props = {
-    open: true,
+    group: "layers",
     mapType: "roadmap",
     mapReady: true,
     availableHeight: 600,
-    bottom: 24,
-    onToggle: (value) => (toggled = value),
+    bottom: 48,
+    onGroup: (value) => (props.group = value),
     onMapType: (value) => (type = value),
     onAddFarm: () => added++,
     onDrawFarm() {},
@@ -2603,25 +2701,35 @@ test("floating actions collapse on outside click/Escape, avoid full-height panel
     onFit() {},
     onReset() {},
   };
-  let tree = runtime.render(Component, props);
-  runtime.flush();
-  listeners.keydown({ key: "Escape" });
-  assert.equal(toggled, false);
-  listeners.pointerdown({ target: new Node() });
-  assert.equal(toggled, false);
+  const render = () => {
+    const tree = expand(runtime.render(Component, props));
+    runtime.flush();
+    return tree;
+  };
+  let tree = render();
+  // The map type is a toggle: it switches and keeps Map Layers open.
   nodes(tree)
     .find(
       (node) =>
+        node.type === "button" &&
         nodes(node).some(
           (child) =>
-            child.type === "span" && child.props.children === "satellite",
-        ) && node.type === "button",
+            child.type === "span" &&
+            [child.props.children].flat().includes("satellite"),
+        ),
     )
     .props.onClick();
   assert.equal(type, "satellite");
+  assert.equal(props.group, "layers");
   assert.equal(added, 0);
+  listeners.keydown({ key: "Escape", preventDefault() {} });
+  assert.equal(props.group, null);
+  props.group = "view";
+  tree = render();
+  listeners.pointerdown({ target: new Node() });
+  assert.equal(props.group, null);
   props.availableHeight = 100;
-  tree = runtime.render(Component, props);
+  tree = render();
   assert.equal(tree, null);
   runtime.cleanup();
   assert.equal(Object.keys(listeners).length, 0);
@@ -2956,4 +3064,289 @@ test("each active crop gets a seedling pin at its polygon centre or saved locati
   h.runtime.cleanup();
   assert.equal(pins.map, null);
   assert.ok(pins.removed > 0);
+});
+
+test("irrigation layers draw on the dashboard map when passed; location editing locks farms and crops", async () => {
+  const h = mapHarness();
+  await h.mount();
+  let tree = h.render();
+  const find = (type) => nodes(tree).find((node) => node.type === type);
+  assert.equal(find("IrrigationMapLayer"), undefined);
+  assert.equal(find("IrrigationLocationEditor"), undefined);
+  const farmsLayer = h.calls.data[0];
+  const farmStyle = () =>
+    farmsLayer.style({ getId: () => 1, getProperty: () => "Test polygon" });
+  assert.equal(farmStyle().visible, undefined);
+  assert.equal(farmStyle().clickable, true);
+
+  const selected = [];
+  const borewell = {
+    type: "Feature",
+    id: "7",
+    geometry: { type: "Point", coordinates: [75.8, 26.9] },
+    properties: {
+      name: "Main Borewell",
+      asset_type: "source",
+      source_type: "borewell",
+      status: "operational",
+      type_label: "Borewell",
+      status_label: "Operational",
+    },
+  };
+  const model = {
+    features: [borewell],
+    selectedId: null,
+    view: "combined",
+    onSelect: (id) => selected.push(id),
+    onAction() {},
+  };
+  h.props.irrigation = {
+    model,
+    layers: { farms: false, sources: true, pipelines: true },
+    editor: null,
+  };
+  tree = h.render();
+  const layer = find("IrrigationMapLayer");
+  assert.deepEqual(layer.props.features, [borewell]);
+  assert.equal(layer.props.interactive, true);
+  assert.equal(layer.props.hiddenId, null);
+  layer.props.onSelect("7");
+  assert.deepEqual(selected, ["7"]);
+  // The Farm Boundaries toggle hides farms; they stay clickable.
+  assert.equal(farmStyle().visible, false);
+  assert.equal(farmStyle().clickable, true);
+
+  // Map view: the selected asset gets the shared popup, anchored on the asset.
+  const popup = () =>
+    nodes(tree).find(
+      (node) =>
+        node.type === "FarmPopup" &&
+        node.props.children?.type === "IrrigationPopup",
+    );
+  h.props.irrigation = {
+    ...h.props.irrigation,
+    model: { ...model, selectedId: "7" },
+  };
+  tree = h.render();
+  assert.equal(popup().props.open, false);
+  h.props.irrigation = {
+    ...h.props.irrigation,
+    model: { ...model, selectedId: "7", view: "map" },
+  };
+  tree = h.render();
+  assert.equal(popup().props.open, true);
+  assert.deepEqual(clone(popup().props.anchor), { lat: 26.9, lng: 75.8 });
+  assert.equal(popup().props.farm.name, "Main Borewell");
+  popup().props.onClose();
+  assert.deepEqual(selected, ["7", null]);
+
+  // Editing a location: parcels stop reacting, the edited asset is hidden.
+  h.props.irrigation = {
+    ...h.props.irrigation,
+    editor: {
+      id: 3,
+      kind: "point",
+      assetId: "7",
+      geometry: borewell.geometry,
+      onConfirm() {},
+      onCancel() {},
+    },
+  };
+  tree = h.render();
+  assert.equal(find("IrrigationLocationEditor").key, "3");
+  assert.equal(find("IrrigationLocationEditor").props.request.assetId, "7");
+  assert.equal(find("IrrigationMapLayer").props.interactive, false);
+  assert.equal(find("IrrigationMapLayer").props.hiddenId, "7");
+  assert.equal(popup().props.open, false);
+  assert.equal(farmStyle().clickable, false);
+
+  // The handle frames any positions and reports when there are none.
+  assert.equal(h.ref.current.fit([]), false);
+  assert.equal(h.ref.current.fit([{ lat: 26.9, lng: 75.8 }]), true);
+  h.runtime.cleanup();
+});
+
+test("starting a boundary or changing route closes an open map action group; zoom stays unless an open group needs its room", () => {
+  const h = shellHarness();
+  let tree = h.render();
+  const get = (type) => nodes(tree).find((node) => node.type === type);
+  const zoom = () =>
+    nodes(tree).find(
+      (node) => node.props?.["aria-label"] === "map.zoomControls",
+    );
+  get("Fab").props.onGroup("view");
+  tree = h.render();
+  assert.equal(get("Fab").props.group, "view");
+  // The zoom buttons no longer hide for open map actions; the stack keeps clear of them.
+  assert.ok(zoom());
+  assert.ok(get("Fab").props.maxHeight > 0);
+  assert.ok(
+    get("Fab").props.maxHeight <=
+      h.window.innerHeight - get("Fab").props.bottom - 156,
+  );
+  // Desktop rows; the zoom buttons' room is offered, and they step aside
+  // only while the stack says it needs it.
+  assert.equal(get("Fab").props.compact, false);
+  assert.equal(get("Fab").props.zoomRoom, 92);
+  get("Fab").props.onZoomHidden(true);
+  tree = h.render();
+  assert.equal(zoom(), undefined);
+  get("Fab").props.onZoomHidden(false);
+  tree = h.render();
+  assert.ok(zoom());
+  get("Fab").props.onDrawFarm();
+  tree = h.render();
+  assert.equal(get("Fab").props.drawMode, "drawing");
+  assert.equal(get("Fab").props.group, null);
+  // Locate & Fit and Map Layers stay usable while drawing.
+  get("Fab").props.onGroup("layers");
+  tree = h.render();
+  assert.equal(get("Fab").props.group, "layers");
+  tree = h.visit("/account/farms");
+  assert.equal(get("Fab").props.group, null);
+  // Drawing shortcuts stay off while a group is open.
+  assert.match(
+    fs.readFileSync(base + "AccountDashboardShell.tsx", "utf8"),
+    /useBoundaryDrawShortcuts\(\s*drawActive &&\s*mapVisible &&\s*!state\.fabGroup &&/,
+  );
+  h.runtime.cleanup();
+});
+
+test("every page's map shows all irrigation assets with their layer toggles; a tapped asset opens in the Irrigation Manager", async () => {
+  const requests = [];
+  let fail = false;
+  const borewell = {
+    type: "Feature",
+    id: "7",
+    geometry: { type: "Point", coordinates: [75.8, 26.9] },
+    properties: {
+      name: "Main Borewell",
+      asset_type: "source",
+      source_type: "borewell",
+      status: "operational",
+      type_label: "Borewell",
+      status_label: "Operational",
+    },
+  };
+  const h = shellHarness({
+    loadIrrigation: async (filters, parts) => {
+      requests.push([clone(filters), [...parts]]);
+      return fail
+        ? { map: { success: false, message: "failed" } }
+        : {
+            map: {
+              success: true,
+              data: { type: "FeatureCollection", features: [borewell] },
+            },
+          };
+    },
+  });
+  h.render();
+  await tick();
+  let tree = h.render();
+  const get = (type) => nodes(tree).find((node) => node.type === type);
+  const context = () => get("FarmWorkspace").props.value.irrigation;
+  const allOn = { farms: true, sources: true, pipelines: true };
+  // Like farms and crops, every mapped asset loads once, unfiltered.
+  assert.deepEqual(requests, [[{}, ["map"]]]);
+  let irrigation = get("Map").props.irrigation;
+  assert.deepEqual(irrigation.model.features, [borewell]);
+  assert.equal(irrigation.model.selectedId, null);
+  assert.equal(irrigation.editor, null);
+  assert.deepEqual(clone(irrigation.layers), allOn);
+  assert.deepEqual(context().assets, [borewell]);
+  // Map Layers gets the three toggles here too, and Reset turns them back on.
+  assert.deepEqual(clone(get("Fab").props.irrigation.layers), allOn);
+  get("Fab").props.irrigation.onToggleLayer("sources");
+  tree = h.render();
+  assert.equal(get("Map").props.irrigation.layers.sources, false);
+  get("Fab").props.onReset();
+  tree = h.render();
+  assert.deepEqual(clone(get("Map").props.irrigation.layers), allOn);
+  // Selecting a farm brings back a hidden Farm Boundaries layer.
+  get("Fab").props.irrigation.onToggleLayer("farms");
+  tree = h.render();
+  assert.equal(get("Map").props.irrigation.layers.farms, false);
+  get("Map").props.onSelect(1);
+  tree = h.render();
+  assert.equal(get("Map").props.irrigation.layers.farms, true);
+  assert.equal(get("Map").props.selectedFarmId, 1);
+
+  // A tap opens the Irrigation Manager, which receives the asset to select.
+  h.routes.length = 0;
+  get("Map").props.irrigation.model.onSelect("7");
+  tree = h.render();
+  assert.deepEqual(h.routes, ["/account/irrigation"]);
+  assert.equal(context().requestedId, "7");
+  assert.equal(get("Map").props.selectedFarmId, null);
+  tree = h.visit("/account/irrigation");
+  assert.equal(context().requestedId, "7");
+  context().clearRequest();
+  tree = h.render();
+  assert.equal(context().requestedId, null);
+  // Once published, the manager's filtered assets replace the full set.
+  const managed = {
+    features: [],
+    selectedId: null,
+    view: "combined",
+    onSelect() {},
+    onAction() {},
+  };
+  context().publish(managed);
+  tree = h.render();
+  assert.equal(get("Map").props.irrigation.model, managed);
+  tree = h.visit("/account/dashboard");
+  assert.deepEqual(get("Map").props.irrigation.model.features, [borewell]);
+  // A tap overtaken by another route doesn't open later.
+  get("Map").props.irrigation.model.onSelect("7");
+  tree = h.visit("/account/farms");
+  assert.equal(context().requestedId, null);
+
+  // Fit Irrigation Assets frames them on any page.
+  const fits = [];
+  get("Map").props.ref.current = {
+    fit: (positions) => {
+      fits.push(clone(positions));
+      return positions.length > 0;
+    },
+    focus() {},
+    resetLayers() {},
+  };
+  get("Fab").props.irrigation.onFit();
+  assert.deepEqual(fits, [[{ lat: 26.9, lng: 75.8 }]]);
+  // Changes reload them; a failed reload keeps the assets already shown.
+  fail = true;
+  context().refresh();
+  h.render();
+  await tick();
+  tree = h.render();
+  assert.equal(requests.length, 2);
+  assert.deepEqual(get("Map").props.irrigation.model.features, [borewell]);
+  h.runtime.cleanup();
+
+  // When they never loaded, Fit reports the failure and tries again.
+  const attempts = [];
+  const failing = shellHarness({
+    loadIrrigation: async (filters, parts) => {
+      attempts.push(parts);
+      return { map: { success: false, message: "failed" } };
+    },
+  });
+  failing.render();
+  await tick();
+  const failed = failing.render();
+  assert.deepEqual(
+    clone(
+      nodes(failed).find((node) => node.type === "Map").props.irrigation.model
+        .features,
+    ),
+    [],
+  );
+  nodes(failed)
+    .find((node) => node.type === "Fab")
+    .props.irrigation.onFit();
+  failing.render();
+  assert.deepEqual(failing.notices.at(-1), ["error", "errors.loadFailed"]);
+  assert.equal(attempts.length, 2);
+  failing.runtime.cleanup();
 });

@@ -1,4 +1,4 @@
-import type { MapType, MapView } from "./dashboardTypes";
+import type { FabGroupId, MapType, MapView } from "./dashboardTypes";
 
 export const PANEL_MIN_HEIGHT = 200;
 export const PANEL_INITIAL_DESKTOP = 0.35;
@@ -10,14 +10,15 @@ export const DEFAULT_MAP_VIEW: MapView = {
 export interface DashboardState {
   sidebarOpen: boolean;
   panelHeight: number | null;
-  fabOpen: boolean;
+  /** The map action group that is open, if any. One at a time. */
+  fabGroup: FabGroupId | null;
   selectedFarmId: number | null;
   mapType: MapType;
 }
 export const initialDashboardState: DashboardState = {
   sidebarOpen: false,
   panelHeight: null,
-  fabOpen: false,
+  fabGroup: null,
   selectedFarmId: null,
   mapType: "satellite",
 };
@@ -25,8 +26,9 @@ export type DashboardAction =
   | { type: "restore"; state: DashboardState }
   | { type: "sidebar"; open: boolean }
   | { type: "navigate" }
-  | { type: "resize"; height: number }
-  | { type: "fab"; open: boolean }
+  /** null returns to the default height for the viewport. */
+  | { type: "resize"; height: number | null }
+  | { type: "fab"; group: FabGroupId | null }
   | { type: "select-farm"; id: number | null }
   | { type: "map-type"; mapType: MapType };
 export function dashboardReducer(
@@ -37,25 +39,28 @@ export function dashboardReducer(
     case "restore":
       return action.state;
     case "sidebar":
-      return { ...state, sidebarOpen: action.open, fabOpen: false };
+      return { ...state, sidebarOpen: action.open, fabGroup: null };
     case "navigate":
       return {
         ...state,
         sidebarOpen: false,
-        fabOpen: false,
+        fabGroup: null,
       };
     case "resize":
       return { ...state, panelHeight: action.height };
     case "fab":
-      return { ...state, fabOpen: action.open };
+      return action.group === state.fabGroup
+        ? state
+        : { ...state, fabGroup: action.group };
     case "select-farm":
       return {
         ...state,
         selectedFarmId: action.id,
-        fabOpen: false,
+        fabGroup: null,
       };
     case "map-type":
-      return { ...state, mapType: action.mapType, fabOpen: false };
+      // A toggle: the Map Layers group stays open for the next change.
+      return { ...state, mapType: action.mapType };
   }
 }
 export function clampPanelHeight(

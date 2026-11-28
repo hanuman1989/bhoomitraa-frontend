@@ -18,7 +18,7 @@ import type {
   TimelineOptionPage,
 } from "@/types/admin/cropStageTimeline";
 
-type RelationKind = "variety" | "season" | "source";
+type RelationKind = "crop" | "variety" | "season" | "source";
 type SelectOption = TemplateSelectionOption;
 
 export default function CropActivityTemplateMultiSelect({
@@ -161,7 +161,6 @@ export default function CropActivityTemplateMultiSelect({
                 <li
                   key={option.id}
                   className="bg-success-50 dark:bg-success-500/10 flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-800 dark:text-gray-100"
-                  title={option.label}
                 >
                   <span className="max-w-48 truncate">{option.label}</span>
                   <button
@@ -231,9 +230,7 @@ export default function CropActivityTemplateMultiSelect({
               value={option}
               className="group data-focus:bg-brand-50 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 dark:text-gray-200 dark:data-focus:bg-gray-800"
             >
-              <span className="min-w-0 flex-1 truncate" title={option.label}>
-                {option.label}
-              </span>
+              <span className="min-w-0 flex-1 truncate">{option.label}</span>
               <CheckLineIcon
                 aria-hidden="true"
                 className="text-brand-500 invisible size-4 shrink-0 group-data-selected:visible"

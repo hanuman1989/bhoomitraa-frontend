@@ -35,6 +35,7 @@ import type {
   CropStatus,
 } from "@/types/account/farmCrop";
 import { getCropMap } from "@/actions/account/farm-crops";
+import { getIrrigationWorkspace } from "@/actions/account/irrigation";
 import type { CropInfoAction } from "@/components/common/maps/CropInfoWindow";
 import type { FarmInfoAction } from "@/components/common/maps/FarmInfoWindow";
 import CropWizardDialog from "../crops/_components/CropWizardDialog";
@@ -73,10 +74,33 @@ import {
 import type {
   DashboardFarm,
   DashboardMapHandle,
+  FabGroupId,
   FarmDataState,
 } from "./dashboardTypes";
+import type {
+  IrrigationAssetType,
+  IrrigationGeometry,
+  IrrigationMapFeature,
+} from "@/types/account/irrigation";
+import {
+  defaultIrrigationLayers,
+  geometryPositions,
+  irrigationPanelHeight,
+  readIrrigationLayers,
+  saveIrrigationLayers,
+  type IrrigationEditorRequest,
+  type IrrigationLayers,
+  type IrrigationMapModel,
+} from "../irrigation/_components/irrigationMap";
 
 const emptyFarms: readonly DashboardFarm[] = [];
+// Map actions stay below the zoom buttons (80 px down, 65 px tall), or below
+// the language switch when there are none.
+const FAB_TOP_WITH_ZOOM = 156;
+const FAB_TOP = 64;
+const noIrrigationAssets: readonly IrrigationMapFeature[] = [];
+// Outside the Irrigation Manager no asset is selected, so its popup never opens.
+const noIrrigationAction = () => {};
 const getViewport = () => ({
   height: window.visualViewport?.height ?? window.innerHeight,
   width: window.innerWidth,
@@ -107,6 +131,7 @@ export default function AccountDashboardShell({
   const t = useTranslations("farmerDashboard");
   const tf = useTranslations("farmerFarms");
   const tb = useTranslations("farmerDashboard.boundaryDraw");
+  const ti = useTranslations("farmerIrrigation");
   const { user, isAuthenticated, isLoading } = useUserAuth();
   const locale = useLocale();
   const metadata = useAreaUnits();
@@ -120,7 +145,67 @@ export default function AccountDashboardShell({
   const pathname = usePathname();
   const route = resolveAccountRoute(pathname);
   const [panelHidden, setPanelHidden] = useState(false);
-  const panelVisible = route.mode === "panel" && !panelHidden;
+  // Published by the Irrigation Manager while its page is open.
+  const [irrigationModel, setIrrigationModel] =
+    useState<IrrigationMapModel | null>(null);
+  const irrigationMap =
+    route.activeModule === "irrigation" ? irrigationModel : null;
+  const [irrigationEditor, setIrrigationEditor] = useState<
+    (IrrigationEditorRequest & { id: number }) | null
+  >(null);
+  const irrigationEditorId = useRef(0);
+  // Irrigation layer toggles: a per-farmer preference kept in this browser.
+  const [irrigationLayerState, setIrrigationLayerState] = useState<{
+    ownerId: number | null;
+    layers: IrrigationLayers;
+  }>({ ownerId: null, layers: defaultIrrigationLayers });
+  const irrigationLayers =
+    irrigationLayerState.ownerId === (user?.id ?? null)
+      ? irrigationLayerState.layers
+      : defaultIrrigationLayers;
+  const latestIrrigationLayers = useRef(irrigationLayers);
+  useEffect(() => {
+    latestIrrigationLayers.current = irrigationLayers;
+  });
+  const setIrrigationLayers = useCallback(
+    (layers: IrrigationLayers) => {
+      saveIrrigationLayers(user?.id, layers);
+      setIrrigationLayerState({ ownerId: user?.id ?? null, layers });
+    },
+    [user?.id],
+  );
+  // Selecting or saving a farm brings back the Farm Boundaries layer.
+  const showFarmLayer = useCallback(() => {
+    const layers = latestIrrigationLayers.current;
+    if (!layers.farms) setIrrigationLayers({ ...layers, farms: true });
+  }, [setIrrigationLayers]);
+  // Every mapped asset, shown on each page's map like farms and crops. The
+  // Irrigation Manager shows its own filtered assets instead.
+  const [irrigationAssets, setIrrigationAssets] = useState<{
+    ownerId: number | null;
+    features: readonly IrrigationMapFeature[];
+    status: "loading" | "ready" | "error";
+  }>({ ownerId: null, features: noIrrigationAssets, status: "loading" });
+  const ownIrrigationAssets = irrigationAssets.ownerId === (user?.id ?? null);
+  const dashboardAssets = ownIrrigationAssets
+    ? irrigationAssets.features
+    : noIrrigationAssets;
+  const [irrigationRevision, setIrrigationRevision] = useState(0);
+  const refreshIrrigation = useCallback(
+    () => setIrrigationRevision((value) => value + 1),
+    [],
+  );
+  // An asset tapped on another page's map, which the Irrigation Manager opens.
+  const [irrigationRequest, setIrrigationRequest] = useState<string | null>(
+    null,
+  );
+  const clearIrrigationRequest = useCallback(
+    () => setIrrigationRequest(null),
+    [],
+  );
+  // The map gets the whole screen while a location is edited.
+  const panelVisible =
+    route.mode === "panel" && !panelHidden && !irrigationEditor;
   const mapVisible = route.mode !== "full-page";
   const navigation = useRef({ pathname: accountPathname(pathname), router });
   const pendingFarmFocus = useRef<DashboardFarm | null>(null);
@@ -238,6 +323,39 @@ export default function AccountDashboardShell({
     };
   }, [user?.id, cropRevision, revision, locale]);
   useEffect(() => {
+    if (!user?.id) return;
+    const ownerId = user.id;
+    let active = true;
+    startTransition(async () => {
+      const result = await getIrrigationWorkspace({}, ["map"]).catch(
+        () => null,
+      );
+      if (!active) return;
+      const collection = result?.map;
+      setIrrigationAssets((current) =>
+        collection?.success && collection.data
+          ? { ownerId, features: collection.data.features, status: "ready" }
+          : {
+              ownerId,
+              // A failed reload keeps the assets already on the map.
+              features:
+                current.ownerId === ownerId
+                  ? current.features
+                  : noIrrigationAssets,
+              status: "error",
+            },
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [user?.id, irrigationRevision, locale]);
+  // A tap whose navigation was overtaken by another route must not open later.
+  useEffect(() => {
+    if (route.activeModule !== "irrigation")
+      startTransition(() => setIrrigationRequest(null));
+  }, [route.activeModule]);
+  useEffect(() => {
     if (!user?.id || farmState) return;
     let active = true;
     const requestedUnit = latestPreference.current;
@@ -354,6 +472,16 @@ export default function AccountDashboardShell({
   );
   const visiblePanelHeight = panelVisible ? panelHeight : 0;
   const mapSpace = viewport.height - visiblePanelHeight;
+  // Map actions sit 16 px above the panel button and stay clear of the zoom
+  // buttons and language switch at the top right. When an open group needs
+  // the zoom buttons' room, they step aside until it closes.
+  const zoomFits = mapSpace >= 280;
+  const fabBottom = visiblePanelHeight + (panelHidden ? 48 : 32);
+  const fabMaxHeight = Math.max(
+    0,
+    viewport.height - fabBottom - (zoomFits ? FAB_TOP_WITH_ZOOM : FAB_TOP),
+  );
+  const [fabHidesZoom, setFabHidesZoom] = useState(false);
   useEffect(() => {
     if (!state.sidebarOpen || !sidebar) return;
     const panel = sidebar;
@@ -365,6 +493,10 @@ export default function AccountDashboardShell({
     return () => observer.disconnect();
   }, [state.sidebarOpen, sidebar]);
 
+  // A route change closes an open map action group.
+  useEffect(() => {
+    dispatch({ type: "fab", group: null });
+  }, [pathname]);
   useEffect(() => {
     navigation.current = { pathname: accountPathname(pathname), router };
     if (
@@ -408,9 +540,14 @@ export default function AccountDashboardShell({
       window.visualViewport?.removeEventListener("resize", resize);
     };
   }, [user?.id]);
-  const ready = useCallback((value: boolean) => setMapReady(value), []);
-  const toggleFab = useCallback(
-    (open: boolean) => dispatch({ type: "fab", open }),
+  // DashboardMap reports false only when Google Maps failed to load.
+  const [mapFailed, setMapFailed] = useState(false);
+  const ready = useCallback((value: boolean) => {
+    setMapReady(value);
+    setMapFailed(!value);
+  }, []);
+  const openFabGroup = useCallback(
+    (group: FabGroupId | null) => dispatch({ type: "fab", group }),
     [],
   );
   const navigate = useCallback((id: AccountNavigationId) => {
@@ -423,6 +560,7 @@ export default function AccountDashboardShell({
   const selectFarm = useCallback(
     (id: number) => {
       setSelectedCrop(null);
+      showFarmLayer();
       dispatch({ type: "select-farm", id });
       const selected = farms.find((farm) => farm.id === id);
       if (selected) {
@@ -432,7 +570,7 @@ export default function AccountDashboardShell({
       }
       navigate("farm-manager");
     },
-    [farms, navigate],
+    [farms, navigate, showFarmLayer],
   );
   const selectCrop = useCallback(
     (record: CropCycle | CropMapRecord) => {
@@ -475,6 +613,27 @@ export default function AccountDashboardShell({
     },
     [cropMap.records, selectCrop],
   );
+  // Like a farm or crop, a tapped asset opens in its manager, selected.
+  const openIrrigationAsset = useCallback(
+    (id: string | null) => {
+      if (!id) return;
+      setSelectedCrop(null);
+      dispatch({ type: "select-farm", id: null });
+      setIrrigationRequest(id);
+      navigate("irrigation");
+    },
+    [navigate],
+  );
+  const dashboardIrrigation = useMemo<IrrigationMapModel>(
+    () => ({
+      features: dashboardAssets,
+      selectedId: null,
+      view: "combined",
+      onSelect: openIrrigationAsset,
+      onAction: noIrrigationAction,
+    }),
+    [dashboardAssets, openIrrigationAsset],
+  );
   const farmAction = useCallback(
     (action: FarmInfoAction, id: number) => {
       if (action === "planting-crops") openCrop({ farmId: id });
@@ -508,7 +667,7 @@ export default function AccountDashboardShell({
       ? null
       : `${formatArea(drawArea ?? draw.area, locale)} ${areaUnitLabel(drawArea === null || !drawUnit ? "sqm" : drawUnit)}`;
   function startDraw() {
-    dispatch({ type: "fab", open: false });
+    dispatch({ type: "fab", group: null });
     // Phones: the panel would cover most of the map while drawing.
     if (viewport.width < 768 && panelVisible) {
       panelCollapsedForDraw.current = true;
@@ -527,7 +686,7 @@ export default function AccountDashboardShell({
   function openDraftFarm() {
     const boundary = draw.mode === "drawn" && pointsToBoundary(draw.points);
     if (!boundary) return;
-    dispatch({ type: "fab", open: false });
+    dispatch({ type: "fab", group: null });
     setFarmDialog({
       boundary: { boundary, boundary_source: "manual", gps_accuracy_m: null },
       fromDraft: true,
@@ -547,7 +706,7 @@ export default function AccountDashboardShell({
   useBoundaryDrawShortcuts(
     drawActive &&
       mapVisible &&
-      !state.fabOpen &&
+      !state.fabGroup &&
       !state.sidebarOpen &&
       !farmDialog &&
       !confirmClear,
@@ -559,6 +718,99 @@ export default function AccountDashboardShell({
       state,
       map.current?.getView() ?? snapshot?.view ?? null,
     );
+  }
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const ownerId = user.id;
+    startTransition(() =>
+      setIrrigationLayerState({
+        ownerId,
+        layers: readIrrigationLayers(ownerId),
+      }),
+    );
+  }, [user?.id]);
+  // Each Irrigation Manager view has its own panel height. Leaving the module
+  // restores the height other modules had.
+  const irrigationView = irrigationMap?.view ?? null;
+  const layout = useRef({ panelHeight: state.panelHeight, viewport });
+  useEffect(() => {
+    layout.current = { panelHeight: state.panelHeight, viewport };
+  });
+  const heightBeforeIrrigation = useRef<{ height: number | null } | null>(null);
+  useEffect(() => {
+    if (!irrigationView) {
+      const saved = heightBeforeIrrigation.current;
+      heightBeforeIrrigation.current = null;
+      if (saved) dispatch({ type: "resize", height: saved.height });
+      return;
+    }
+    heightBeforeIrrigation.current ??= { height: layout.current.panelHeight };
+    if (layout.current.viewport.height)
+      dispatch({
+        type: "resize",
+        height: irrigationPanelHeight(irrigationView, layout.current.viewport),
+      });
+    // A restored or newly signed-in workspace resets the height, so apply it again.
+  }, [irrigationView, user?.id, browserState.ready]);
+  // The editor belongs to the open Irrigation Manager.
+  useEffect(() => {
+    if (!irrigationMap) startTransition(() => setIrrigationEditor(null));
+  }, [irrigationMap]);
+  function editIrrigationLocation(request: IrrigationEditorRequest) {
+    if (drawActive) {
+      toast.error(ti("editor.drawActive"));
+      return false;
+    }
+    if (!mapReady) return false;
+    irrigationEditorId.current += 1;
+    dispatch({ type: "fab", group: null });
+    setIrrigationEditor({
+      ...request,
+      id: irrigationEditorId.current,
+      onConfirm: (geometry) => {
+        setIrrigationEditor(null);
+        request.onConfirm(geometry);
+      },
+      onCancel: () => {
+        setIrrigationEditor(null);
+        request.onCancel();
+      },
+    });
+    return true;
+  }
+  function locateIrrigation(
+    assetType: IrrigationAssetType,
+    geometry: IrrigationGeometry,
+  ) {
+    const layer = assetType === "source" ? "sources" : "pipelines";
+    if (!irrigationLayers[layer])
+      setIrrigationLayers({ ...irrigationLayers, [layer]: true });
+    const positions = geometryPositions(geometry);
+    // Wait for a view change to resize the panel, so the asset isn't behind it.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => map.current?.fit(positions)),
+    );
+  }
+  function fitIrrigation() {
+    const positions = (irrigationMap?.features ?? dashboardAssets)
+      .filter(
+        (feature) =>
+          irrigationLayers[
+            feature.properties.asset_type === "source" ? "sources" : "pipelines"
+          ],
+      )
+      .flatMap((feature) => geometryPositions(feature.geometry));
+    if (map.current?.fit(positions)) return;
+    if (
+      !irrigationMap &&
+      ownIrrigationAssets &&
+      irrigationAssets.status === "error"
+    ) {
+      // The message asks the farmer to try again, so this tap reloads them.
+      refreshIrrigation();
+      toast.error(ti("errors.loadFailed"));
+    } else toast(ti("map.noMappedAssets"));
   }
 
   return (
@@ -593,6 +845,17 @@ export default function AccountDashboardShell({
           timeline: showCropTimeline,
           remove: setCropDelete,
         },
+        irrigation: {
+          assets: dashboardAssets,
+          refresh: refreshIrrigation,
+          requestedId: irrigationRequest,
+          clearRequest: clearIrrigationRequest,
+          publish: setIrrigationModel,
+          mapStatus: mapReady ? "ready" : mapFailed ? "error" : "loading",
+          editing: Boolean(irrigationEditor),
+          editLocation: editIrrigationLocation,
+          locate: locateIrrigation,
+        },
       }}
     >
       <div
@@ -620,6 +883,7 @@ export default function AccountDashboardShell({
                 Boolean(cropDetails) ||
                 Boolean(cropTimeline) ||
                 Boolean(cropDelete) ||
+                Boolean(irrigationEditor) ||
                 !mapVisible ||
                 (state.sidebarOpen && sidebarWidth === 0)
               }
@@ -650,6 +914,12 @@ export default function AccountDashboardShell({
                       onOpen: openDraftFarm,
                     }
               }
+              irrigation={{
+                model: irrigationMap ?? dashboardIrrigation,
+                layers: irrigationLayers,
+                // The editor belongs to the open Irrigation Manager.
+                editor: irrigationMap ? irrigationEditor : null,
+              }}
             />
           ) : (
             <div
@@ -699,7 +969,7 @@ export default function AccountDashboardShell({
             error={draw.error}
           />
         )}
-        {mapVisible && mapSpace >= 280 && !state.fabOpen && (
+        {mapVisible && zoomFits && !fabHidesZoom && (
           <div
             role="group"
             aria-label={t("map.zoomControls")}
@@ -725,14 +995,18 @@ export default function AccountDashboardShell({
             </button>
           </div>
         )}
-        {mapVisible && (
+        {mapVisible && !irrigationEditor && (
           <AccountFloatingActions
-            open={state.fabOpen}
+            group={state.fabGroup}
             mapType={state.mapType}
             mapReady={mapReady}
             availableHeight={mapSpace}
-            bottom={visiblePanelHeight + (panelHidden ? 48 : 24)}
-            onToggle={toggleFab}
+            maxHeight={fabMaxHeight}
+            zoomRoom={zoomFits ? FAB_TOP_WITH_ZOOM - FAB_TOP : 0}
+            onZoomHidden={setFabHidesZoom}
+            compact={viewport.width < 640}
+            bottom={fabBottom}
+            onGroup={openFabGroup}
             onAddFarm={() => {
               navigate("farm-manager");
               openFarm();
@@ -760,7 +1034,17 @@ export default function AccountDashboardShell({
                 mapType: initialDashboardState.mapType,
               });
               map.current?.resetLayers();
+              setIrrigationLayers(defaultIrrigationLayers);
               toast(t("actions.layersReset"));
+            }}
+            irrigation={{
+              layers: irrigationLayers,
+              onToggleLayer: (layer) =>
+                setIrrigationLayers({
+                  ...irrigationLayers,
+                  [layer]: !irrigationLayers[layer],
+                }),
+              onFit: fitIrrigation,
             }}
           />
         )}
@@ -769,6 +1053,7 @@ export default function AccountDashboardShell({
             height={panelHeight}
             maximum={viewport.height}
             collapsed={!panelVisible}
+            toggleHidden={Boolean(irrigationEditor)}
             onResize={(height) => dispatch({ type: "resize", height })}
             onToggle={() => setPanelHidden((hidden) => !hidden)}
           >
@@ -805,6 +1090,7 @@ export default function AccountDashboardShell({
                 ],
               }));
               dispatch({ type: "select-farm", id: farm.id });
+              showFarmLayer();
               refresh();
               navigate("farm-manager");
               const selected: DashboardFarm = {

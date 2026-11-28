@@ -18,6 +18,7 @@ export default function CropConfirmDialog({
   alternativeLabel,
   onAlternative,
   cancelLabel,
+  busyLabel,
   danger = false,
 }: {
   title: string;
@@ -29,6 +30,8 @@ export default function CropConfirmDialog({
   alternativeLabel?: string;
   onAlternative?: () => void;
   cancelLabel?: string;
+  /** Confirm button text while busy; "Saving…" by default. */
+  busyLabel?: string;
   /** Red confirm button for permanent deletions. */
   danger?: boolean;
 }) {
@@ -77,7 +80,7 @@ export default function CropConfirmDialog({
               className={danger ? cropDanger : cropPrimary}
               onClick={onConfirm}
             >
-              {busy ? t("saving") : confirmLabel}
+              {busy ? (busyLabel ?? t("saving")) : confirmLabel}
             </button>
           </div>
         </DialogPanel>
