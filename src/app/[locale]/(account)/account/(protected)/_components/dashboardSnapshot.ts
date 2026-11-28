@@ -25,7 +25,8 @@ export function readDashboardSnapshot(
       state: {
         ...initialDashboardState,
         sidebarOpen: saved.sidebarOpen === true,
-        fabOpen: false,
+        // Menus always start closed; an older snapshot's fabOpen is ignored.
+        fabGroup: null,
         panelHeight:
           typeof saved.panelHeight === "number" &&
           Number.isFinite(saved.panelHeight) &&

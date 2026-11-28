@@ -1,25 +1,42 @@
 "use client";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+} from "react";
 import { useTranslations } from "next-intl";
 import Tooltip from "@/components/common/Tooltip";
-import {
-  CheckLineIcon,
-  PencilIcon,
-  PlusIcon,
-  MapLayersIcon,
-  LocationPinIcon,
-  FitMapIcon,
-} from "@/icons";
-import type { MapType } from "./dashboardTypes";
+import { CheckLineIcon, PencilIcon } from "@/icons";
+import { cn } from "@/utils";
+import type { FabGroupId, MapType } from "./dashboardTypes";
 import type { BoundaryDrawMode } from "./boundaryDraw/boundaryDrawState";
+import type { IrrigationLayers } from "../irrigation/_components/irrigationMap";
+import FabButton from "./fab/FabButton";
+import FabGroup from "./fab/FabGroup";
+import { fabGroups, fabLayout, fabRowHeight } from "./fab/fabGroups";
 
+/**
+ * The map's actions at the bottom right, above the panel button: Draw Farm
+ * Boundary, then the Farm Actions, Locate & Fit and Map Layers speed dials.
+ * One group opens at a time; a tap on the map, Esc or a route change closes
+ * it. Every button calls the handler the shell passes in. Nothing scrolls:
+ * when an open group needs more room, the buttons above it and then the zoom
+ * buttons step aside until it closes.
+ */
 export default function AccountFloatingActions({
-  open,
+  group,
   mapType,
   mapReady,
   availableHeight,
+  maxHeight,
+  zoomRoom = 0,
+  onZoomHidden,
+  compact = false,
   bottom,
-  onToggle,
+  onGroup,
   onAddFarm,
   onDrawFarm,
   onMapType,
@@ -29,39 +46,90 @@ export default function AccountFloatingActions({
   drawMode = "idle",
   canCompleteDraw = false,
   drawToolbar,
+  irrigation,
 }: {
-  open: boolean;
+  group: FabGroupId | null;
   mapType: MapType;
   mapReady: boolean;
   availableHeight: number;
+  /** Room for the stack below the top-right controls. */
+  maxHeight?: number;
+  /** Extra room when the zoom buttons step aside; 0 when they aren't shown. */
+  zoomRoom?: number;
+  /** Whether the stack needs the zoom buttons' room right now. */
+  onZoomHidden?: (hidden: boolean) => void;
+  /** Below the `sm` breakpoint rows are 44 px tall. */
+  compact?: boolean;
   bottom: number;
-  onToggle: (open: boolean) => void;
+  onGroup: (group: FabGroupId | null) => void;
   onAddFarm: () => void;
   onDrawFarm: () => void;
   onMapType: (type: MapType) => void;
   onLocate: () => void;
   onFit: () => void;
   onReset: () => void;
-  /** Outside idle, the Draw FAB is pinned and completes the boundary. */
+  /** Outside idle, the Draw button completes the boundary and always stays visible. */
   drawMode?: BoundaryDrawMode;
   canCompleteDraw?: boolean;
   drawToolbar?: ReactNode;
+  /** Irrigation assets on the map: their layer toggles and Fit Irrigation Assets. */
+  irrigation?: {
+    layers: IrrigationLayers;
+    onToggleLayer: (layer: keyof IrrigationLayers) => void;
+    onFit: () => void;
+  };
 }) {
   const t = useTranslations("farmerDashboard.actions");
   const tb = useTranslations("farmerDashboard.boundaryDraw");
-  const container = useRef<HTMLDivElement>(null);
-  const minPointsId = useId();
+  const id = useId();
+  const stack = useRef<HTMLDivElement>(null);
+  const catcher = useRef<HTMLDivElement>(null);
+  const mains = useRef<Partial<Record<FabGroupId, HTMLButtonElement | null>>>(
+    {},
+  );
+  const drawing = drawMode !== "idle";
+  const groups = fabGroups({
+    mapType,
+    mapReady,
+    drawing,
+    onAddFarm,
+    onDrawFarm,
+    onMapType,
+    onLocate,
+    onFit,
+    onReset,
+    irrigation,
+  });
+  // A group this page lacks, or one blocked while drawing, can't be open.
+  const open = groups.some((item) => item.id === group && !item.blocked)
+    ? group
+    : null;
+
   useEffect(() => {
     if (!open) return;
     function outside(event: PointerEvent) {
+      const target = event.target;
+      // A tap on the map lands on the click-catcher, which closes the group itself.
       if (
-        event.target instanceof Node &&
-        !container.current?.contains(event.target)
+        target instanceof Node &&
+        !stack.current?.contains(target) &&
+        !catcher.current?.contains(target)
       )
-        onToggle(false);
+        onGroup(null);
     }
     function escape(event: KeyboardEvent) {
-      if (event.key === "Escape") onToggle(false);
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (
+        document.querySelector('[role="dialog"][aria-modal="true"]') ||
+        active?.closest?.("input, textarea, select, [contenteditable='true']")
+      )
+        return;
+      event.preventDefault();
+      const focusInside = Boolean(active && stack.current?.contains(active));
+      onGroup(null);
+      // Focus would otherwise vanish with the closed items.
+      if (focusInside && open) mains.current[open]?.focus();
     }
     document.addEventListener("pointerdown", outside, true);
     document.addEventListener("keydown", escape);
@@ -69,143 +137,175 @@ export default function AccountFloatingActions({
       document.removeEventListener("pointerdown", outside, true);
       document.removeEventListener("keydown", escape);
     };
-  }, [open, onToggle]);
-  if (availableHeight < 160) return null;
-  const drawing = drawMode !== "idle";
+  }, [open, onGroup]);
+
+  // Draw stays on top of the stack; it only steps aside for an open group,
+  // never while a boundary or an unsaved draft is on the map.
+  const showDraw = drawing || !open;
+  const layout =
+    maxHeight === undefined
+      ? { hideAbove: false, hideZoom: false, scrolls: false }
+      : fabLayout({
+          groups,
+          open,
+          draw: showDraw,
+          row: fabRowHeight(compact),
+          space: maxHeight,
+          zoomSpace: zoomRoom,
+        });
+  const shown = availableHeight >= 160;
+  const hideZoom = shown && layout.hideZoom;
+  useLayoutEffect(() => {
+    // Before paint, so the open items never overlap the zoom buttons.
+    onZoomHidden?.(hideZoom);
+    return () => onZoomHidden?.(false);
+  }, [hideZoom, onZoomHidden]);
+  useEffect(() => {
+    // Keep the group buttons, next to the panel button, in view.
+    if (layout.scrolls && stack.current)
+      stack.current.scrollTop = stack.current.scrollHeight;
+  }, [layout.scrolls, open]);
+
+  if (!shown) return null;
+  const openIndex = groups.findIndex((item) => item.id === open);
+  const visibleGroups = layout.hideAbove ? groups.slice(openIndex) : groups;
   const drawLabel = tb(drawMode === "drawn" ? "saveAsFarm" : "confirm");
-  const actions = [
-    {
-      id: "drawFarm",
-      icon: PencilIcon,
-      color: "bg-success-700",
-      run: onDrawFarm,
-      disabled: !mapReady,
-    },
-    {
-      id: "addFarm",
-      icon: PlusIcon,
-      color: "bg-error-600",
-      run: onAddFarm,
-      disabled: false,
-    },
-    {
-      id: mapType === "roadmap" ? "satellite" : "roadmap",
-      icon: MapLayersIcon,
-      color: "bg-success-600",
-      run: () => onMapType(mapType === "roadmap" ? "satellite" : "roadmap"),
-      disabled: !mapReady,
-    },
-    {
-      id: "myLocation",
-      icon: LocationPinIcon,
-      color: "bg-orange-500",
-      run: onLocate,
-      disabled: !mapReady,
-    },
-    {
-      id: "fitAll",
-      icon: FitMapIcon,
-      color: "bg-theme-purple-500",
-      run: onFit,
-      disabled: !mapReady,
-    },
-    {
-      id: "resetLayers",
-      icon: MapLayersIcon,
-      color: "bg-gray-600",
-      run: onReset,
-      disabled: !mapReady,
-    },
-  ].filter((action) => !drawing || action.id !== "drawFarm");
+  const minPointsId = `${id}-min-points`;
   return (
-    <div
-      ref={container}
-      className="absolute end-5 z-20 flex flex-col items-end gap-2 sm:end-7"
-      style={{ bottom: `max(${bottom}px, env(safe-area-inset-bottom))` }}
-    >
+    <>
       {open && (
+        // Closes the group on a tap anywhere on the map, without the map
+        // seeing it: no farm popup, no draw point, no deselection.
         <div
-          id="account-map-actions"
-          role="group"
-          aria-label={t("label")}
-          className="custom-scrollbar flex flex-col items-end gap-1.5 overflow-y-auto overscroll-contain p-1"
-          style={{ maxHeight: Math.max(80, availableHeight - 160) }}
-        >
-          <p className="sr-only">{t("currentMapType", { type: t(mapType) })}</p>
-          {actions.map(({ id, icon: Icon, color, run, disabled }) => (
-            <button
-              key={id}
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                onToggle(false);
-                run();
-              }}
-              className="group focus-visible:outline-success-700 flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span className="shadow-theme-md group-hover:bg-success-50 rounded-xl bg-white/95 px-2.5 py-1.5 text-xs font-medium text-gray-950 dark:bg-gray-900 dark:text-gray-100">
-                {t(id)}
-              </span>
-              <span
-                className={`shadow-theme-lg flex size-8 shrink-0 items-center justify-center rounded-full text-white ${color}`}
-              >
-                <Icon aria-hidden="true" className="block size-4 shrink-0" />
-              </span>
-            </button>
-          ))}
-        </div>
+          ref={catcher}
+          aria-hidden="true"
+          data-fab-catcher=""
+          className="absolute inset-0 z-10"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onGroup(null);
+          }}
+        />
       )}
-      {drawing && (
-        <div className="flex items-center gap-2">
-          {drawToolbar}
-          {/* The label is visible, so the tooltip only explains why it is blocked. */}
-          <Tooltip
-            content={canCompleteDraw ? null : tb("minPoints")}
-            id={minPointsId}
-            className="shrink-0"
-          >
-            <button
-              type="button"
-              aria-disabled={!canCompleteDraw}
-              aria-label={drawLabel}
-              aria-describedby={canCompleteDraw ? undefined : minPointsId}
-              onClick={() => {
-                if (canCompleteDraw) onDrawFarm();
-              }}
-              className="group focus-visible:outline-success-700 flex min-h-11 items-center gap-2 rounded-full focus-visible:outline-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 sm:min-h-0"
-            >
-              <span className="shadow-theme-md group-hover:bg-success-50 max-xsm:sr-only rounded-xl bg-white/95 px-2.5 py-1.5 text-xs font-medium text-gray-950 dark:bg-gray-900 dark:text-gray-100">
-                {drawLabel}
-              </span>
-              <span className="bg-success-700 shadow-theme-lg flex size-8 shrink-0 items-center justify-center rounded-full text-white">
-                <CheckLineIcon
-                  aria-hidden="true"
-                  className="block size-4 shrink-0"
-                />
-              </span>
-            </button>
-          </Tooltip>
-        </div>
-      )}
-      <Tooltip
-        content={open ? t("close") : t("open")}
-        side="start"
-        className="shrink-0"
+      <div
+        ref={stack}
+        role="group"
+        aria-label={t("label")}
+        style={{
+          bottom: `max(${bottom}px, env(safe-area-inset-bottom))`,
+          maxHeight:
+            layout.scrolls && maxHeight !== undefined
+              ? maxHeight + (hideZoom ? zoomRoom : 0)
+              : undefined,
+        }}
+        className={cn(
+          // In line with the panel and zoom buttons, growing upward from a fixed bottom.
+          "absolute end-5 z-20 flex flex-col items-end gap-2 transition-[bottom] duration-300 ease-out motion-reduce:transition-none sm:end-7",
+          // A tiny map only: no scrollbar to show, nothing to scroll sideways,
+          // and room for focus rings without moving the buttons.
+          layout.scrolls
+            ? "no-scrollbar -me-1 justify-start overflow-x-hidden overflow-y-auto overscroll-contain p-1"
+            : "justify-end",
+        )}
       >
-        <button
-          type="button"
-          onClick={() => onToggle(!open)}
-          aria-expanded={open}
-          aria-controls="account-map-actions"
-          aria-label={open ? t("close") : t("open")}
-          className="bg-success-800 shadow-theme-xl hover:bg-success-700 focus-visible:outline-success-700 flex size-8 items-center justify-center rounded-full p-0 leading-none text-white transition focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          <PencilIcon
-            aria-hidden="true"
-            className={`block size-4 shrink-0 transition-transform ${open ? "rotate-45" : ""}`}
-          />
-        </button>
-      </Tooltip>
-    </div>
+        {showDraw &&
+          (drawing ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {drawToolbar}
+              {/* The label is visible, so the tooltip only explains why it is blocked. */}
+              <Tooltip
+                content={canCompleteDraw ? null : tb("minPoints")}
+                id={minPointsId}
+                className="shrink-0"
+              >
+                <FabButton
+                  main
+                  icon={CheckLineIcon}
+                  color="bg-success-700"
+                  label={drawLabel}
+                  labelClassName="max-xsm:sr-only"
+                  aria-label={drawLabel}
+                  aria-disabled={!canCompleteDraw}
+                  aria-describedby={canCompleteDraw ? undefined : minPointsId}
+                  onClick={() => {
+                    if (canCompleteDraw) onDrawFarm();
+                  }}
+                />
+              </Tooltip>
+            </div>
+          ) : (
+            <FabButton
+              main
+              icon={PencilIcon}
+              color="bg-success-700"
+              label={t("drawFarm")}
+              disabled={!mapReady}
+              onClick={onDrawFarm}
+            />
+          ))}
+        {visibleGroups.map((item) => {
+          const isOpen = open === item.id;
+          return (
+            <FabGroup
+              key={item.id}
+              group={item}
+              label={t(item.label)}
+              reason={item.blocked ? t(item.blocked) : null}
+              open={isOpen}
+              menuId={`${id}-${item.id}-menu`}
+              reasonId={`${id}-${item.id}-reason`}
+              buttonRef={(node) => {
+                mains.current[item.id] = node;
+              }}
+              onToggle={() => onGroup(isOpen ? null : item.id)}
+            >
+              {item.id === "layers" && (
+                <p className="sr-only">
+                  {t("currentMapType", { type: t(mapType) })}
+                </p>
+              )}
+              {item.items.map((action) => (
+                <Fragment key={action.id}>
+                  {action.divider && (
+                    <span
+                      aria-hidden="true"
+                      className="my-0.5 h-px w-40 shrink-0 bg-gray-300 dark:bg-gray-600"
+                    />
+                  )}
+                  <FabButton
+                    icon={action.icon}
+                    color={action.color}
+                    pressed={action.pressed}
+                    disabled={action.disabled}
+                    label={
+                      action.pressed === undefined ? (
+                        t(action.label)
+                      ) : (
+                        <>
+                          <CheckLineIcon
+                            aria-hidden="true"
+                            className={cn(
+                              "size-3.5 shrink-0",
+                              !action.pressed && "invisible",
+                            )}
+                          />
+                          {t(action.label)}
+                        </>
+                      )
+                    }
+                    onClick={() => {
+                      // Actions close their group; toggles keep it open.
+                      if (action.kind === "action") onGroup(null);
+                      action.run();
+                    }}
+                  />
+                </Fragment>
+              ))}
+            </FabGroup>
+          );
+        })}
+      </div>
+    </>
   );
 }

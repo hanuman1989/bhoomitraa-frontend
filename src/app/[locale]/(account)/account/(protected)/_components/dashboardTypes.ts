@@ -8,6 +8,8 @@ export type DashboardModule =
   | "employees"
   | "profile";
 export type MapType = "roadmap" | "satellite";
+/** The map's speed-dial groups: Farm Actions, Locate & Fit and Map Layers. */
+export type FabGroupId = "farm" | "view" | "layers";
 export interface MapPosition {
   lat: number;
   lng: number;
@@ -43,6 +45,8 @@ export interface DashboardMapHandle {
   locate: () => void;
   fitAll: () => void;
   focus: (farm: DashboardFarm) => void;
+  /** Frames these positions; false when there are none or the map can't move. */
+  fit: (positions: readonly MapPosition[]) => boolean;
   resetLayers: () => void;
   getView: () => MapView | null;
 }

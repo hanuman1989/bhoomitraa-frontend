@@ -35,6 +35,7 @@ export interface MapsStyle {
   clickable?: boolean;
   editable?: boolean;
   draggable?: boolean;
+  visible?: boolean;
   zIndex?: number;
   label?: string;
   title?: string;
@@ -67,6 +68,29 @@ export interface MapsData {
     event: "click",
     callback: (event: { feature: MapsFeature }) => void,
   ): MapsListener;
+  /** A draggable feature was moved; a point's new geometry returns its position. */
+  addListener(
+    event: "setgeometry",
+    callback: (event: {
+      feature: MapsFeature;
+      newGeometry: { get(): MapsLatLng };
+    }) => void,
+  ): MapsListener;
+}
+/** Pointer event on a polyline; `vertex` is set when it hit an editable point. */
+export interface MapsPolyMouseEvent {
+  latLng: MapsLatLng | null;
+  vertex?: number;
+  domEvent?: Event;
+}
+export interface MapsSymbol {
+  path: string | number;
+  scale: number;
+  strokeColor?: string;
+  strokeOpacity?: number;
+  strokeWeight?: number;
+  fillColor?: string;
+  fillOpacity?: number;
 }
 export interface MapsInstance {
   setMapTypeId(type: MapType | "terrain"): void;
@@ -156,12 +180,10 @@ export interface MapsSDK {
     strokeWeight: number;
     geodesic: boolean;
     clickable?: boolean;
+    /** Vertex and midpoint handles; dragging a midpoint inserts a point. */
+    editable?: boolean;
     zIndex?: number;
-    icons?: {
-      icon: { path: string; strokeOpacity: number; scale: number };
-      offset: string;
-      repeat: string;
-    }[];
+    icons?: { icon: MapsSymbol; offset: string; repeat: string }[];
   }) => MapsPolyline;
   Circle: new (options: {
     map: MapsInstance;
@@ -208,6 +230,11 @@ export interface MapsPolygon {
 export interface MapsPolyline {
   setMap(map: MapsInstance | null): void;
   setPath(path: MapPosition[]): void;
+  getPath(): MapsPath;
+  addListener(
+    event: "click" | "dblclick" | "contextmenu",
+    callback: (event: MapsPolyMouseEvent) => void,
+  ): MapsListener;
 }
 declare global {
   interface Window {
